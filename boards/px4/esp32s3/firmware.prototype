@@ -1,0 +1,13 @@
+{
+    "board_id": 88,
+    "magic": "PX4ESP32v1",
+    "description": "Firmware for the PX4ESP32 board",
+    "image": "",
+    "build_time": 0,
+    "summary": "PX4ESP32S3",
+    "version": "0.1",
+    "image_size": 0,
+    "image_maxsize": 2080768,
+    "git_identity": "",
+    "board_revision": 0
+}

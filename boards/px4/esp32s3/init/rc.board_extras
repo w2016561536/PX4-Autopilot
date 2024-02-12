@@ -1,0 +1,16 @@
+#!/bin/sh
+#
+# PX4 FMUv4 specific board extras init
+#------------------------------------------------------------------------------
+
+# Run FrSky Telemetry on Pixracer on the FrSky port if not enabled already
+# if param compare TEL_FRSKY_CONFIG 0
+# then
+# 	frsky_telemetry start -d /dev/ttyS6 -t 15
+# fi
+
+dhcpd_start wlan0
+# ifdown wlan0
+# ifconfig
+mavlink start -x -u 14556 -p -r 100000 -n wlan0
+#mavlink start -d /dev/ttyACM0 -b 2000000 -m onboard

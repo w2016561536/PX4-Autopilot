@@ -1,0 +1,16 @@
+#!/bin/sh
+#
+# PX4 FMUv4 specific board sensors init
+#------------------------------------------------------------------------------
+
+#icm20602 -s start
+# icm20689 -s -R 2 start
+#hmc5883 -I -R 0 start
+#ist8310 -I -R 0 start
+#ms5611 -I start
+#mpu9250_i2c -I -b 3 -a 0x69 -R 6 start
+#fake_imu start
+
+ist8310 start -X -a 12
+bmp388 start -I
+icm42688p -s start

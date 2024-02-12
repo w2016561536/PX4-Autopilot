@@ -40,69 +40,69 @@ serial_ports = {
 #     "URT1": {
 #         "label": "UART 1",
 #         "index": 1,
-#         "default_baudrate": 57600,
+#         "default_baudrate": 115200,
 #         },
 #     "URT2": {
 #         "label": "UART 2",
 #         "index": 2,
-#         "default_baudrate": 57600,
+#         "default_baudrate": 115200,
 #         },
 #     "URT3": {
 #         "label": "UART 3",
 #         "index": 3,
-#         "default_baudrate": 57600,
+#         "default_baudrate": 115200,
 #         },
 #     "URT4": {
 #         "label": "UART 4",
 #         "index": 4,
-#         "default_baudrate": 57600,
+#         "default_baudrate": 115200,
 #         },
 #     "URT5": {
 #         "label": "UART 5",
 #         "index": 5,
-#         "default_baudrate": 57600,
+#         "default_baudrate": 115200,
 #         },
     "URT6": {
         "label": "UART 6",
         "index": 6,
-        "default_baudrate": 57600,
+        "default_baudrate": 115200,
         },
 #     "URT7": {
 #         "label": "UART 7",
 #         "index": 7,
-#         "default_baudrate": 57600,
+#         "default_baudrate": 115200,
 #         },
 #     "URT8": {
 #         "label": "UART 8",
 #         "index": 8,
-#         "default_baudrate": 57600,
+#         "default_baudrate": 115200,
 #         },
 #     "URT9": {
 #         "label": "UART 9",
 #         "index": 9,
-#         "default_baudrate": 57600,
+#         "default_baudrate": 115200,
 #         },
 
     # Telemetry Ports
     "TEL1": { # telemetry link
         "label": "TELEM 1",
         "index": 101,
-        "default_baudrate": 57600,
+        "default_baudrate": 115200,
         },
     "TEL2": { # companion port
         "label": "TELEM 2",
         "index": 102,
-        "default_baudrate": 921600,
+        "default_baudrate": 115200,
         },
     "TEL3": {
         "label": "TELEM 3",
         "index": 103,
-        "default_baudrate": 57600,
+        "default_baudrate": 115200,
         },
     "TEL4": {
         "label": "TELEM/SERIAL 4",
         "index": 104,
-        "default_baudrate": 57600,
+        "default_baudrate": 115200,
         },
 
     # GPS Ports
@@ -140,7 +140,7 @@ serial_ports = {
     "EXT2": {
         "label": "EXT2",
         "index": 401,
-        "default_baudrate": 57600,
+        "default_baudrate": 115200,
         },
 
     }

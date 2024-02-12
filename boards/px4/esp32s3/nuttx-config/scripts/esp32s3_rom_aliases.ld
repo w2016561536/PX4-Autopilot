@@ -1,0 +1,13 @@
+PROVIDE( cache_dbus_mmu_set = Cache_Dbus_MMU_Set );
+PROVIDE( cache_ibus_mmu_set = Cache_Ibus_MMU_Set );
+PROVIDE( cache_invalidate_addr = Cache_Invalidate_Addr );
+PROVIDE( cache_invalidate_dcache_all = Cache_Invalidate_DCache_All );
+PROVIDE( cache_invalidate_icache_all = Cache_Invalidate_ICache_All );
+PROVIDE( cache_occupy_addr = Cache_Occupy_Addr );
+PROVIDE( cache_resume_dcache = Cache_Resume_DCache );
+PROVIDE( cache_resume_icache = Cache_Resume_ICache );
+PROVIDE( cache_set_idrom_mmu_info = Cache_Set_IDROM_MMU_Info );
+PROVIDE( cache_set_idrom_mmu_size = Cache_Set_IDROM_MMU_Size );
+PROVIDE( cache_suspend_dcache = Cache_Suspend_DCache );
+PROVIDE( cache_suspend_icache = Cache_Suspend_ICache );
+PROVIDE( cache_writeback_all = Cache_WriteBack_All );
