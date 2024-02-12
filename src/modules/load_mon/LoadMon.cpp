@@ -162,7 +162,7 @@ void LoadMon::cpuload()
 	const float interval_idletime = total_runtime - _last_idle_time;
 #endif
 
-	cpuload_s cpuload{};
+	px4_cpuload_s cpuload{};
 #if defined(__PX4_LINUX)
 	/* following calculation is based on free(1)
 	 * https://gitlab.com/procps-ng/procps/-/blob/master/proc/sysinfo.c */
@@ -259,7 +259,7 @@ void LoadMon::stack_usage()
 
 	if (system_load.tasks[_stack_task_index].valid && (system_load.tasks[_stack_task_index].tcb->pid > 0)) {
 
-		stack_free = up_check_tcbstack_remain(system_load.tasks[_stack_task_index].tcb);
+		stack_free = up_check_tcbstack(system_load.tasks[_stack_task_index].tcb);
 
 		strncpy((char *)task_stack_info.task_name, system_load.tasks[_stack_task_index].tcb->name, CONFIG_TASK_NAME_SIZE - 1);
 		task_stack_info.task_name[CONFIG_TASK_NAME_SIZE - 1] = '\0';

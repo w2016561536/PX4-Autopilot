@@ -10889,7 +10889,7 @@ namespace Catch {
 
     static char* altStackMem = nullptr;
     static std::size_t altStackSize = 0;
-    static stack_t oldSigStack{};
+    static stack_t_px4 oldSigStack{};
     static struct sigaction oldSigActions[sizeof(signalDefs) / sizeof(SignalDefs)]{};
 
     static void restorePreviousSignalHandlers() {
@@ -10936,7 +10936,7 @@ namespace Catch {
     }
 
     void FatalConditionHandler::engage_platform() {
-        stack_t sigStack;
+        stack_t_px4 sigStack;
         sigStack.ss_sp = altStackMem;
         sigStack.ss_size = altStackSize;
         sigStack.ss_flags = 0;

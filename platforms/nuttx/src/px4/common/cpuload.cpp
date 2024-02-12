@@ -62,6 +62,7 @@ static px4::atomic_int cpuload_monitor_all_count{0};
 
 void cpuload_monitor_start()
 {
+	return;
 	if (cpuload_monitor_all_count.fetch_add(1) == 0) {
 		// if the count was previously 0 (idle thread only) then clear any existing runtime data
 		sched_lock();
@@ -79,6 +80,7 @@ void cpuload_monitor_start()
 
 void cpuload_monitor_stop()
 {
+	return;
 	if (cpuload_monitor_all_count.fetch_sub(1) <= 1) {
 		// don't allow the count to go negative
 		cpuload_monitor_all_count.store(0);
@@ -87,6 +89,7 @@ void cpuload_monitor_stop()
 
 void cpuload_initialize_once()
 {
+	return;
 	for (auto &task : system_load.tasks) {
 		task.valid = false;
 	}
@@ -114,7 +117,7 @@ void cpuload_initialize_once()
 
 	system_load.initialized = true;
 }
-
+/*
 void sched_note_start(FAR struct tcb_s *tcb)
 {
 	// find first free slot
@@ -214,7 +217,7 @@ void sched_note_resume(FAR struct tcb_s *tcb)
 	sysview_sched_note_resume(tcb);
 #endif
 }
-
+*/
 #ifdef CONFIG_SEGGER_SYSVIEW
 
 #ifdef CONFIG_SCHED_INSTRUMENTATION_IRQHANDLER

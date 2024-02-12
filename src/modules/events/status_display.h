@@ -45,7 +45,7 @@
 #include <uORB/Publication.hpp>
 #include <uORB/Subscription.hpp>
 #include <uORB/topics/battery_status.h>
-#include <uORB/topics/cpuload.h>
+#include <uORB/topics/px4_cpuload.h>
 #include <uORB/topics/led_control.h>
 #include <uORB/topics/vehicle_status.h>
 #include <uORB/topics/failsafe_flags.h>
@@ -80,7 +80,7 @@ protected:
 	void publish();
 
 	uORB::SubscriptionData<battery_status_s>       _battery_status_sub{ORB_ID(battery_status)};
-	uORB::SubscriptionData<cpuload_s>              _cpu_load_sub{ORB_ID(cpuload)};
+	uORB::SubscriptionData<px4_cpuload_s>              _cpu_load_sub{ORB_ID(px4_cpuload)};
 	uORB::SubscriptionData<vehicle_status_s>       _vehicle_status_sub{ORB_ID(vehicle_status)};
 	uORB::SubscriptionData<failsafe_flags_s>       _failsafe_flags_sub{ORB_ID(failsafe_flags)};
 

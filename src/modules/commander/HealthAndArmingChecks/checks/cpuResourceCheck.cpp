@@ -41,9 +41,9 @@ void CpuResourceChecks::checkAndReport(const Context &context, Report &reporter)
 		return;
 	}
 
-	cpuload_s cpuload;
+	px4_cpuload_s cpuload;
 
-	if (!_cpuload_sub.copy(&cpuload) || hrt_elapsed_time(&cpuload.timestamp) > 2_s) {
+	if (!_px4_cpuload_sub.copy(&cpuload) || hrt_elapsed_time(&cpuload.timestamp) > 2_s) {
 
 		/* EVENT
 		 * @description

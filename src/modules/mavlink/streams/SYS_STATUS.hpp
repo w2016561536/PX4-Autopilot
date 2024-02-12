@@ -35,7 +35,7 @@
 #define SYS_STATUS_HPP
 
 #include <uORB/topics/battery_status.h>
-#include <uORB/topics/cpuload.h>
+#include <uORB/topics/px4_cpuload.h>
 #include <uORB/topics/vehicle_status.h>
 #include <uORB/topics/health_report.h>
 #include <px4_platform_common/events.h>
@@ -60,7 +60,7 @@ private:
 	explicit MavlinkStreamSysStatus(Mavlink *mavlink) : MavlinkStream(mavlink) {}
 
 	uORB::Subscription _status_sub{ORB_ID(vehicle_status)};
-	uORB::Subscription _cpuload_sub{ORB_ID(cpuload)};
+	uORB::Subscription _px4_cpuload_sub{ORB_ID(px4_cpuload)};
 	uORB::Subscription _health_report{ORB_ID(health_report)};
 	uORB::SubscriptionMultiArray<battery_status_s, battery_status_s::MAX_INSTANCES> _battery_status_subs{ORB_ID::battery_status};
 
@@ -105,12 +105,12 @@ private:
 
 	bool send() override
 	{
-		if (_status_sub.updated() || _cpuload_sub.updated() || _battery_status_subs.updated()) {
+		if (_status_sub.updated() || _px4_cpuload_sub.updated() || _battery_status_subs.updated()) {
 			vehicle_status_s status{};
 			_status_sub.copy(&status);
 
-			cpuload_s cpuload{};
-			_cpuload_sub.copy(&cpuload);
+			px4_cpuload_s cpuload{};
+			_px4_cpuload_sub.copy(&cpuload);
 
 			health_report_s health_report{};
 			_health_report.copy(&health_report);

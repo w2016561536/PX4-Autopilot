@@ -67,6 +67,7 @@ extern struct system_load_s system_load;
 
 void init_print_load(struct print_load_s *s)
 {
+	return;
 	cpuload_monitor_start();
 
 	s->total_user_time = 0;
@@ -136,6 +137,7 @@ static constexpr const char *tstate_name(const tstate_t s)
 void print_load_buffer(char *buffer, int buffer_length, print_load_callback_f cb, void *user,
 		       struct print_load_s *print_state)
 {
+	return;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat" // NuttX uses a different printf format
 #pragma GCC diagnostic ignored "-Wformat-extra-args"
@@ -202,14 +204,14 @@ void print_load_buffer(char *buffer, int buffer_length, print_load_callback_f cb
 
 		if (system_load.tasks[i].tcb->pid == 0) {
 			stack_size = (CONFIG_ARCH_INTERRUPTSTACK & ~3);
-			stack_free = up_check_intstack_remain();
+			stack_free = up_check_intstack();
 
 		} else {
-			stack_free = up_check_tcbstack_remain(system_load.tasks[i].tcb);
+			stack_free = up_check_tcbstack(system_load.tasks[i].tcb);
 		}
 
 #else
-		stack_free = up_check_tcbstack_remain(system_load.tasks[i].tcb);
+		stack_free = up_check_tcbstack(system_load.tasks[i].tcb);
 #endif
 
 #if CONFIG_ARCH_BOARD_SIM || !defined(CONFIG_PRIORITY_INHERITANCE)
@@ -239,6 +241,9 @@ void print_load_buffer(char *buffer, int buffer_length, print_load_callback_f cb
 		case TSTATE_TASK_PENDING:
 		case TSTATE_TASK_READYTORUN:
 		case TSTATE_TASK_RUNNING:
+		#ifdef CONFIG_SMP
+		case TSTATE_TASK_ASSIGNED:
+		#endif
 			print_state->running_count++;
 			break;
 
@@ -375,6 +380,7 @@ struct print_load_callback_data_s {
 
 static void print_load_callback(void *user)
 {
+	return;
 	char clear_line[] {CL};
 	struct print_load_callback_data_s *data = (struct print_load_callback_data_s *)user;
 
@@ -387,6 +393,7 @@ static void print_load_callback(void *user)
 
 void print_load(int fd, struct print_load_s *print_state)
 {
+	return;
 	// print system information
 	if (fd == STDOUT_FILENO) {
 		// move cursor home and clear screen
