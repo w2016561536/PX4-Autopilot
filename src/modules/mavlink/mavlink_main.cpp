@@ -40,6 +40,8 @@
  * @author Anton Babushkin <anton.babushkin@me.com>
  */
 
+
+#include "stdio.h"
 #include <termios.h>
 
 #ifdef CONFIG_NET
@@ -110,7 +112,6 @@ Mavlink::Mavlink() :
 	if (sys_id > 0 && sys_id < 255) {
 		mavlink_system.sysid = sys_id;
 	}
-
 	int comp_id = _param_mav_comp_id.get();
 
 	if (comp_id > 0 && comp_id < 255) {
@@ -133,6 +134,7 @@ Mavlink::Mavlink() :
 	}
 
 	_event_sub.subscribe();
+
 	_telemetry_status_pub.advertise();
 }
 
@@ -2890,7 +2892,7 @@ Mavlink::start(int argc, char *argv[])
 	px4_task_spawn_cmd("mavlink_main",
 			   SCHED_DEFAULT,
 			   SCHED_PRIORITY_DEFAULT,
-			   PX4_STACK_ADJUSTED(2896) + MAVLINK_NET_ADDED_STACK,
+			   PX4_STACK_ADJUSTED(4096) + MAVLINK_NET_ADDED_STACK,
 			   (px4_main_t)&Mavlink::start_helper,
 			   (char *const *)argv);
 

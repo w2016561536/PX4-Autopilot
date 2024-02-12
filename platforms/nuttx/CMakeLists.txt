@@ -106,6 +106,7 @@ list(APPEND nuttx_libs
 	nuttx_crypto
 	nuttx_binfmt
 	nuttx_xx
+	nuttx_mm
 	)
 
 if (NOT CONFIG_BUILD_FLAT)
@@ -177,8 +178,9 @@ if (NOT CONFIG_BUILD_FLAT)
 			${kernel_module_libraries}
 		-Wl,--end-group
 
-		m
-		gcc
+		-lgcc
+		#m
+		#gcc
 		)
 
 	if (config_romfs_root)
@@ -222,8 +224,9 @@ if (NOT CONFIG_BUILD_FLAT)
 		${nuttx_userspace}
 		-Wl,--end-group
 
-		m
-		gcc
+		-lgcc
+		#m
+		#gcc
 		)
 
 	target_link_libraries(px4 PRIVATE -Wl,--print-memory-usage)
@@ -242,6 +245,30 @@ if (NOT CONFIG_BUILD_FLAT)
 
 else()
 
+	set(PX4_STARTUP_DIR ${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src)
+	set(NUTTX_STARTUP_OBJS
+
+	${PX4_STARTUP_DIR}/xtensa_vectors.o
+	${PX4_STARTUP_DIR}/xtensa_window_vector.o
+	${PX4_STARTUP_DIR}/xtensa_windowspill.o
+	${PX4_STARTUP_DIR}/xtensa_int_handlers.o
+	${PX4_STARTUP_DIR}/xtensa_user_handler.o
+	${PX4_STARTUP_DIR}/esp32s3_start.o
+
+
+	# ${PX4_STARTUP_DIR}/xtensa_cpupause.o
+	)
+
+	execute_process(COMMAND touch ${NUTTX_STARTUP_OBJS}
+	WORKING_DIRECTORY ${PX4_SOURCE_DIR})
+
+	set_source_files_properties(
+		${NUTTX_STARTUP_OBJS}
+		PROPERTIES
+		EXTERNAL_OBJECT true
+		GENERATED true)
+
+
 	target_link_libraries(nuttx_c INTERFACE nuttx_sched) # nxsched_get_streams
 
 	target_link_libraries(nuttx_arch
@@ -249,10 +276,16 @@ else()
 			drivers_board
 			arch_hrt
 			arch_board_reset
+			${PX4_STARTUP_DIR}/esp32s3/esp-hal-3rdparty/components/esp_wifi/lib/esp32s3/libnet80211.a
+			${PX4_STARTUP_DIR}/esp32s3/esp-hal-3rdparty/components/esp_wifi/lib/esp32s3/libcore.a
+			${PX4_STARTUP_DIR}/esp32s3/esp-hal-3rdparty/components/esp_wifi/lib/esp32s3/libpp.a
+			${PX4_STARTUP_DIR}/esp32s3/esp-hal-3rdparty/components/esp_wifi/lib/esp32s3/libwapi.a
+			${PX4_STARTUP_DIR}/chip/esp-hal-3rdparty/components/esp_phy/lib/esp32s3/libphy.a
 	)
 
+
 	target_link_libraries(nuttx_c INTERFACE nuttx_drivers)
-	target_link_libraries(nuttx_drivers INTERFACE nuttx_c)
+	target_link_libraries(nuttx_drivers INTERFACE nuttx_c nuttx_mm nuttx_fs)
 	target_link_libraries(nuttx_xx INTERFACE nuttx_c)
 	target_link_libraries(nuttx_fs INTERFACE nuttx_c)
 
@@ -265,17 +298,32 @@ else()
 
 		-fno-exceptions
 		-fno-rtti
-		-Wl,--script=${NUTTX_CONFIG_DIR_CYG}/scripts/${SCRIPT_PREFIX}script.ld
+		#-Wl,--script=${NUTTX_CONFIG_DIR_CYG}/scripts/${SCRIPT_PREFIX}script.ld
+		-Wl,-T ${NUTTX_CONFIG_DIR_CYG}/scripts/${SCRIPT_PREFIX}esp32s3_peripherals.ld
+		-T ${NUTTX_CONFIG_DIR_CYG}/scripts/${SCRIPT_PREFIX}esp32s3_rom.ld
+		-T ${NUTTX_CONFIG_DIR_CYG}/scripts/${SCRIPT_PREFIX}esp32s3_rom_api.ld
+		-T ${NUTTX_CONFIG_DIR_CYG}/scripts/${SCRIPT_PREFIX}esp32s3_rom_aliases.ld
+		-T ${NUTTX_CONFIG_DIR_CYG}/scripts/${SCRIPT_PREFIX}flat_memory.ld
+		-T ${NUTTX_CONFIG_DIR_CYG}/scripts/${SCRIPT_PREFIX}legacy_sections.ld
+		#-T ${NUTTX_CONFIG_DIR_CYG}/scripts/${SCRIPT_PREFIX}esp32s3_rom_api.ld
 		-Wl,-Map=${PX4_CONFIG}.map
 		-Wl,--warn-common
 		-Wl,--gc-sections
 
 		-Wl,--start-group
 			${nuttx_libs}
+			${NUTTX_STARTUP_OBJS}
+			${PX4_STARTUP_DIR}/esp32s3/esp-hal-3rdparty/components/esp_wifi/lib/esp32s3/libnet80211.a
+	${PX4_STARTUP_DIR}/esp32s3/esp-hal-3rdparty/components/esp_wifi/lib/esp32s3/libcore.a
+	${PX4_STARTUP_DIR}/esp32s3/esp-hal-3rdparty/components/esp_wifi/lib/esp32s3/libpp.a
+	${PX4_STARTUP_DIR}/esp32s3/esp-hal-3rdparty/components/esp_wifi/lib/esp32s3/libwapi.a
+
 		-Wl,--end-group
 
-		m
-		gcc
+		#-lgcc
+
+		#m
+		#gcc
 		)
 
 	if(NOT USE_LD_GOLD)
@@ -290,7 +338,8 @@ else()
 	endif()
 
 	add_custom_command(OUTPUT ${PX4_BINARY_OUTPUT}
-		COMMAND ${CMAKE_OBJCOPY} -O binary ${PX4_BINARY_DIR_REL}/${FW_NAME} ${PX4_BINARY_OUTPUT}
+		#COMMAND ${CMAKE_OBJCOPY} -O binary ${PX4_BINARY_DIR_REL}/${FW_NAME} ${PX4_BINARY_OUTPUT}
+		COMMAND esptool.py --chip esp32s3 elf2image -o ${PX4_BINARY_OUTPUT} ${PX4_BINARY_DIR_REL}/${FW_NAME}
 		DEPENDS px4
 	)
 

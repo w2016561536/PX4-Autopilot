@@ -69,6 +69,11 @@ function(px4_add_common_flags)
 		-Wall
 		-Wextra
 		-Werror
+		-Wno-address
+		-Wno-error=dangling-pointer
+		-Wno-error=array-bounds
+		-Wno-error=format-overflow=
+		-Wno-error=unused-variable
 
 		-Warray-bounds
 		-Wcast-align

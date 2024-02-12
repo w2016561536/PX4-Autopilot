@@ -47,6 +47,7 @@
 #include "uORBDeviceNode.hpp"
 #include "uORBUtils.hpp"
 #include "uORBManager.hpp"
+#include "stdio.h"
 
 #ifdef CONFIG_ORB_COMMUNICATOR
 pthread_mutex_t uORB::Manager::_communicator_mutex = PTHREAD_MUTEX_INITIALIZER;

@@ -190,7 +190,7 @@ static bool dsm_decode_channel(uint16_t raw, unsigned shift, uint8_t &channel, u
 		static constexpr uint16_t offset = 903; // microseconds
 		value = roundf(servo_position * 0.583f) + offset;
 
-		PX4_DEBUG(stderr, "CH%d=%d(0x%02x), ", channel, value, raw);
+		PX4_DEBUG( "CH%d=%d(0x%02x), ", channel, value, raw);
 
 		return true;
 	}

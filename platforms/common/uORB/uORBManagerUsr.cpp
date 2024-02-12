@@ -46,6 +46,8 @@
 #include "uORBUtils.hpp"
 #include "uORBManager.hpp"
 
+#include "stdio.h"
+
 uORB::Manager *uORB::Manager::_Instance = nullptr;
 
 bool uORB::Manager::initialize()

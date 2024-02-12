@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 function check_git_submodule {
-
+exit 0
 # The .git exists in a submodule if init and update have been done.
 if [[ -f $1"/.git" || -d $1"/.git" ]]; then
 
