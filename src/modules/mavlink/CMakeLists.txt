@@ -103,6 +103,8 @@ target_include_directories(mavlink_c
 px4_add_module(
 	MODULE modules__mavlink
 	MAIN mavlink
+	STACK_MAIN
+		8192
 	COMPILE_FLAGS
 		-Wno-enum-compare # ROTATION <-> MAV_SENSOR_ROTATION
 		#-DDEBUG_BUILD

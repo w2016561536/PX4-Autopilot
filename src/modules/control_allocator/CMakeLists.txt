@@ -41,7 +41,7 @@ px4_add_module(
 	COMPILE_FLAGS
 		${MAX_CUSTOM_OPT_LEVEL}
 	STACK_MAIN
-		3000
+		4096
 	SRCS
 		ControlAllocator.cpp
 		ControlAllocator.hpp

@@ -185,7 +185,7 @@ function(px4_add_module)
 
 	# set defaults if not set
 	set(MAIN_DEFAULT MAIN-NOTFOUND)
-	set(STACK_MAIN_DEFAULT 2048)
+	set(STACK_MAIN_DEFAULT 4096)
 	set(PRIORITY_DEFAULT SCHED_PRIORITY_DEFAULT)
 
 	foreach(property MAIN STACK_MAIN PRIORITY)
