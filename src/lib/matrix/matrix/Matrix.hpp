@@ -11,7 +11,8 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
-
+#include <lib/esp_dsp/esp_dsp.h>
+#include "typename_compare.hpp"
 #include "math.hpp"
 
 namespace matrix
@@ -146,6 +147,11 @@ public:
 	{
 		const Matrix<Type, M, N> &self = *this;
 		Matrix<Type, M, P> res{};
+
+		if (Same::is_same<Type,float>::value && M > 2 && P > 2){
+			dspm_mult_f32_aes3((float *)(&(self(0,0))), (float *)(&(other(0,0))),(float *)(&(res(0,0))), M ,N ,P);
+			return res;
+		}
 
 		for (size_t i = 0; i < M; i++) {
 			for (size_t k = 0; k < P; k++) {

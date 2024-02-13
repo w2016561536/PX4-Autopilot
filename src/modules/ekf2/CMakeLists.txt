@@ -167,6 +167,7 @@ px4_add_module(
 		EKF2Utility
 		px4_work_queue
 		world_magnetic_model
+		esp_dsp
 	UNITY_BUILD
 	)
 

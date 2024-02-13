@@ -9,6 +9,8 @@
 #pragma once
 
 #include "math.hpp"
+#include <lib/esp_dsp/esp_dsp.h>
+#include "typename_compare.hpp"
 
 namespace matrix
 {
@@ -70,6 +72,11 @@ public:
 	{
 		const Vector &a(*this);
 		Type r(0);
+
+		if (Same::is_same<Type,float>::value && M > 4){
+			dsps_dotprod_f32_aes3((float *)(&(a(0))) , (float *)(&(b(0,0))) , &r , M);
+			return r;
+		}
 
 		for (size_t i = 0; i < M; i++) {
 			r += a(i) * b(i, 0);

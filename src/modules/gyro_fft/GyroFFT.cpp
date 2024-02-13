@@ -36,6 +36,7 @@
 #include <drivers/drv_hrt.h>
 #include <mathlib/math/Limits.hpp>
 #include <mathlib/math/Functions.hpp>
+#include <lib/esp_dsp/esp_dsp.h>
 
 using namespace matrix;
 
@@ -410,7 +411,8 @@ void GyroFFT::Update(const hrt_abstime &timestamp_sample, int16_t *input[], uint
 			if ((buffer_index >= _imu_gyro_fft_len) && !_fft_updated) {
 				perf_begin(_fft_perf);
 
-				arm_mult_q15(gyro_data_buffer[axis], _hanning_window, _fft_input_buffer, _imu_gyro_fft_len);
+				//arm_mult_q15(gyro_data_buffer[axis], _hanning_window, _fft_input_buffer, _imu_gyro_fft_len);
+				dsps_dotprod_s16_ae32(gyro_data_buffer[axis], _hanning_window, _fft_input_buffer, _imu_gyro_fft_len, 0);
 				arm_rfft_q15(&_rfft_q15, _fft_input_buffer, _fft_outupt_buffer);
 
 				_fft_updated = true;
