@@ -11,6 +11,13 @@
 #mpu9250_i2c -I -b 3 -a 0x69 -R 6 start
 #fake_imu start
 
-ist8310 start -X -a 12
+icm42688p -s -R 2 start
+ist8310 start -I -R 2 -a 12
 bmp388 start -I
-icm42688p -s start
+spl06 -I -a 119 start
+ip5109 -I start
+
+hmc5883 -T -X start
+qmc5883l -X start
+ist8310 -X start
+rm3100 -X start

@@ -123,82 +123,9 @@ __END_DECLS
  ****************************************************************************/
 
 
-
-/****************************************************************************
- * Name: setup_littlefs
- *
- * Description:
- *   Register a mtd driver and mount a Little FS over it.
- *
- * Parameters:
- *   path   - Path name used to register the mtd driver.
- *   mtd    - Pointer to a pre-allocated mtd partition.
- *   mnt_pt - Mount point
- *   priv   - Privileges
- *
- * Returned Value:
- *   Zero on success; a negated errno value on failure.
- *
- ****************************************************************************/
-
-static int setup_littlefs(const char *path, struct mtd_dev_s *mtd,
-                          const char *mnt_pt, int priv)
-{
-  int ret = OK;
-
-  ret = register_mtddriver(path, mtd, priv, NULL);
-  if (ret < 0)
-    {
-      syslog(LOG_ERR, "ERROR: Failed to register MTD: %d\n", ret);
-      syslog(LOG_ERR, "ERROR: Failed to register MTD: %d\n", ret);
-      syslog(LOG_ERR, "ERROR: Failed to register MTD: %d\n", ret);
-
-      return ERROR;
-    }
-
-
-  /*if (mnt_pt != NULL )
-    {
-      ret = nx_mount(path, mnt_pt, "littlefs", 0, NULL);
-      if (ret < 0)
-        {
-          ret = nx_mount(path, mnt_pt, "littlefs", 0, "forceformat");
-          if (ret < 0)
-            {
-	      syslog(LOG_ERR, "ERROR: Failed to mount the FS volume: %d\n", ret);
-	      syslog(LOG_ERR, "ERROR: Failed to mount the FS volume: %d\n", ret);
-	      syslog(LOG_ERR, "ERROR: Failed to mount the FS volume: %d\n", ret);
-              return ret;
-            }
-        }
-    }*/
-
-  return OK;
-}
-
-
-
 static void esp32_wifi_init(void)
 {
     int ret =0;
-
-// #ifdef CONFIG_FS_PROCFS
-//   /* Mount the procfs file system */
-
-//   ret = nx_mount(NULL, "/proc", "procfs", 0, NULL);
-//   if (ret < 0)
-//     {
-//       syslog(LOG_ERR, "ERROR: Failed to mount procfs at /proc: %d\n", ret);
-//     }
-// #endif
-/*
-#ifdef CONFIG_ESP32S3_SPIFLASH
-  //ret = esp32s3_spiflash_init();
-  if (ret)
-    {
-      syslog(LOG_ERR, "ERROR: Failed to initialize SPI Flash\n");
-    }
-#endif*/
 
 #ifdef CONFIG_ESP32S3_RT_TIMER
   ret = esp32s3_rt_timer_init();
@@ -334,6 +261,10 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 
 	syslog(LOG_INFO, "\n[boot] CPU SPEED %d\n", esp_rtc_clk_get_cpu_freq());
 
+	esp32_wifi_init();
+
+	usleep(1000);
+
 	esp32s3_spiinitialize();
 
 	//sercon_main(0, NULL);
@@ -421,8 +352,6 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 	// led_off(LED_BLUE);
 	syslog(LOG_INFO, "PX4 PLATFORM INIT OK");
 	px4_platform_configure();
-
-	esp32_wifi_init();
 
 	//static struct hrt_call test_call;
 	//hrt_call_every(&test_call, 1000000, 1000000, (hrt_callout)test_poll, NULL);

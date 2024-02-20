@@ -50,9 +50,9 @@
 /* PX4FMU GPIOs ***********************************************************************************/
 /* LEDs */
 
-#define GPIO_LED_RED                 (GPIO_OUTPUT|15)
-#define GPIO_LED_GREEN               (GPIO_OUTPUT|0)
-#define GPIO_LED_BLUE                (GPIO_OUTPUT|2)
+#define GPIO_LED_RED                 (GPIO_OUTPUT|11)
+#define GPIO_LED_GREEN               (GPIO_OUTPUT|12)
+#define GPIO_LED_BLUE                (GPIO_OUTPUT|5)
 // #define GPIO_LED_SAFETY              GPIO_LED_BLUE
 
 #define BOARD_HAS_CONTROL_STATUS_LEDS 1
@@ -61,7 +61,7 @@
 #define BOARD_ARMED_STATE_LED  LED_RED
 
 
-#define GPIO_SENSORS_3V3_EN           (GPIO_OUTPUT | 12)
+//#define GPIO_SENSORS_3V3_EN           (GPIO_OUTPUT | 12)
 
 #define HRT_TIMER                    0  /* use timer 3 for the HRT */
 
@@ -90,7 +90,7 @@
 
 //#define RC_SERIAL_PORT		"/dev/ttyS2"
 
-#define GPIO_HEATER_OUTPUT   /* PA8 */ (GPIO_OUTPUT| 41)
+#define GPIO_HEATER_OUTPUT   /* PA8 */ (GPIO_OUTPUT| 46)
 #define HEATER_OUTPUT_EN(on_true)      px4_arch_gpiowrite(GPIO_HEATER_OUTPUT, (on_true))
 
 /* AUX PWMs
@@ -100,8 +100,8 @@
 #define BOARD_ENABLE_CONSOLE_BUFFER
 
 /* Power supply control and monitoring GPIOs. */
-#define GPIO_VDD_BRICK_VALID         (GPIO_INPUT|GPIO_PULLUP|32)
-#define GPIO_VDD_USB_VALID           (GPIO_INPUT|GPIO_PULLUP|35)
+//#define GPIO_VDD_BRICK_VALID         (GPIO_INPUT|GPIO_PULLUP|32)
+//#define GPIO_VDD_USB_VALID           (GPIO_INPUT|GPIO_PULLUP|35)
 
 
 #define BOARD_ADC_USB_CONNECTED      1//(px4_arch_gpioread(GPIO_VDD_USB_VALID))

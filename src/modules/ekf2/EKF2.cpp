@@ -419,7 +419,7 @@ void EKF2::Run()
 					float interval_ms = roundf(1000.f / sens_baro_rate);
 
 					if (PX4_ISFINITE(interval_ms) && (interval_ms > _params->sensor_interval_max_ms)) {
-						PX4_DEBUG("updating sensor_interval_max_ms %.3f -> %.3f", (double)_params->sensor_interval_max_ms, (double)interval_ms);
+						PX4_WARN("updating sensor_interval_max_ms %.3f -> %.3f", (double)_params->sensor_interval_max_ms, (double)interval_ms);
 						_params->sensor_interval_max_ms = interval_ms;
 					}
 				}
@@ -435,7 +435,7 @@ void EKF2::Run()
 					float interval_ms = roundf(1000.f / sens_mag_rate);
 
 					if (PX4_ISFINITE(interval_ms) && (interval_ms > _params->sensor_interval_max_ms)) {
-						PX4_DEBUG("updating sensor_interval_max_ms %.3f -> %.3f", (double)_params->sensor_interval_max_ms, (double)interval_ms);
+						PX4_WARN("updating sensor_interval_max_ms %.3f -> %.3f", (double)_params->sensor_interval_max_ms, (double)interval_ms);
 						_params->sensor_interval_max_ms = interval_ms;
 					}
 				}
@@ -526,7 +526,7 @@ void EKF2::Run()
 				if ((imu.accel_calibration_count != _accel_calibration_count)
 				    || (imu.accel_device_id != _device_id_accel)) {
 
-					PX4_DEBUG("%d - resetting accelerometer bias", _instance);
+					PX4_WARN("%d - resetting accelerometer bias", _instance);
 					_device_id_accel = imu.accel_device_id;
 
 					_ekf.resetAccelBias();
@@ -539,7 +539,7 @@ void EKF2::Run()
 				if ((imu.gyro_calibration_count != _gyro_calibration_count)
 				    || (imu.gyro_device_id != _device_id_gyro)) {
 
-					PX4_DEBUG("%d - resetting rate gyro bias", _instance);
+					PX4_WARN("%d - resetting rate gyro bias", _instance);
 					_device_id_gyro = imu.gyro_device_id;
 
 					_ekf.resetGyroBias();
@@ -579,7 +579,7 @@ void EKF2::Run()
 
 			if (sensor_combined.accel_calibration_count != _accel_calibration_count) {
 
-				PX4_DEBUG("%d - resetting accelerometer bias", _instance);
+				PX4_WARN("%d - resetting accelerometer bias", _instance);
 
 				_ekf.resetAccelBias();
 				_accel_calibration_count = sensor_combined.accel_calibration_count;
@@ -590,7 +590,7 @@ void EKF2::Run()
 
 			if (sensor_combined.gyro_calibration_count != _gyro_calibration_count) {
 
-				PX4_DEBUG("%d - resetting rate gyro bias", _instance);
+				PX4_WARN("%d - resetting rate gyro bias", _instance);
 
 				_ekf.resetGyroBias();
 				_gyro_calibration_count = sensor_combined.gyro_calibration_count;
@@ -1987,14 +1987,14 @@ void EKF2::UpdateBaroSample(ekf2_timestamps_s &ekf2_timestamps)
 		// check if barometer has changed
 		if (airdata.baro_device_id != _device_id_baro) {
 			if (_device_id_baro != 0) {
-				PX4_DEBUG("%d - baro sensor ID changed %" PRIu32 " -> %" PRIu32, _instance, _device_id_baro, airdata.baro_device_id);
+				PX4_WARN("%d - baro sensor ID changed %" PRIu32 " -> %" PRIu32, _instance, _device_id_baro, airdata.baro_device_id);
 			}
 
 			reset = true;
 
 		} else if (airdata.calibration_count != _baro_calibration_count) {
 			// existing calibration has changed, reset saved baro bias
-			PX4_DEBUG("%d - baro %" PRIu32 " calibration updated, resetting bias", _instance, _device_id_baro);
+			PX4_WARN("%d - baro %" PRIu32 " calibration updated, resetting bias", _instance, _device_id_baro);
 			reset = true;
 		}
 
@@ -2291,14 +2291,14 @@ void EKF2::UpdateMagSample(ekf2_timestamps_s &ekf2_timestamps)
 		// check if magnetometer has changed
 		if (magnetometer.device_id != _device_id_mag) {
 			if (_device_id_mag != 0) {
-				PX4_DEBUG("%d - mag sensor ID changed %" PRIu32 " -> %" PRIu32, _instance, _device_id_mag, magnetometer.device_id);
+				PX4_WARN("%d - mag sensor ID changed %" PRIu32 " -> %" PRIu32, _instance, _device_id_mag, magnetometer.device_id);
 			}
 
 			reset = true;
 
 		} else if (magnetometer.calibration_count != _mag_calibration_count) {
 			// existing calibration has changed, reset saved mag bias
-			PX4_DEBUG("%d - mag %" PRIu32 " calibration updated, resetting bias", _instance, _device_id_mag);
+			PX4_WARN("%d - mag %" PRIu32 " calibration updated, resetting bias", _instance, _device_id_mag);
 			reset = true;
 		}
 
@@ -2665,7 +2665,7 @@ int EKF2::task_spawn(int argc, char *argv[])
 									multi_instances_allocated++;
 									ekf2_instance_created[imu][mag] = true;
 
-									PX4_DEBUG("starting instance %d, IMU:%" PRIu8 " (%" PRIu32 "), MAG:%" PRIu8 " (%" PRIu32 ")", actual_instance,
+									PX4_WARN("starting instance %d, IMU:%" PRIu8 " (%" PRIu32 "), MAG:%" PRIu8 " (%" PRIu32 ")", actual_instance,
 										  imu, vehicle_imu_sub.get().accel_device_id,
 										  mag, vehicle_mag_sub.get().device_id);
 

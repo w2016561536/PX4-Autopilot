@@ -395,7 +395,7 @@ __END_DECLS
 #define PX4_PANIC(FMT, ...)	printf("Panic: " FMT "\n", ##__VA_ARGS__)
 #define PX4_ERR(FMT, ...)	printf("Error: " FMT "\n", ##__VA_ARGS__)
 #define PX4_WARN(FMT, ...) 	printf("Warn: " FMT "\n", ##__VA_ARGS__)
-#define PX4_DEBUG(FMT, ...) 	printf(FMT "\n", ##__VA_ARGS__)
+#define PX4_DEBUG(FMT, ...) 	//printf("Debug: " FMT "\n", ##__VA_ARGS__)
 
 #elif defined(TRACE_BUILD)
 /****************************************************************************

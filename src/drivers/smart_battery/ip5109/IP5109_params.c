@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (C) 2021 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2022 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,26 +31,16 @@
  *
  ****************************************************************************/
 
-#include <px4_arch/io_timer_hw_description.h>
+/**
+ * Enable external ADS1115 ADC
+ *
+ * If enabled, the internal ADC is not used.
+ *
+ * @boolean
+ * @reboot_required true
+ * @group Sensors
+ */
+PARAM_DEFINE_FLOAT(CHARGE_CURRENT, 0.5);
 
-constexpr io_timers_t io_timers[MAX_IO_TIMERS] = {
-	initIOTimer(Timer::Timer0),
-};
+PARAM_DEFINE_FLOAT(LOW_VOLTAGE_WARN, 3.5);
 
-constexpr timer_io_channels_t timer_io_channels[MAX_TIMER_IO_CHANNELS] = {
-	initIOTimerChannel(io_timers, {Timer::Timer0, 0}, {10}),
-	initIOTimerChannel(io_timers, {Timer::Timer0, 1}, {9}),
-	initIOTimerChannel(io_timers, {Timer::Timer0, 2}, {4}),
-	initIOTimerChannel(io_timers, {Timer::Timer0, 3}, {37}),
-
-};
-// Well, the pins here are invalid, it defined in defconfig
-
-// constexpr io_timers_channel_mapping_t io_timers_channel_mapping = initIOTimerChannelMapping(io_timers,
-// 		timer_io_channels);
-
-	/*
-	initIOTimerChannel(io_timers, {Timer::Timer0, 4}, {37}),
-	initIOTimerChannel(io_timers, {Timer::Timer0, 5}, {35}),
-	initIOTimerChannel(io_timers, {Timer::Timer0, 6}, {45}),
-	initIOTimerChannel(io_timers, {Timer::Timer0, 7}, {48}),*/
