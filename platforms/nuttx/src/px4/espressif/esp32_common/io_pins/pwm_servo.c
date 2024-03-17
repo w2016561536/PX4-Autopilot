@@ -70,6 +70,11 @@ struct pwm_lowerhalf_s *pwm;
 int up_pwm_servo_set(unsigned channel, servo_position_t value)
 {
 	//syslog(LOG_INFO, "PWM set ch: %d value:%d\n", channel,value);
+	if (pwm_info.frequency == 15000)
+	{
+		pwm_info.channels[channel].duty = (value*450)/(1000000/65535);
+		return OK;
+	}
 	pwm_info.channels[channel].duty = (value*pwm_info.frequency)/(1000000/65535);
 	return OK;
 }
@@ -131,6 +136,10 @@ int up_pwm_servo_set_rate_group_update(unsigned group, unsigned rate)
 
 	if(group == 0)
 	{
+		if (rate == 0){
+			pwm_info.frequency = 15000;
+			return OK;
+		}
 		pwm_info.frequency = rate;
 		return OK;
 	}

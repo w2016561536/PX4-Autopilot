@@ -1,0 +1,5 @@
+menuconfig DRIVERS_OPTICAL_FLOW_FLOW3953
+	bool "flow3953"
+	default n
+	---help---
+		Enable support for flow3953

@@ -36,7 +36,7 @@
 #include "../Common.hpp"
 
 #include <uORB/Subscription.hpp>
-#include <uORB/topics/px4_cpuload.h>
+#include <uORB/topics/cpuload.h>
 
 class CpuResourceChecks : public HealthAndArmingCheckBase
 {
@@ -47,7 +47,7 @@ public:
 	void checkAndReport(const Context &context, Report &reporter) override;
 
 private:
-	uORB::Subscription _px4_cpuload_sub{ORB_ID(px4_cpuload)};
+	uORB::Subscription _cpuload_sub{ORB_ID(cpuload)};
 
 	DEFINE_PARAMETERS_CUSTOM_PARENT(HealthAndArmingCheckBase,
 					(ParamFloat<px4::params::COM_CPU_MAX>) _param_com_cpu_max

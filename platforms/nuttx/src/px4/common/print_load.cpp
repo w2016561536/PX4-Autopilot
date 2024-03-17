@@ -67,7 +67,6 @@ extern struct system_load_s system_load;
 
 void init_print_load(struct print_load_s *s)
 {
-	return;
 	cpuload_monitor_start();
 
 	s->total_user_time = 0;
@@ -137,7 +136,6 @@ static constexpr const char *tstate_name(const tstate_t s)
 void print_load_buffer(char *buffer, int buffer_length, print_load_callback_f cb, void *user,
 		       struct print_load_s *print_state)
 {
-	return;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat" // NuttX uses a different printf format
 #pragma GCC diagnostic ignored "-Wformat-extra-args"
@@ -380,7 +378,6 @@ struct print_load_callback_data_s {
 
 static void print_load_callback(void *user)
 {
-	return;
 	char clear_line[] {CL};
 	struct print_load_callback_data_s *data = (struct print_load_callback_data_s *)user;
 
@@ -393,7 +390,6 @@ static void print_load_callback(void *user)
 
 void print_load(int fd, struct print_load_s *print_state)
 {
-	return;
 	// print system information
 	if (fd == STDOUT_FILENO) {
 		// move cursor home and clear screen

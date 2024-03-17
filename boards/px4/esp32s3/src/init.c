@@ -270,34 +270,6 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 	//sercon_main(0, NULL);
 
 
-
-
-#ifdef CONFIG_ESP32S3_SPIFLASH
-	// esp32 flash mtd init.
-
-	int ret = 0;
-
-	ret = esp32s3_spiflash_init();
-  if (ret < 0)
-    {
-      return ret;
-    }
-
-	FAR struct mtd_dev_s *mtd;
-	mtd = esp32s3_spiflash_alloc_mtdpart(0x310000,
-					    0x80000,
-					   false);
-	if (!mtd) {
-		syslog(LOG_ERR, "ERROR: Failed to alloc MTD partition of SPI Flash\n");
-		return -ENOMEM;
-	}
-
-	const char *path = "/fs/mtd_params";
-  	ret = setup_littlefs(path, mtd, "/fs", 0777);
-
-#endif
-
-
 	uint8_t recv_spi[4] = {0};
 	uint8_t send_spi[4] = {0};
 

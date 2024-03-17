@@ -40,10 +40,10 @@ param set-default PWM_MAIN_DIS4 0
 
 param set-default IMU_GYRO_RATEMAX 400
 param set-default IMU_INTEG_RATE 200
-param set-default EKF2_PREDICT_US 20000
+param set-default EKF2_PREDICT_US 10000
 param set-default COM_CPU_MAX -1
 param set-default BAT1_SOURCE 1
 param set-default BAT1_N_CELLS 1
-#param set IMU_GYRO_RATEMAX 400
+param set IMU_GYRO_RATEMAX 250
 #param set PWM_MAIN_RATE 400
 #param set SYS_DM_BACKEND 2

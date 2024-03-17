@@ -7,6 +7,7 @@ menu "Optical flow"
         select DRIVERS_OPTICAL_FLOW_PMW3901
         select DRIVERS_OPTICAL_FLOW_PX4FLOW
         select DRIVERS_OPTICAL_FLOW_THONEFLOW
+        select DRIVERS_OPTICAL_FLOW_FLOW3953
         ---help---
             Enable default set of optical flow drivers
     rsource "*/Kconfig"

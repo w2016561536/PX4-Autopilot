@@ -73,10 +73,10 @@ public:
 		const Vector &a(*this);
 		Type r(0);
 
-		if (Same::is_same<Type,float>::value && M > 4){
+		/*if (Same::is_same<Type,float>::value ){
 			dsps_dotprod_f32_aes3((float *)(&(a(0))) , (float *)(&(b(0,0))) , &r , M);
 			return r;
-		}
+		}*/
 
 		for (size_t i = 0; i < M; i++) {
 			r += a(i) * b(i, 0);

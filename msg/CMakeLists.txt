@@ -59,7 +59,7 @@ set(msg_files
 	CollisionConstraints.msg
 	CollisionReport.msg
 	ControlAllocatorStatus.msg
-	Px4Cpuload.msg
+	Cpuload.msg
 	DebugArray.msg
 	DebugKeyValue.msg
 	DebugValue.msg

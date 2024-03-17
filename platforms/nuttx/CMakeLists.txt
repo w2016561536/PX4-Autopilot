@@ -178,9 +178,9 @@ if (NOT CONFIG_BUILD_FLAT)
 			${kernel_module_libraries}
 		-Wl,--end-group
 
-		-lgcc
-		#m
-		#gcc
+
+		m
+		gcc
 		)
 
 	if (config_romfs_root)
@@ -224,9 +224,9 @@ if (NOT CONFIG_BUILD_FLAT)
 		${nuttx_userspace}
 		-Wl,--end-group
 
-		-lgcc
-		#m
-		#gcc
+
+		m
+		gcc
 		)
 
 	target_link_libraries(px4 PRIVATE -Wl,--print-memory-usage)
@@ -320,10 +320,8 @@ else()
 
 		-Wl,--end-group
 
-		#-lgcc
-
-		#m
-		#gcc
+		m
+		gcc
 		)
 
 	if(NOT USE_LD_GOLD)

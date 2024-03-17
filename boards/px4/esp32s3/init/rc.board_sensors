@@ -3,21 +3,18 @@
 # PX4 FMUv4 specific board sensors init
 #------------------------------------------------------------------------------
 
-#icm20602 -s start
-# icm20689 -s -R 2 start
-#hmc5883 -I -R 0 start
-#ist8310 -I -R 0 start
-#ms5611 -I start
-#mpu9250_i2c -I -b 3 -a 0x69 -R 6 start
-#fake_imu start
 
 icm42688p -s -R 2 start
-ist8310 start -I -R 2 -a 12
-bmp388 start -I
-spl06 -I -a 119 start
-ip5109 -I start
 
-hmc5883 -T -X start
-qmc5883l -X start
-ist8310 -X start
-rm3100 -X start
+if param compare -s SYS_HAS_MAG 1
+then
+	ist8310 start -I -a 12
+fi
+
+if param compare -s SYS_HAS_BARO 1
+then
+	spl06 -I -a 119 start
+fi
+
+flow3953 start -d /dev/ttyS2
+#ip5109 -I start

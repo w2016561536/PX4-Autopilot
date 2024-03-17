@@ -1,0 +1,6 @@
+module_name: flow3953 optical flow sensor
+serial_config:
+    - command: flow3953 start -d ${SERIAL_DEV}
+      port_config_param:
+        name: SENS_NKFLOW_CFG
+        group: Sensors

@@ -162,7 +162,7 @@ void LoadMon::cpuload()
 	const float interval_idletime = total_runtime - _last_idle_time;
 #endif
 
-	px4_cpuload_s cpuload{};
+	cpuload_s cpuload{};
 #if defined(__PX4_LINUX)
 	/* following calculation is based on free(1)
 	 * https://gitlab.com/procps-ng/procps/-/blob/master/proc/sysinfo.c */
