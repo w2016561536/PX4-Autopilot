@@ -88,8 +88,11 @@ public:
 	 * @brief Initialize filter
 	 *
 	 * @param[in] equivalent_airspeed is the equivalent airspeed in [m/s].
+	 * @param[in] equivalent_airspeed_trim is the equivalent airspeed trim (vehicle setting) in [m/s].
+	 * @param[in] airspeed_sensor_available boolean if the airspeed sensor is available.
 	 */
-	void initialize(float equivalent_airspeed);
+	void initialize(float equivalent_airspeed, const float equivalent_airspeed_trim,
+			const bool airspeed_sensor_available);
 
 	/**
 	 * @brief Update filter
@@ -696,9 +699,9 @@ private:
 		.max_climb_rate = 5.0f,
 		.vert_accel_limit = 0.0f,
 		.equivalent_airspeed_trim = 15.0f,
-		.tas_min = 3.0f,
-		.pitch_max = 5.0f,
-		.pitch_min = -5.0f,
+		.tas_min = 10.0f,
+		.pitch_max = 0.5f,
+		.pitch_min = -0.5f,
 		.throttle_trim = 0.0f,
 		.throttle_trim_adjusted = 0.f,
 		.throttle_max = 1.0f,

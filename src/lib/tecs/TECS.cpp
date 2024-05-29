@@ -52,10 +52,17 @@ using namespace time_literals;
 
 static inline constexpr bool TIMESTAMP_VALID(float dt) { return (PX4_ISFINITE(dt) && dt > FLT_EPSILON);}
 
-void TECSAirspeedFilter::initialize(const float equivalent_airspeed)
+void TECSAirspeedFilter::initialize(const float equivalent_airspeed, const float equivalent_airspeed_trim,
+				    const bool airspeed_sensor_available)
 {
-	_airspeed_state.speed = equivalent_airspeed;
-	_airspeed_state.speed_rate = 0.0f;
+	if (airspeed_sensor_available && PX4_ISFINITE(equivalent_airspeed)) {
+		_airspeed_state.speed = equivalent_airspeed;
+
+	} else {
+		_airspeed_state.speed = equivalent_airspeed_trim;
+	}
+
+	_airspeed_state.speed_rate = 0.f;
 }
 
 void TECSAirspeedFilter::update(const float dt, const Input &input, const Param &param,
@@ -353,7 +360,7 @@ TECSControl::SpecificEnergyRates TECSControl::_calcSpecificEnergyRates(const Alt
 
 void TECSControl::_detectUnderspeed(const Input &input, const Param &param, const Flag &flag)
 {
-	if (!flag.detect_underspeed_enabled) {
+	if (!flag.detect_underspeed_enabled || !flag.airspeed_enabled) {
 		_ratio_undersped = 0.0f;
 		return;
 	}
@@ -412,6 +419,7 @@ void TECSControl::_calcPitchControl(float dt, const Input &input, const Specific
 	const float pitch_increment = dt * param.vert_accel_limit / math::max(input.tas, FLT_EPSILON);
 	_pitch_setpoint = constrain(pitch_setpoint, _pitch_setpoint - pitch_increment,
 				    _pitch_setpoint + pitch_increment);
+	_pitch_setpoint = constrain(_pitch_setpoint, param.pitch_min, param.pitch_max);
 
 	//Debug Output
 	_debug_output.energy_balance_rate_estimate = seb_rate.estimate;
@@ -654,7 +662,8 @@ void TECS::initialize(const float altitude, const float altitude_rate, const flo
 	TECSAltitudeReferenceModel::AltitudeReferenceState current_state{.alt = altitude,
 			.alt_rate = altitude_rate};
 	_altitude_reference_model.initialize(current_state);
-	_airspeed_filter.initialize(equivalent_airspeed);
+	_airspeed_filter.initialize(equivalent_airspeed, _airspeed_filter_param.equivalent_airspeed_trim,
+				    _control_flag.airspeed_enabled);
 
 	TECSControl::Setpoint control_setpoint;
 	control_setpoint.altitude_reference = _altitude_reference_model.getAltitudeReference();
