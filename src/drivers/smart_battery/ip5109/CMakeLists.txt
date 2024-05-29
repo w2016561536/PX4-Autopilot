@@ -33,9 +33,9 @@
 px4_add_module(
 	MODULE drivers__ip5109
 	MAIN ip5109
-	COMPILE_FLAGS
 	SRCS
 		IP5109_main.cpp
 		IP5109.cpp
-	DEPENDS
+	MODULE_CONFIG
+		module.yaml
 	)

@@ -41,7 +41,8 @@
 #include <lib/perf/perf_counter.h>
 #include <drivers/drv_hrt.h>
 
-#define IP5109_ADDR 0x58
+#define IP5109_ADDR 0x75
+#define IP5109_WHO_AM_I 0xEA
 
 #define	SYS_CTL0 0x01
 #define SYS_CTL0_CLR 0xE1
@@ -91,7 +92,7 @@
 
 #define CHG_DIG_CTL5 0x25
 #define CHG_DIG_CTL5_CLR 0xE0
-#define CHARGE_CURRENT_SET(x)  ((uint8_t)((float)x * 10))
+#define CHARGE_CURRENT_SET(x)  ((uint8_t)((int)((float)x * 10)))
 
 #define BATVADC_DAT0 0xa2
 #define BATVADC_DAT1 0xA3
@@ -133,7 +134,7 @@ private:
 
 	uORB::Publication<battery_status_s>		_to_battery_report{ORB_ID(battery_status)};
 
-	static const hrt_abstime	SAMPLE_INTERVAL{1000_ms};
+	static const hrt_abstime	SAMPLE_INTERVAL{100_ms};
 
 	battery_status_s _battery_report{};
 

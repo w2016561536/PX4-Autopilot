@@ -95,7 +95,7 @@ void IP5109::RunImpl()
 
 	_battery_report.connected = true;
 
-	_battery_report.voltage_cell_v[0] = battery_voltage;
+	_battery_report.voltage_cell_v[0] = battery_voltage / 1000.0f;
 
 	// Convert millivolts to volts.
 	_battery_report.voltage_v = battery_voltage / 1000.0f;
@@ -112,42 +112,44 @@ void IP5109::RunImpl()
 	// Read average time to empty (minutes).
 	_battery_report.average_time_to_empty = _battery_report.voltage_v / 4.2f * 5;
 
-	// Read remaining capacity.
-	//ret |= _interface->read_word(BATT_SMBUS_REMAINING_CAPACITY, result);
-
 	// Calculate total discharged amount in mah.
 	_battery_report.discharged_mah = 2000;
 
-	// Read Relative SOC.
-	//ret |= _interface->read_word(BATT_SMBUS_RELATIVE_SOC, result);
-
 	// Normalize 0.0 to 1.0
-	_battery_report.remaining = (battery_voltage - 3300) / (4200 - 3300);
+	if (battery_voltage - 3200 > 1000) {
+		_battery_report.remaining = 1;
+
+	} else if (battery_voltage - 3200 < 0) {
+		_battery_report.remaining = 0;
+
+	} else{
+	_battery_report.remaining = (battery_voltage - 3200) / (4200 - 3200);
+	}
 
 	// Read battery temperature and covert to Celsius.
 	_battery_report.temperature = 30;
 
 	// Only publish if no errors.
 
-		_battery_report.capacity = 2000;
-		_battery_report.cycle_count = 1;
-		_battery_report.serial_number = 11451;
-		_battery_report.max_cell_voltage_delta = 1.5;
-		_battery_report.cell_count = 1;
-		_battery_report.state_of_health = 100;
+	_battery_report.capacity = 2000;
+	_battery_report.cycle_count = 1;
+	_battery_report.serial_number = 11451;
+	_battery_report.max_cell_voltage_delta = 1.5;
+	_battery_report.cell_count = 1;
+	_battery_report.state_of_health = 100;
 
-		// TODO: This critical setting should be set with BMS info or through a paramter
-		// Setting a hard coded BATT_CELL_VOLTAGE_THRESHOLD_FAILED may not be appropriate
-		//if (_lifetime_max_delta_cell_voltage > BATT_CELL_VOLTAGE_THRESHOLD_FAILED) {
-		//	_battery_report.warning = battery_status_s::BATTERY_WARNING_CRITICAL;
+	// TODO: This critical setting should be set with BMS info or through a paramter
+	// Setting a hard coded BATT_CELL_VOLTAGE_THRESHOLD_FAILED may not be appropriate
+	//if (_lifetime_max_delta_cell_voltage > BATT_CELL_VOLTAGE_THRESHOLD_FAILED) {
+	//	_battery_report.warning = battery_status_s::BATTERY_WARNING_CRITICAL;
 
-		if (battery_voltage < low_voltage_warn) {
-			_battery_report.warning = battery_status_s::BATTERY_WARNING_LOW;
-		}
+	if (battery_voltage < low_voltage_warn * 1000.0f) {
+		_battery_report.warning = battery_status_s::BATTERY_WARNING_LOW;
+	}
 
-		//_battery_report.interface_error = perf_event_count(_interface->_interface_errors);
+	//_battery_report.interface_error = perf_event_count(_interface->_interface_errors);
 
-		_to_battery_report.publish(_battery_report);
+	_to_battery_report.publish(_battery_report);
 
 
 	perf_end(_cycle_perf);
@@ -158,7 +160,7 @@ void IP5109::print_usage()
 	PRINT_MODULE_USAGE_NAME("ip5109", "driver");
 	PRINT_MODULE_USAGE_COMMAND("start");
 	PRINT_MODULE_USAGE_PARAMS_I2C_SPI_DRIVER(true, false);
-	PRINT_MODULE_USAGE_PARAMS_I2C_ADDRESS(0xEA);
+	PRINT_MODULE_USAGE_PARAMS_I2C_ADDRESS(IP5109_ADDR);
 	PRINT_MODULE_USAGE_DEFAULT_COMMANDS();
 }
 
@@ -173,7 +175,7 @@ extern "C" int ip5109_main(int argc, char *argv[])
 	using ThisDriver = IP5109;
 	BusCLIArguments cli{true, false};
 	cli.default_i2c_frequency = 400000;
-	cli.i2c_address = 0xEA;
+	cli.i2c_address = IP5109_ADDR;
 
 	param_get(param_find("LOW_VOLTAGE_WARN"), &low_voltage_warn);
 

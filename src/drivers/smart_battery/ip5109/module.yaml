@@ -1,0 +1,36 @@
+module_name: IP5109 CHARGER
+parameters:
+    - group: Battery Calibration
+      definitions:
+        LOW_VOLTAGE_WARN:
+            description:
+                short: low voltage warning threshold
+                long: |
+                  Set the low voltage warning threshold in volts.
+            type: float
+            min: 3.0
+            max: 5.0
+            default: 3.4
+            reboot_required: true
+
+
+        BAT_CHG_CURRENT:
+            description:
+                short: charge current
+                long: |
+                  Set the charge current in amperes.
+            type: float
+            min: 0.0
+            max: 2.0
+            default: 1.0
+            reboot_required: true
+
+        ENABLE_BOOST:
+          description:
+            short: enable boost
+            long: |
+              Enable boost mode to charge the battery faster.
+          type: boolean
+          default: 0
+          reboot_required: true
+

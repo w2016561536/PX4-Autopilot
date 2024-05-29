@@ -33,42 +33,51 @@
 
 #include "IP5109.h"
 #include <cassert>
+#include <lib/parameters/param.h>
+
+float charge_current = 0.5f;
+int enable_boost = 0;
 
 int IP5109::init()
 {
 	int ret = I2C::init();
 
+
 	if (ret != PX4_OK) {
 		return ret;
 	}
 
-	// set charge current to 0.5A
-	setReg(CHG_DIG_CTL5, CHG_DIG_CTL5_CLR, CHARGE_CURRENT_SET(0.5));
+	ret = PX4_OK;
+	ret |= probe();
 
-	// Enable boost and charge, disable light
-	modifyReg(SYS_CTL0, BOOST_ENABLE | CHARGE_ENABLE, LIGHT_ENABLE);
+	if (ret != PX4_OK) {
+		PX4_ERR("IP5109 probe failed (%i)", ret);
+		return ret;
+	}
 
-	// Disable auto low load off and enable auto on load detect
-	modifyReg(SYS_CTL1, ENABLE_AUTO_ON_LOAD_DETECT, ENABLE_LOW_LOAD_AUTO_OFF);
+	param_get(param_find("BAT_CHG_CURRENT"), &charge_current);
+	param_get(param_find("ENABLE_BOOST"), &enable_boost);
 
-	// Set low load threshold to 100mA
-	setReg(SYS_CTL2, SYS_CTL2_CLR, LOW_LOAD_THRESHOLD(100));
+	// set charge current
+	setReg(CHG_DIG_CTL5, CHG_DIG_CTL5_CLR, CHARGE_CURRENT_SET(charge_current));
 
-	// disable double click off
-	modifyReg(SYS_CTL3, 0, ENABLE_DOUBLE_SHORT_CLICK);
+	// Enable charge, disable light
+	if (enable_boost)
+		modifyReg(SYS_CTL0, CHARGE_ENABLE | BOOST_ENABLE, LIGHT_ENABLE | ENABLE_FLASH_LIGHT );
+	else
+		modifyReg(SYS_CTL0, CHARGE_ENABLE, LIGHT_ENABLE | ENABLE_FLASH_LIGHT | BOOST_ENABLE);
 
-	// disable ntc control
-	modifyReg(SYS_CTL5, 0, NTC_ENABLE);
+	// Disable auto low load off and auto on load detect
+	modifyReg(SYS_CTL1, 0, ENABLE_LOW_LOAD_AUTO_OFF | ENABLE_AUTO_ON_LOAD_DETECT);
 
-	setReg(CHARGER_CTL2, CHARGER_CLT2_CLR, BATTERY_4V2 | BATTERY_OVERVOLTAGE_28MV);
+	ret |= checkReg(CHG_DIG_CTL5, CHG_DIG_CTL5_CLR, CHARGE_CURRENT_SET(charge_current),0);
 
-	ret |= checkReg(CHG_DIG_CTL5, CHG_DIG_CTL5_CLR, CHARGE_CURRENT_SET(0.5),0);
-	ret |= checkReg(SYS_CTL0, SYS_CTL0_CLR, BOOST_ENABLE | CHARGE_ENABLE, LIGHT_ENABLE);
-	ret |= checkReg(SYS_CTL1, SYS_CTL1_CLR, ENABLE_AUTO_ON_LOAD_DETECT, ENABLE_LOW_LOAD_AUTO_OFF);
-	ret |= checkReg(SYS_CTL2, SYS_CTL2_CLR, LOW_LOAD_THRESHOLD(100), 0);
-	ret |= checkReg(SYS_CTL3, SYS_CTL3_CLR, 0, ENABLE_DOUBLE_SHORT_CLICK);
-	ret |= checkReg(SYS_CTL5, SYS_CL5_CLR, 0, NTC_ENABLE);
-	ret |= checkReg(CHARGER_CTL2, CHARGER_CLT2_CLR, BATTERY_4V2 | BATTERY_OVERVOLTAGE_28MV, 0);
+	if (enable_boost)
+		ret |= checkReg(SYS_CTL0, SYS_CTL0_CLR, CHARGE_ENABLE | BOOST_ENABLE, LIGHT_ENABLE | ENABLE_FLASH_LIGHT );
+	else
+		ret |= checkReg(SYS_CTL0, SYS_CTL0_CLR, CHARGE_ENABLE, LIGHT_ENABLE | ENABLE_FLASH_LIGHT | BOOST_ENABLE);
+
+	ret |= checkReg(SYS_CTL1, SYS_CTL1_CLR, 0, ENABLE_LOW_LOAD_AUTO_OFF | ENABLE_AUTO_ON_LOAD_DETECT);
 
 	if (ret == PX4_OK) ScheduleOnInterval(SAMPLE_INTERVAL , SAMPLE_INTERVAL );
 	else PX4_ERR("IP5109 init failed (%i)", ret);
@@ -79,14 +88,14 @@ int IP5109::init()
 int IP5109::probe()
 {
 	uint8_t buf;
-	int ret = readReg(SYS_CTL1, &buf, 1);
+	int ret = readReg(0, &buf, 1);
 
 	if (ret != PX4_OK) {
 		PX4_ERR("readReg failed (%i)", ret);
 		return ret;
 	}
 
-	if (!(buf & SYS_CTL1_CLR & (BOOST_ENABLE | CHARGE_ENABLE))) {
+	if (buf != IP5109_WHO_AM_I) {
 		PX4_ERR("IP5109 not found");
 		return PX4_ERROR;
 	}
@@ -102,10 +111,10 @@ int IP5109::readReg(uint8_t addr, uint8_t *buf, size_t len)
 
 int IP5109::writeReg(uint8_t addr, uint8_t *buf, size_t len)
 {
-	uint8_t buffer[len + 1];
+	uint8_t buffer[2];
 	buffer[0] = addr;
-	memcpy(buffer + 1, buf, sizeof(uint8_t)*len);
-	return transfer(buffer, len + 1, nullptr, 0);
+	memcpy(buffer + 1, buf, 1);
+	return transfer(buffer, 2, nullptr, 0);
 }
 
 int IP5109::modifyReg(uint8_t addr, uint8_t set_flag, uint8_t clear_flag){
@@ -127,12 +136,12 @@ int IP5109::setReg(uint8_t addr, uint8_t reset_flag ,uint8_t set_flag){
 int IP5109::checkReg(uint8_t addr, uint8_t reset_flag, uint8_t set_flag, uint8_t clear_flag){
 	uint8_t origin_data;
 	readReg(addr, &origin_data, 1);
-	if((origin_data & reset_flag) == (set_flag & (~clear_flag)))
+	if((origin_data & (~reset_flag)) == (set_flag & (~clear_flag)))
 	{
 		return PX4_OK;
 	}
 	PX4_ERR("IP5109 Register Check FAIL: addr: 0x%02x , read: 0x%02x , should: 0x%02x",
-		addr, origin_data & reset_flag, set_flag & (~clear_flag));
+		addr, origin_data & (~reset_flag), set_flag & (~clear_flag));
 	return PX4_ERROR;
 }
 
@@ -151,12 +160,13 @@ float IP5109::getVoltage()
 	float BATVOL;
  	if((BATVADC_VALUE_high & 0x20)==0x20)//补码
 	{
-		BATVOL = 2600-((~BATVADC_VALUE_low)+(~(BATVADC_VALUE_high & 0x1F))*256+1)*0.26855;
+		BATVOL = 2600-((float)(~BATVADC_VALUE_low)+((float)(~(BATVADC_VALUE_high & 0x1F)))*256+1)*0.26855f;
  	}
 	else //原码
 	{
-		BATVOL = 2600+(BATVADC_VALUE_low+BATVADC_VALUE_high*256)*0.26855; //mv 为单位
+		BATVOL = 2600+(((float)BATVADC_VALUE_low)+((float)BATVADC_VALUE_high)*256)*0.26855f; //mv 为单位
 	}
+
 	return BATVOL;
 }
 
@@ -177,13 +187,13 @@ float IP5109::getCurrent()
  	{
  		char a=~BATIADC_VALUE_low;
  		char b=(~(BATIADC_VALUE_high & 0x1F) & 0x1f);
- 		int c=b*256+a+1;
-		BATCUR=-c*0.745985;
+ 		int c=(int)b*256+(int)a+1;
+		BATCUR=-(float)c*0.745985f;
  		//BATCUR=-(int)(((~BATIADC_VALUE_low)+(~(BATIADC_VALUE_high & 0x1F))*256+1)*0.745985);
 	}
 	else //正值
  	{
- 		BATCUR= (BATIADC_VALUE_high*256+BATIADC_VALUE_low)*0.745985; //mA 为单位
+ 		BATCUR= (((float)BATIADC_VALUE_high*256+(float)BATIADC_VALUE_low))*0.745985f; //mA 为单位
  	}
 	return BATCUR;
 }
