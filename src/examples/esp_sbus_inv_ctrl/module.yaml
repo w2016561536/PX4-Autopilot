@@ -1,0 +1,22 @@
+module_name: SBUS_INV_CTRL
+parameters:
+    - group: RC Input
+      definitions:
+        UART1_RX_INV:
+          description:
+            short: ENABLE_INVERTER_FOR_UART1_RX
+            long: |
+              ENABLE_INVERTER_FOR_UART1_RX
+          type: boolean
+          default: 0
+          reboot_required: true
+
+        UART2_RX_INV:
+          description:
+            short: ENABLE_INVERTER_FOR_UART2_RX
+            long: |
+              ENABLE_INVERTER_FOR_UART2_RX
+          type: boolean
+          default: 0
+          reboot_required: true
+

@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (C) 2021 PX4 Development Team. All rights reserved.
+ *   Copyright (C) 2020-2021 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,50 +31,36 @@
  *
  ****************************************************************************/
 
-#include <nuttx/spi/spi.h>
-#include <px4_platform_common/px4_manifest.h>
-//                                                              KiB BS    nB
-static const px4_mft_device_t spi3 = {             		// FM25V01A on FMUM 16K
-	.bus_type = px4_mft_device_t::SPI,
-	.devid    = SPIDEV_FLASH(0)
-};
+/**
+ * @file _main.cpp
+ * @author w2016561536
+ *
+ * Driver for the IP5109 connected via I2C.
+ */
 
-static const px4_mtd_entry_t fmum_fram = {
-	.device = &spi3,
-	.npart = 2,
-	.partd = {
-		{
-			.type = MTD_PARAMETERS,
-			.path = "/fs/mtd_params",
-			.nblocks = 32
-		},
-		{
-			.type = MTD_WAYPOINTS,
-			.path = "/fs/mtd_waypoints",
-			.nblocks = 32
+#include <px4_platform_common/module.h>
+#include <lib/parameters/param.h>
+#include <cmath>
 
-		}
-	},
-};
+#include "esp32s3_gpio.h"
+#include "hardware/esp32s3_gpio_sigmap.h"
 
-static const px4_mtd_manifest_t board_mtd_config = {
-	.nconfigs = 1,
-	.entries  = {
-		&fmum_fram
-	}
-};
+int inv_uart1 = 0;
+int inv_uart2 = 0;
 
-static const px4_mft_entry_s mtd_mft = {
-	.type = MTD,
-	.pmft = (void *) &board_mtd_config,
-};
-
-static const px4_mft_s mft = {
-	.nmft = 1,
-	.mfts = &mtd_mft
-};
-
-const px4_mft_s *board_get_manifest(void)
+extern "C" int esp_inv_ctrl_main(int argc, char *argv[])
 {
-	return &mft;
+
+	param_get(param_find("UART1_RX_INV"), &inv_uart1);
+	param_get(param_find("UART2_RX_INV"), &inv_uart2);
+
+	if (inv_uart1)
+	esp32s3_gpio_matrix_in(CONFIG_ESP32S3_UART1_RXPIN, U1RXD_IN_IDX, 1);
+
+	if (inv_uart2)
+	esp32s3_gpio_matrix_in(CONFIG_ESP32S3_UART2_RXPIN, U2RXD_IN_IDX, 1);
+
+	printf("ENABLE_INVERTER_FOR_UART1_RX: %d\n", inv_uart1);
+	printf("ENABLE_INVERTER_FOR_UART2_RX: %d\n", inv_uart2);
+	return 0;
 }

@@ -1,0 +1,5 @@
+menuconfig EXAMPLES_ESP_SBUS_INV_CTRL
+	bool "ESP_SBUS_INV_CTRL"
+	default n
+	---help---
+		Enable support for esp32s3 sbus inverter ctrl

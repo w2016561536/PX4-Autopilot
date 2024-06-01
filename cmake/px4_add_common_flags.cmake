@@ -90,6 +90,8 @@ function(px4_add_common_flags)
 		-Wunknown-pragmas
 		-Wunused-variable
 
+		-Wno-error=array-bounds=
+
 		# disabled warnings
 		-Wno-missing-field-initializers
 		-Wno-missing-include-dirs # TODO: fix and enable

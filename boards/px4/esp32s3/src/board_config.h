@@ -97,7 +97,7 @@
  */
 #define DIRECT_PWM_OUTPUT_CHANNELS	4
 
-#define BOARD_ENABLE_CONSOLE_BUFFER
+// #define BOARD_ENABLE_CONSOLE_BUFFER
 
 /* Power supply control and monitoring GPIOs. */
 //#define GPIO_VDD_BRICK_VALID         (GPIO_INPUT|GPIO_PULLUP|32)
