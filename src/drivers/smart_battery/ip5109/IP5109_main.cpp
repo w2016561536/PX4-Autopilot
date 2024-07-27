@@ -107,10 +107,10 @@ void IP5109::RunImpl()
 	_battery_report.current_average_a = _battery_report.current_a;
 
 	// Read run time to empty (minutes).
-	_battery_report.time_remaining_s = _battery_report.voltage_v / 4.2f * 5;
+	_battery_report.time_remaining_s = _battery_report.voltage_v / 4.2f * 10000;
 
 	// Read average time to empty (minutes).
-	_battery_report.average_time_to_empty = _battery_report.voltage_v / 4.2f * 5;
+	_battery_report.average_time_to_empty = _battery_report.voltage_v / 4.2f * 10000;
 
 	// Calculate total discharged amount in mah.
 	_battery_report.discharged_mah = 2000;

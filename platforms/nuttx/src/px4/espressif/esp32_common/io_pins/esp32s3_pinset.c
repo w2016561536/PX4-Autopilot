@@ -15,7 +15,7 @@ int px4_esp32s3_configgpio(uint32_t pinset)
 	if ((pinset & GPIO_NUM_MASK) >= ESP32S3_NGPIOS) {
 		return -EINVAL;
 	}
-	return esp32s3_configgpio((int)(pinset & GPIO_NUM_MASK),(uint16_t)(pinset >> GPIO_SET_SHIFT));
+	return esp32s3_configgpio((int)(pinset & GPIO_NUM_MASK),(uint16_t)((pinset >> GPIO_SET_SHIFT) & 0xffff) );
 }
 
 int px4_esp32s3_unconfiggpio(uint32_t pinset)

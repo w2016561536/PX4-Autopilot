@@ -261,6 +261,13 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 
 	syslog(LOG_INFO, "\n[boot] CPU SPEED %d\n", esp_rtc_clk_get_cpu_freq());
 
+	led_init();
+
+	led_on(LED_RED);
+	led_on(LED_GREEN);
+
+	drv_led_start();
+
 	esp32_wifi_init();
 
 	usleep(1000);
@@ -273,9 +280,6 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 	uint8_t recv_spi[4] = {0};
 	uint8_t send_spi[4] = {0};
 
-
-	// px4_esp32_configgpio(GPIO_OUTPUT | 14);  //TEST PIN
-	// esp32_gpiowrite(14, false);
 
 	// Configure SPI-based devices.
 #ifdef CONFIG_ESP32S3_SPI2
@@ -317,16 +321,11 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 
 	px4_platform_init();
 
-	// Initial LED state.
-	// drv_led_start();
-	// led_off(LED_RED);
-	// led_off(LED_GREEN);
-	// led_off(LED_BLUE);
 	syslog(LOG_INFO, "PX4 PLATFORM INIT OK");
 	px4_platform_configure();
 
-	//static struct hrt_call test_call;
-	//hrt_call_every(&test_call, 1000000, 1000000, (hrt_callout)test_poll, NULL);
+	led_off(LED_RED);
+	led_off(LED_GREEN);
 
 	return OK;
 }

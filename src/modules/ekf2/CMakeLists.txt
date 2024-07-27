@@ -149,9 +149,9 @@ px4_add_module(
 	INCLUDES
 		EKF
 	PRIORITY
-		"SCHED_PRIORITY_MAX - 18" # max priority below high priority WQ threads
+		"SCHED_PRIORITY_MAX - 9" # max priority below high priority WQ threads
 	STACK_MAX
-		3600
+		4096
 	SRCS
 		${EKF_SRCS}
 
@@ -167,7 +167,6 @@ px4_add_module(
 		EKF2Utility
 		px4_work_queue
 		world_magnetic_model
-		esp_dsp
 	UNITY_BUILD
 	)
 

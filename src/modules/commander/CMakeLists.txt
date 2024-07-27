@@ -71,7 +71,6 @@ px4_add_module(
 		world_magnetic_model
 		mode_util
 		failsafe
-		esp_dsp
 	)
 
 px4_add_unit_gtest(SRC mag_calibration_test.cpp LINKLIBS modules__commander)

@@ -114,7 +114,7 @@ void cpuload_initialize_once()
 
 	system_load.initialized = true;
 }
-/*
+
 void sched_note_start(FAR struct tcb_s *tcb)
 {
 	// find first free slot
@@ -214,7 +214,7 @@ void sched_note_resume(FAR struct tcb_s *tcb)
 	sysview_sched_note_resume(tcb);
 #endif
 }
-*/
+
 #ifdef CONFIG_SEGGER_SYSVIEW
 
 #ifdef CONFIG_SCHED_INSTRUMENTATION_IRQHANDLER

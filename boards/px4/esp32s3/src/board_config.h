@@ -51,13 +51,13 @@
 /* LEDs */
 
 #define GPIO_LED_RED                 (GPIO_OUTPUT|11)
-#define GPIO_LED_GREEN               (GPIO_OUTPUT|12)
-#define GPIO_LED_BLUE                (GPIO_OUTPUT|5)
+//#define GPIO_LED_GREEN               (GPIO_OUTPUT|12)
+#define GPIO_LED_BLUE                (GPIO_OUTPUT|12)
 // #define GPIO_LED_SAFETY              GPIO_LED_BLUE
 
 #define BOARD_HAS_CONTROL_STATUS_LEDS 1
 // #define BOARD_OVERLOAD_LED     LED_RED
-#define BOARD_ARMED_LED        LED_GREEN
+#define BOARD_ARMED_LED        LED_BLUE
 #define BOARD_ARMED_STATE_LED  LED_RED
 
 

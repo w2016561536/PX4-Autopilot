@@ -64,7 +64,7 @@ __END_DECLS
 static uint32_t g_ledmap[] = {
 	GPIO_LED_BLUE,    // Indexed by LED_BLUE
 	GPIO_LED_RED,     // Indexed by LED_RED, LED_AMBER
-	GPIO_LED_GREEN,   // Indexed by LED_GREEN
+	//GPIO_LED_GREEN,   // Indexed by LED_GREEN
 };
 
 __EXPORT void led_init(void)
@@ -78,13 +78,13 @@ __EXPORT void led_init(void)
 static void phy_set_led(int led, bool state)
 {
 	/* Pull Down to switch on */
-	px4_arch_gpiowrite(g_ledmap[led], !state);
+	px4_arch_gpiowrite(g_ledmap[led], state);
 }
 
 static bool phy_get_led(int led)
 {
 
-	return !px4_arch_gpioread(g_ledmap[led]);
+	return px4_arch_gpioread(g_ledmap[led]);
 }
 
 __EXPORT void led_on(int led)

@@ -11,7 +11,6 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
-#include <lib/esp_dsp/esp_dsp.h>
 #include "typename_compare.hpp"
 #include "math.hpp"
 

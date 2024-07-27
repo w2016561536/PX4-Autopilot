@@ -9,7 +9,6 @@
 #pragma once
 
 #include "math.hpp"
-#include <lib/esp_dsp/esp_dsp.h>
 #include "typename_compare.hpp"
 
 namespace matrix
