@@ -239,7 +239,7 @@ else()
 	if(px4_constrained_flash_build)
 		set(MAX_CUSTOM_OPT_LEVEL -Os)
 	else()
-		set(MAX_CUSTOM_OPT_LEVEL -O2)
+		set(MAX_CUSTOM_OPT_LEVEL -O3)
 	endif()
 endif()
 

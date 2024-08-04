@@ -71,7 +71,7 @@ function(px4_add_common_flags)
 		-Werror
 		-Wno-address
 		-Wno-error=stringop-truncation
-		#-Wno-error=dangling-pointer
+		-Wno-error=dangling-pointer
 		#-Wno-error=array-bounds
 		#-Wno-error=format-overflow=
 		-Wno-error=unused-variable
