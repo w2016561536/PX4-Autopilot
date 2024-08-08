@@ -35,24 +35,17 @@
 #include <px4_platform_common/px4_manifest.h>
 //                                                              KiB BS    nB
 static const px4_mft_device_t spi3 = {             		// FM25V01A on FMUM 16K
-	.bus_type = px4_mft_device_t::SPI,
-	.devid    = SPIDEV_FLASH(0)
+	.bus_type = px4_mft_device_t::ONCHIP,
 };
 
 static const px4_mtd_entry_t fmum_fram = {
 	.device = &spi3,
-	.npart = 2,
+	.npart = 1,
 	.partd = {
 		{
 			.type = MTD_PARAMETERS,
 			.path = "/fs/mtd_params",
 			.nblocks = 32
-		},
-		{
-			.type = MTD_WAYPOINTS,
-			.path = "/fs/mtd_waypoints",
-			.nblocks = 32
-
 		}
 	},
 };

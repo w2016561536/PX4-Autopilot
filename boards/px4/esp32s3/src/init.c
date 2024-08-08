@@ -321,6 +321,27 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 
 	px4_platform_init();
 
+
+
+#ifdef CONFIG_ESP32S3_SPIFLASH
+	// esp32 flash mtd init.
+	int ret = 0;
+	FAR struct mtd_dev_s *mtd;
+	ret = esp32s3_spiflash_init();
+	mtd = esp32s3_spiflash_alloc_mtdpart(0x310000,
+					   0x10000,
+					   false);
+	if (!mtd) {
+		ferr("ERROR: Failed to alloc MTD partition of SPI Flash\n");
+		return -ENOMEM;
+	}
+	ret = register_mtddriver("/fs/mtd_params", mtd, 0777, NULL);
+	if (ret < 0) {
+		ferr("ERROR: Failed to register MTD: %d\n", ret);
+		return ret;
+	}
+#endif
+
 	syslog(LOG_INFO, "PX4 PLATFORM INIT OK");
 	px4_platform_configure();
 
