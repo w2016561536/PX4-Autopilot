@@ -45,6 +45,8 @@
 
 using namespace matrix;
 
+int32_t count = 0;
+
 ActuatorEffectivenessRotors::ActuatorEffectivenessRotors(ModuleParams *parent, AxisConfiguration axis_config,
 		bool tilt_support)
 	: ModuleParams(parent), _axis_config(axis_config), _tilt_support(tilt_support)
@@ -88,14 +90,14 @@ void ActuatorEffectivenessRotors::updateParams()
 {
 	ModuleParams::updateParams();
 
-	int32_t count = 0;
+
 
 	if (param_get(_count_handle, &count) != 0) {
 		PX4_ERR("param_get failed");
 		return;
 	}
 
-	_geometry.num_rotors = math::min(NUM_ROTORS_MAX, (int)count);
+	_geometry.num_rotors = math::min(NUM_ROTORS_MAX, count);
 
 	for (int i = 0; i < _geometry.num_rotors; ++i) {
 		Vector3f &position = _geometry.rotors[i].position;
