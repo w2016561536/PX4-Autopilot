@@ -55,7 +55,32 @@ SECTIONS
     *libsched.a:sched_suspendscheduler.*(.literal .text .literal.* .text.*)
     *libsched.a:sched_thistask.*(.literal .text .literal.* .text.*)
     *libsched.a:spinlock.*(.literal .text .literal.* .text.*)
+
+    *libarch.a:xtensa_switchcontext.*(.literal.up_switch_context .text.up_switch_context)
+
+    *libarch.a:esp32s3_timerisr.*(.literal.systimer_isr .text.systimer_isr)
+    *libarch.a:esp32s3_idle.*(.literal.up_idle .text.up_idle)
+    *libarch.a:esp32s3_dma.*(.literal.esp32s3_dma_load .text.esp32s3_dma_load \
+                             .literal.esp32s3_dma_enable .text.esp32s3_dma_enable)
+
+    *libsched.a:sched_processtimer.*(.literal.nxsched_process_timer .text.nxsched_process_timer)
+    *libsched.a:clock_initialize.*(.literal.clock_timer .text.clock_timer)
+    *libsched.a:wd_start.*(.literal.wd_timer .text.wd_timer)
+    *libsched.a:sched_roundrobin.*(.literal.nxsched_process_roundrobin .text.nxsched_process_roundrobin)
+    *libsched.a:sched_reprioritizertr.*(.literal.nxsched_reprioritize_rtr .text.nxsched_reprioritize_rtr)
+    *libsched.a:sched_removereadytorun.*(.literal.nxsched_remove_readytorun .text.nxsched_remove_readytorun)
+    *libsched.a:sched_addreadytorun.*(.literal.nxsched_add_readytorun .text.nxsched_add_readytorun)
+    *libsched.a:sched_addprioritized.*(.literal.nxsched_add_prioritized .text.nxsched_add_prioritized)
+    *libsched.a:sched_mergepending.*(.literal.nxsched_merge_pending .text.nxsched_merge_pending)
+    *libsched.a:sched_resumescheduler.*(.literal.nxsched_resume_scheduler .text.nxsched_resume_scheduler)
+
+    *libc.a:sq_remfirst.*(.literal.sq_remfirst .text.sq_remfirst)
+
+
     *libarch.a:esp32s3_spi_timing.*(.literal .text .literal.* .text.*)
+
+    *libarch.a:esp32s3_psram_quad.*(.literal .text .literal.* .text.*)
+
     *(.wifirxiram .wifirxiram.*)
     *(.wifi0iram .wifi0iram.*)
     *(.wifiorslpiram .wifiorslpiram.*)
