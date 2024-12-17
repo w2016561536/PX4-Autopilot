@@ -43,7 +43,7 @@
 function(px4_add_common_flags)
 
 	add_compile_options(
-		-g # always build debug symbols
+		-g0 # always build debug symbols
 
 		# optimization options
 		-fdata-sections
