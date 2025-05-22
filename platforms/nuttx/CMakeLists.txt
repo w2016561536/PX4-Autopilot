@@ -305,7 +305,6 @@ else()
 		-T ${NUTTX_CONFIG_DIR_CYG}/scripts/${SCRIPT_PREFIX}esp32s3_rom_aliases.ld
 		-T ${NUTTX_CONFIG_DIR_CYG}/scripts/${SCRIPT_PREFIX}flat_memory.ld
 		-T ${NUTTX_CONFIG_DIR_CYG}/scripts/${SCRIPT_PREFIX}legacy_sections.ld
-		#-T ${NUTTX_CONFIG_DIR_CYG}/scripts/${SCRIPT_PREFIX}esp32s3_rom_api.ld
 		-Wl,-Map=${PX4_CONFIG}.map
 		-Wl,--warn-common
 		-Wl,--gc-sections
@@ -335,7 +334,10 @@ else()
 		target_link_libraries(px4 PRIVATE romfs)
 	endif()
 
-	add_custom_command(OUTPUT ${PX4_BINARY_OUTPUT}
+	add_custom_command(
+		OUTPUT ${PX4_BINARY_OUTPUT}
+		#TARGET px4  POST_BUILD
+
 		#COMMAND ${CMAKE_OBJCOPY} -O binary ${PX4_BINARY_DIR_REL}/${FW_NAME} ${PX4_BINARY_OUTPUT}
 		COMMAND esptool --chip esp32s3 elf2image -o ${PX4_BINARY_OUTPUT} ${PX4_BINARY_DIR_REL}/${FW_NAME}
 		DEPENDS px4

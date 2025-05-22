@@ -202,7 +202,7 @@ void print_load_buffer(char *buffer, int buffer_length, print_load_callback_f cb
 
 		if (system_load.tasks[i].tcb->pid == 0) {
 			stack_size = (CONFIG_ARCH_INTERRUPTSTACK & ~3);
-			stack_free = up_check_intstack();
+			stack_free = up_check_intstack(0);
 
 		} else {
 			stack_free = up_check_tcbstack(system_load.tasks[i].tcb);

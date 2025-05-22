@@ -1616,7 +1616,7 @@ void Logger::write_load_output()
 	// TODO: maybe we should restrict the output to a selected backend (eg. when file logging is running
 	// and mavlink log is started, this will be added to the file as well)
 	print_load_buffer(buffer, sizeof(buffer), print_load_callback, &callback_data, &_load);
-	cpuload_monitor_stop();
+	//cpuload_monitor_stop();
 	_writer.set_need_reliable_transfer(false);
 }
 

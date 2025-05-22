@@ -66,6 +66,7 @@
 
 #include "hardware/esp32s3_soc.h"
 #include "hardware/esp32s3_tim.h"
+#include "esp_private/esp_clk.h"
 
 #ifdef CONFIG_DEBUG_HRT
 #  define hrtinfo _info
@@ -206,7 +207,7 @@ static void		hrt_call_enter(struct hrt_call *entry);
 static void		hrt_call_reschedule(void);
 static void		hrt_call_invoke(void);
 
-struct esp32s3_tim_dev_s *tim;
+static struct esp32s3_tim_dev_s *tim;
 
 int hrt_ioctl(unsigned int cmd, unsigned long arg);
 /**
@@ -215,6 +216,7 @@ int hrt_ioctl(unsigned int cmd, unsigned long arg);
 static void
 hrt_tim_init(void)
 {
+	irqstate_t flags = px4_enter_critical_section();
 
 	tim = esp32s3_tim_init(ESP32S3_HRT_TIMER);
 
@@ -222,8 +224,16 @@ hrt_tim_init(void)
 	{
 		PX4_ERR("ERROR: Failed to initialize ESP32S3 timer\n");
 	}
+	ESP32S3_TIM_CLK_SRC(tim, ESP32S3_TIM_APB_CLK);
 
-	ESP32S3_TIM_SETPRE(tim, ESP32S3_HRT_TIMER_PRESCALER);
+  	/* Calculate the suitable prescaler according to the current APB
+  	 * frequency to generate a period of 1 us.
+  	 */
+	uint16_t pre;
+
+  	pre = esp_clk_apb_freq() / 1000000;
+
+	ESP32S3_TIM_SETPRE(tim, pre);
 	ESP32S3_TIM_SETMODE(tim, ESP32S3_TIM_MODE_UP);
 	ESP32S3_TIM_CLEAR(tim);
 
@@ -237,6 +247,7 @@ hrt_tim_init(void)
 	ESP32S3_TIM_SETISR(tim, hrt_tim_isr, NULL);
 	ESP32S3_TIM_ENABLEINT(tim);
 	ESP32S3_TIM_START(tim);
+	px4_leave_critical_section(flags);
 }
 
 /**
@@ -291,7 +302,7 @@ hrt_absolute_time(void)
 	/* prevent re-entry */
 	flags = px4_enter_critical_section();
 	uint64_t count;
-	tim->ops->getcounter(tim,&count);
+	ESP32S3_TIM_GETCTR(tim, &count);
 
 
 	abstime = (hrt_abstime)(count);
@@ -568,26 +579,28 @@ hrt_call_reschedule()
 	//rALARMLO = latency_baseline = deadline & 0xffff;
 	//rALARMLO = (uint32_t)(deadline & 0xffffffff);
 	//rALARMHI = (uint32_t)((deadline >> 32) & 0xffffffff);
-	tim->ops->setalarmvalue(tim,deadline);
+	//tim->ops->setalarmvalue(tim,deadline);
+	ESP32S3_TIM_SETALRVL(tim, (uint64_t)deadline);
+
 }
 
-// static void
-// hrt_latency_update(void)
-// {
-// 	uint16_t latency = latency_actual - latency_baseline;
-// 	unsigned	index;
+static void
+hrt_latency_update(void)
+{
+	uint16_t latency = latency_actual - latency_baseline;
+	unsigned	index;
 
-// 	/* bounded buckets */
-// 	for (index = 0; index < LATENCY_BUCKET_COUNT; index++) {
-// 		if (latency <= latency_buckets[index]) {
-// 			latency_counters[index]++;
-// 			return;
-// 		}
-// 	}
+	/* bounded buckets */
+	for (index = 0; index < LATENCY_BUCKET_COUNT; index++) {
+		if (latency <= latency_buckets[index]) {
+			latency_counters[index]++;
+			return;
+		}
+	}
 
-// 	/* catch-all at the end */
-// 	latency_counters[index]++;
-// }
+	/* catch-all at the end */
+	latency_counters[index]++;
+}
 
 void __attribute__ ((section(".iram1")))
 hrt_call_init(struct hrt_call *entry)

@@ -107,11 +107,11 @@ int esp32s3_gpiosetevent(uint32_t pinset, bool risingedge, bool fallingedge,bool
 #define px4_i2cbus_initialize(bus_num_1based)   	esp32s3_i2cbus_initialize(bus_num_1based)
 #define px4_i2cbus_uninitialize(pdev)           	esp32s3_i2cbus_uninitialize(pdev)
 
-#define px4_arch_configgpio(pinset)			px4_esp32s3_configgpio(pinset)
-#define px4_arch_unconfiggpio(pinset)			px4_esp32s3_unconfiggpio(pinset)
+#define px4_arch_configgpio(pinset)			px4_esp32s3_configgpio(pinset & GPIO_NUM_MASK)
+#define px4_arch_unconfiggpio(pinset)			px4_esp32s3_unconfiggpio(pinset & GPIO_NUM_MASK)
 #define px4_arch_gpioread(pinset)			esp32s3_gpioread(pinset & GPIO_NUM_MASK)
 #define px4_arch_gpiowrite(pinset, value)		esp32s3_gpiowrite(pinset & GPIO_NUM_MASK, value)
-#define px4_arch_gpiosetevent(pinset,r,f,e,fp,a)	esp32s3_gpiosetevent(pinset,r,f,e,fp,a)
+#define px4_arch_gpiosetevent(pinset,r,f,e,fp,a)	esp32s3_gpiosetevent(pinset & GPIO_NUM_MASK,r,f,e,fp,a)
 
 
 #define px4_spibus_initialize(bus_num_1based)   esp32s3_spibus_initialize(bus_num_1based)

@@ -39,8 +39,9 @@ add_library(drivers_board
 	timer_config.cpp
 	esp32s3_board_usb.c
 	esp32s3_ledc.c
-	esp32s3_board_tim.c
+	#esp32s3_board_tim.c
 	esp32s3_board_wlan.c
+	esp32s3_board_sdmmc.c
 	mtd.cpp
 )
 
@@ -52,4 +53,12 @@ target_link_libraries(drivers_board
 		nuttx_arch # sdio
 		nuttx_drivers # sdio
 		px4_layer
+)
+
+target_include_directories(drivers_board PRIVATE
+
+../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/soc/esp32s3/include/
+../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/esp_common/include/
+../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/nuttx/esp32s3/include/
+
 )

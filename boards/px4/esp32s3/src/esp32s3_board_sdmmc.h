@@ -1,5 +1,7 @@
 /****************************************************************************
- * boards/xtensa/esp32/common/src/esp32_board_wlan.c
+ * boards/xtensa/esp32s3/common/include/esp32s3_board_sdmmc.h
+ *
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -18,43 +20,41 @@
  *
  ****************************************************************************/
 
+#ifndef __BOARDS_XTENSA_ESP32S3_COMMON_INCLUDE_ESP32S3_BOARD_SDMMC_H
+#define __BOARDS_XTENSA_ESP32S3_COMMON_INCLUDE_ESP32S3_BOARD_SDMMC_H
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <nuttx/config.h>
 
-#include <stdio.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <syslog.h>
-#include <debug.h>
-
-#include <nuttx/wireless/wireless.h>
-
-#include "esp32s3_spiflash.h"
-#include "espressif/esp_wlan.h"
-#include "netutils/netlib.h"
-#include "netutils/dhcpd.h"
-#include "esp32s3_board_wlan.h"
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
 
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
+#ifndef __ASSEMBLY__
+
+#undef EXTERN
+#if defined(__cplusplus)
+#define EXTERN extern "C"
+extern "C"
+{
+#else
+#define EXTERN extern
+#endif
 
 /****************************************************************************
- * Public Functions
+ * Public Function Prototypes
  ****************************************************************************/
 
+#ifdef CONFIG_ESP32S3_SDMMC
+
 /****************************************************************************
- * Name: board_wlan_init
+ * Name: board_sdmmc_initialize
  *
  * Description:
- *   Configure the wireless subsystem.
+ *   Configure the sdmmc subsystem.
  *
  * Returned Value:
  *   Zero (OK) is returned on success; A negated errno value is returned
@@ -62,31 +62,14 @@
  *
  ****************************************************************************/
 
-int board_wlan_init(void)
-{
-  int ret = OK;
-/*
+int board_sdmmc_initialize(void);
 
-#ifdef ESP32S3_WLAN_HAS_STA
-  ret = esp32s3_wlan_sta_initialize();
-  if (ret)
-    {
-      printf("ERROR: Failed to initialize Wi-Fi station\n");
-      return ret;
-    }
-#endif*/
+#endif /* CONFIG_ESP32S3_SDMMC */
 
-  ret = esp_wlan_softap_initialize();
-  if (ret)
-    {
-      wlerr("ERROR: Failed to initialize Wi-Fi softAP\n");
-      return ret;
-    }
-
-
-  netlib_ifup("wlan0");
-
-  //dhcpd_start("wlan0");
-
-  return ret;
+#undef EXTERN
+#if defined(__cplusplus)
 }
+#endif
+
+#endif /* __ASSEMBLY__ */
+#endif /* __BOARDS_XTENSA_ESP32S3_COMMON_INCLUDE_ESP32S3_BOARD_SDMMC_H */

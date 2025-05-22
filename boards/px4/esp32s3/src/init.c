@@ -78,7 +78,7 @@
 
 #include <drivers/drv_pwm_output.h>
 
-#include "esp32s3_wlan.h"
+//#include "esp32s3_wlan.h"
 #include "esp32s3_wifi_adapter.h"
 
 #include "esp32s3-devkit.h"
@@ -98,6 +98,8 @@
 #ifdef CONFIG_ESP32S3_TIMER
 #  include "esp32s3_board_tim.h"
 #endif
+
+#include "esp32s3_board_sdmmc.h"
 /****************************************************************************
  * Pre-Processor Definitions
  ****************************************************************************/
@@ -135,14 +137,13 @@ static void esp32_wifi_init(void)
     }
 #endif
 
-#ifdef CONFIG_ESP32S3_WIRELESS
+
   ret = board_wlan_init();
   if (ret < 0)
     {
       syslog(LOG_ERR, "ERROR: Failed to initialize wireless subsystem=%d\n",
              ret);
     }
-#endif
 }
 
 
@@ -316,32 +317,37 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 	usleep(100);
 
 #endif
+	int ret =0;
+
+	ret = board_sdmmc_initialize();
+  	if (ret < 0)
+  	{
+  	  	syslog(LOG_ERR, "ERROR: Failed to initialize SDMMC: %d\n", ret);
+  	}
 
 	syslog(LOG_INFO, "PX4 PLATFORM INIT PREPARE");
 
+#ifdef CONFIG_ESP32S3_SPIFLASH
+	// esp32 flash mtd init.
+	//int ret = 0;
+	FAR struct mtd_dev_s *mtd;
+	ret = esp32s3_spiflash_init();
+	mtd = esp32s3_spiflash_alloc_mtdpart(0x310000,
+					   0x10000,
+					   false);
+	if (!mtd) {
+		ferr("ERROR: Failed to alloc MTD partition of SPI Flash\n");
+		return -ENOMEM;
+	}
+	ret = register_mtddriver("/fs/mtd_params", mtd, 0777, NULL);
+	if (ret < 0) {
+		ferr("ERROR: Failed to register MTD: %d\n", ret);
+		return ret;
+	}
+#endif
+
+
 	px4_platform_init();
-
-
-
-// #ifdef CONFIG_ESP32S3_SPIFLASH
-// 	// esp32 flash mtd init.
-// 	int ret = 0;
-// 	FAR struct mtd_dev_s *mtd;
-// 	ret = esp32s3_spiflash_init();
-// 	mtd = esp32s3_spiflash_alloc_mtdpart(0x310000,
-// 					   0x10000,
-// 					   false);
-// 	if (!mtd) {
-// 		ferr("ERROR: Failed to alloc MTD partition of SPI Flash\n");
-// 		return -ENOMEM;
-// 	}
-// 	ret = register_mtddriver("/fs/mtd_params", mtd, 0777, NULL);
-// 	if (ret < 0) {
-// 		ferr("ERROR: Failed to register MTD: %d\n", ret);
-// 		return ret;
-// 	}
-// #endif
-
 	syslog(LOG_INFO, "PX4 PLATFORM INIT OK");
 	px4_platform_configure();
 

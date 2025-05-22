@@ -1,5 +1,7 @@
 /****************************************************************************
- * boards/xtensa/esp32/common/src/esp32_board_wlan.c
+ * boards/xtensa/esp32s3/common/src/esp32s3_board_sdmmc.c
+ *
+ * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -24,37 +26,25 @@
 
 #include <nuttx/config.h>
 
-#include <stdio.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/stat.h>
 #include <syslog.h>
 #include <debug.h>
 
-#include <nuttx/wireless/wireless.h>
+#include <nuttx/sdio.h>
+#include <nuttx/mmcsd.h>
 
-#include "esp32s3_spiflash.h"
-#include "espressif/esp_wlan.h"
-#include "netutils/netlib.h"
-#include "netutils/dhcpd.h"
-#include "esp32s3_board_wlan.h"
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-/****************************************************************************
- * Private Functions
- ****************************************************************************/
-
+extern struct sdio_dev_s *sdio_initialize(int slotno);
 /****************************************************************************
  * Public Functions
  ****************************************************************************/
 
 /****************************************************************************
- * Name: board_wlan_init
+ * Name: board_sdmmc_initialize
  *
  * Description:
- *   Configure the wireless subsystem.
+ *   Configure the sdmmc subsystem.
+ *
+ * Input Parameters:
+ *   None.
  *
  * Returned Value:
  *   Zero (OK) is returned on success; A negated errno value is returned
@@ -62,31 +52,24 @@
  *
  ****************************************************************************/
 
-int board_wlan_init(void)
+int board_sdmmc_initialize(void)
 {
-  int ret = OK;
-/*
+  struct sdio_dev_s *sdio;
+  int rv;
 
-#ifdef ESP32S3_WLAN_HAS_STA
-  ret = esp32s3_wlan_sta_initialize();
-  if (ret)
+  sdio = sdio_initialize(1);
+  if (!sdio)
     {
-      printf("ERROR: Failed to initialize Wi-Fi station\n");
-      return ret;
-    }
-#endif*/
-
-  ret = esp_wlan_softap_initialize();
-  if (ret)
-    {
-      wlerr("ERROR: Failed to initialize Wi-Fi softAP\n");
-      return ret;
+      syslog(LOG_ERR, "Failed to initialize SDIO slot\n");
+      return -ENODEV;
     }
 
+  rv = mmcsd_slotinitialize(1, sdio);
+  if (rv < 0)
+    {
+      syslog(LOG_ERR, "Failed to bind SPI port to SD slot\n");
+      return rv;
+    }
 
-  netlib_ifup("wlan0");
-
-  //dhcpd_start("wlan0");
-
-  return ret;
+  return OK;
 }

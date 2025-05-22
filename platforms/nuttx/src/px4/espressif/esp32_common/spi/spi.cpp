@@ -48,20 +48,20 @@ static const px4_spi_bus_t *_spi_bus3;
 
 static void spi_bus_configgpio_cs(const px4_spi_bus_t *bus)
 {
-	for (int i = 0; i < SPI_BUS_MAX_DEVICES; ++i) {
-		if (bus->devices[i].cs_gpio != 0) {
-			px4_arch_configgpio(bus->devices[i].cs_gpio);
-			//px4_arch_gpiowrite(bus->devices[i].cs_gpio, 1);
-		}
-	}
+	// for (int i = 0; i < SPI_BUS_MAX_DEVICES; i++) {
+	// 	if (bus->devices[i].cs_gpio != 0) {
+	// 		px4_arch_configgpio(bus->devices[i].cs_gpio);
+	// 		px4_arch_gpiowrite(bus->devices[i].cs_gpio, 1);
+	// 	}
+	// }
 }
 
 __EXPORT void esp32s3_spiinitialize()
 {
-	px4_set_spi_buses_from_hw_version();
-	board_control_spi_sensors_power_configgpio();
-	board_control_spi_sensors_power(true, 0xffff);
-	for (int i = 0; i < SPI_BUS_MAX_BUS_ITEMS; ++i) {
+	// px4_set_spi_buses_from_hw_version();
+	// board_control_spi_sensors_power_configgpio();
+	// board_control_spi_sensors_power(true, 0xffff);
+	for (int i = 0; i < SPI_BUS_MAX_BUS_ITEMS; i++) {
 		switch (px4_spi_buses[i].bus) {
 		case 2: _spi_bus2 = &px4_spi_buses[i]; break;
 		case 3: _spi_bus3 = &px4_spi_buses[i]; break;
@@ -90,22 +90,19 @@ __EXPORT void esp32s3_spiinitialize()
 
 }
 
-static inline void esp32s3_spixselect(const px4_spi_bus_t *bus, struct spi_dev_s *dev, uint32_t devid, bool selected)
-{
-	//syslog(LOG_DEBUG, "esp32s3 spixselect %i\n", bus->bus);
-
-	for (int i = 0; i < SPI_BUS_MAX_DEVICES; ++i) {
-		if (bus->devices[i].cs_gpio == 0) {
-			break;
-		}
-
-		if (devid == bus->devices[i].devid) {
-			// SPI select is active low, so write !selected to select the device
-			//syslog(LOG_DEBUG, "esp32s3_gpiowrite %i , is selected: %d , gpio :%d\n", bus->bus, selected, bus->devices[i].cs_gpio);
-			px4_arch_gpiowrite(bus->devices[i].cs_gpio, !selected);
-		}
-	}
-}
+// static void esp32s3_spixselect(const px4_spi_bus_t *bus, struct spi_dev_s *dev, uint32_t devid, bool selected)
+// {
+// 	//syslog(LOG_DEBUG, "esp32s3 spixselect %i\n", bus->bus);
+// 	for (int i = 0; i < SPI_BUS_MAX_BUS_ITEMS; i++) {
+// 		if (bus->devices[i].cs_gpio != 0) {
+// 		if (devid == bus->devices[i].devid) {
+// 			// SPI select is active low, so write !selected to select the device
+// 			//syslog(LOG_DEBUG, "esp32s3_gpiowrite %i , is selected: %d , gpio :%d\n", bus->bus, selected, bus->devices[i].cs_gpio);
+// 			px4_arch_gpiowrite(bus->devices[i].cs_gpio & GPIO_NUM_MASK, !selected);
+// 		}
+// 	}
+// 	}
+// }
 
 /************************************************************************************
  * Name: ESP32S3_spi2select and ESP32S3_spi2status
@@ -115,10 +112,10 @@ static inline void esp32s3_spixselect(const px4_spi_bus_t *bus, struct spi_dev_s
  *
  ************************************************************************************/
 #if defined(CONFIG_ESP32S3_SPI2)
-__EXPORT void esp32s3_spi2_select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
-{
-	esp32s3_spixselect(_spi_bus2, dev, devid, selected);
-}
+// __EXPORT void esp32s3_spi2_select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
+// {
+// 	esp32s3_spixselect(_spi_bus2, dev, devid, selected);
+// }
 
 __EXPORT uint8_t esp32s3_spi2_status(FAR struct spi_dev_s *dev, uint32_t devid)
 {
@@ -134,10 +131,10 @@ __EXPORT uint8_t esp32s3_spi2_status(FAR struct spi_dev_s *dev, uint32_t devid)
  *
  ************************************************************************************/
 #if defined(CONFIG_ESP32S3_SPI3)
-__EXPORT void esp32s3_spi3_select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
-{
-	esp32s3_spixselect(_spi_bus3, dev, devid, selected);
-}
+// __EXPORT void esp32s3_spi3_select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
+// {
+// 	esp32s3_spixselect(_spi_bus3, dev, devid, selected);
+// }
 
 __EXPORT uint8_t esp32s3_spi3_status(FAR struct spi_dev_s *dev, uint32_t devid)
 {
@@ -158,21 +155,21 @@ void board_control_spi_sensors_power(bool enable_power, int bus_mask)
 
 #endif
 
-	for (int bus = 0; bus < SPI_BUS_MAX_BUS_ITEMS; ++bus) {
-		if (buses[bus].bus == -1) {
-			break;
-		}
+	// for (int bus = 0; bus < SPI_BUS_MAX_BUS_ITEMS; ++bus) {
+	// 	if (buses[bus].bus == -1) {
+	// 		break;
+	// 	}
 
-		const bool bus_matches = bus_mask & (1 << (buses[bus].bus - 1));
+	// 	const bool bus_matches = bus_mask & (1 << (buses[bus].bus - 1));
 
-		if (buses[bus].power_enable_gpio == 0 ||
-		    !board_has_bus(BOARD_SPI_BUS, buses[bus].bus) ||
-		    !bus_matches) {
-			continue;
-		}
+	// 	if (buses[bus].power_enable_gpio == 0 ||
+	// 	    !board_has_bus(BOARD_SPI_BUS, buses[bus].bus) ||
+	// 	    !bus_matches) {
+	// 		continue;
+	// 	}
 
-		px4_arch_gpiowrite(buses[bus].power_enable_gpio, enable_power ? 1 : 0);
-	}
+	// 	px4_arch_gpiowrite(buses[bus].power_enable_gpio, enable_power ? 1 : 0);
+	// }
 }
 
 void board_control_spi_sensors_power_configgpio()
@@ -188,18 +185,18 @@ void board_control_spi_sensors_power_configgpio()
 
 #endif
 
-	for (int bus = 0; bus < SPI_BUS_MAX_BUS_ITEMS; ++bus) {
-		if (buses[bus].bus == -1) {
-			break;
-		}
+	// for (int bus = 0; bus < SPI_BUS_MAX_BUS_ITEMS; ++bus) {
+	// 	if (buses[bus].bus == -1) {
+	// 		break;
+	// 	}
 
-		if (buses[bus].power_enable_gpio == 0 ||
-		    !board_has_bus(BOARD_SPI_BUS, buses[bus].bus)) {
-			continue;
-		}
+	// 	if (buses[bus].power_enable_gpio == 0 ||
+	// 	    !board_has_bus(BOARD_SPI_BUS, buses[bus].bus)) {
+	// 		continue;
+	// 	}
 
-		px4_arch_configgpio(buses[bus].power_enable_gpio);
-	}
+	// 	px4_arch_configgpio(buses[bus].power_enable_gpio);
+	// }
 }
 
 #define _PIN_OFF(def) (((def) & GPIO_NUM_MASK) | (GPIO_INPUT|GPIO_PULLDOWN))

@@ -69,7 +69,7 @@ function(px4_add_common_flags)
 		-Wall
 		-Wextra
 		-Werror
-		-Wno-address
+		-Wno-error=address
 		-Wno-error=stringop-truncation
 		#-Wno-error=dangling-pointer
 		#-Wno-error=array-bounds
@@ -92,11 +92,13 @@ function(px4_add_common_flags)
 		-Wunused-variable
 
 		-Wno-error=array-bounds=
+			#-Wno-error=frame-larger-than=
 
 		# disabled warnings
-		-Wno-missing-field-initializers
-		-Wno-missing-include-dirs # TODO: fix and enable
-		-Wno-unused-parameter
+			-Wno-error=missing-field-initializers
+			-Wno-error=missing-include-dirs # TODO: fix and enable
+			#-Wno-error=unused-parameter
+			-Wno-unused-parameter
 
 		)
 
