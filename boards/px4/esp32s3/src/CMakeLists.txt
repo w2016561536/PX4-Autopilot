@@ -37,7 +37,7 @@ add_library(drivers_board
 	i2c.cpp
 	spi.cpp
 	timer_config.cpp
-	esp32s3_board_usb.c
+	#esp32s3_board_usb.c
 	esp32s3_ledc.c
 	#esp32s3_board_tim.c
 	esp32s3_board_wlan.c

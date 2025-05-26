@@ -113,10 +113,10 @@ int up_pwm_servo_init(uint32_t channel_mask)
 	pwm_info.channels[1].duty=0,
 	pwm_info.channels[2].duty=0,
 	pwm_info.channels[3].duty=0,
-	pwm_info.channels[4].duty=0,
-	pwm_info.channels[5].duty=0,
-	pwm_info.channels[6].duty=0,
-	pwm_info.channels[7].duty=0,
+	// pwm_info.channels[4].duty=0,
+	// pwm_info.channels[5].duty=0,
+	// pwm_info.channels[6].duty=0,
+	// pwm_info.channels[7].duty=0,
 	pwm->ops->start(pwm,&pwm_info);
 
 	syslog(LOG_INFO, "SYSPWM INIT OK\n");

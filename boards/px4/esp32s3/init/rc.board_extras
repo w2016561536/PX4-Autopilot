@@ -12,6 +12,6 @@
 # dhcpd_start wlan0
 # ifdown wlan0
 # ifconfig
-mavlink start -u 14556 -p -r 10000 -n wlan0
+mavlink start -u 14556 -p -r 100000 -n wlan0
 # esp_inv_ctrl
 #mavlink start -d /dev/ttyACM0 -b 2000000 -m onboard
