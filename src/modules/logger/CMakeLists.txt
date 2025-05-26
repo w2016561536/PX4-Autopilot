@@ -46,7 +46,7 @@ px4_add_module(
 		log_writer_file.cpp
 		log_writer_mavlink.cpp
 		util.cpp
-		watchdog.cpp
+		#watchdog.cpp
 	DEPENDS
 		version
 		component_general_json # for checksums.h

@@ -103,9 +103,9 @@ static void timer_callback(void *arg)
 	 * As the watchdog also uses the counter we use a conservatively high value */
 	bool semaphore_value_saturated = semaphore_value > 100;
 
-	if (watchdog_update(data->watchdog_data, semaphore_value_saturated)) {
-		data->watchdog_triggered.store(true);
-	}
+	// if (watchdog_update(data->watchdog_data, semaphore_value_saturated)) {
+	// 	data->watchdog_triggered.store(true);
+	// }
 
 	if (semaphore_value_saturated) {
 		return;
@@ -145,10 +145,10 @@ int Logger::custom_command(int argc, char *argv[])
 
 #ifdef __PX4_NUTTX
 
-	if (!strcmp(argv[0], "trigger_watchdog")) {
-		get_instance()->trigger_watchdog_now();
-		return 0;
-	}
+	// if (!strcmp(argv[0], "trigger_watchdog")) {
+	// 	get_instance()->trigger_watchdog_now();
+	// 	return 0;
+	// }
 
 #endif
 
@@ -673,7 +673,7 @@ void Logger::run()
 
 			// sched_note_start is already called from pthread_create and task_create,
 			// which means we can expect to find the tasks in system_load.tasks, as required in watchdog_initialize
-			watchdog_initialize(pid_self, writer_thread, _timer_callback_data.watchdog_data);
+			//watchdog_initialize(pid_self, writer_thread, _timer_callback_data.watchdog_data);
 		}
 
 		hrt_call_every(&timer_call, _log_interval, _log_interval, timer_callback, &_timer_callback_data);
@@ -703,10 +703,10 @@ void Logger::run()
 		/* check for logging command from MAVLink (start/stop streaming) */
 		handle_vehicle_command_update();
 
-		if (_timer_callback_data.watchdog_triggered.load()) {
-			_timer_callback_data.watchdog_triggered.store(false);
-			initialize_load_output(PrintLoadReason::Watchdog);
-		}
+		// if (_timer_callback_data.watchdog_triggered.load()) {
+		// 	_timer_callback_data.watchdog_triggered.store(false);
+		// 	initialize_load_output(PrintLoadReason::Watchdog);
+		// }
 
 
 		const hrt_abstime loop_time = hrt_absolute_time();
@@ -1587,7 +1587,7 @@ void Logger::print_load_callback(void *user)
 
 void Logger::initialize_load_output(PrintLoadReason reason)
 {
-	init_print_load(&_load);
+	//init_print_load(&_load);
 
 	if (reason == PrintLoadReason::Watchdog) {
 		_next_load_print = hrt_absolute_time() + 300_ms;
@@ -1608,15 +1608,15 @@ void Logger::write_load_output()
 		write_perf_data(PrintLoadReason::Watchdog);
 	}
 
-	perf_callback_data_t callback_data = {};
-	char buffer[140];
-	callback_data.logger = this;
-	callback_data.counter = 0;
-	callback_data.buffer = buffer;
-	// TODO: maybe we should restrict the output to a selected backend (eg. when file logging is running
-	// and mavlink log is started, this will be added to the file as well)
-	print_load_buffer(buffer, sizeof(buffer), print_load_callback, &callback_data, &_load);
-	//cpuload_monitor_stop();
+	// perf_callback_data_t callback_data = {};
+	// char buffer[140];
+	// callback_data.logger = this;
+	// callback_data.counter = 0;
+	// callback_data.buffer = buffer;
+	// // TODO: maybe we should restrict the output to a selected backend (eg. when file logging is running
+	// // and mavlink log is started, this will be added to the file as well)
+	// //print_load_buffer(buffer, sizeof(buffer), print_load_callback, &callback_data, &_load);
+	// //cpuload_monitor_stop();
 	_writer.set_need_reliable_transfer(false);
 }
 
