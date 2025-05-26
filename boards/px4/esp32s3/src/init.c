@@ -325,7 +325,7 @@ __EXPORT int board_app_initialize(uintptr_t arg)
   	  	syslog(LOG_ERR, "ERROR: Failed to initialize SDMMC: %d\n", ret);
   	}
 
-	syslog(LOG_INFO, "PX4 PLATFORM INIT PREPARE");
+
 
 #ifdef CONFIG_ESP32S3_SPIFLASH
 	// esp32 flash mtd init.
@@ -346,7 +346,9 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 	}
 #endif
 
+	usleep(100000);
 
+	syslog(LOG_INFO, "PX4 PLATFORM INIT PREPARE");
 	px4_platform_init();
 	syslog(LOG_INFO, "PX4 PLATFORM INIT OK");
 	px4_platform_configure();

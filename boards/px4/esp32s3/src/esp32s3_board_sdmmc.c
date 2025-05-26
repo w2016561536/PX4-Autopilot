@@ -64,7 +64,7 @@ int board_sdmmc_initialize(void)
       return -ENODEV;
     }
 
-  rv = mmcsd_slotinitialize(1, sdio);
+  rv = mmcsd_slotinitialize(0, sdio);
   if (rv < 0)
     {
       syslog(LOG_ERR, "Failed to bind SPI port to SD slot\n");

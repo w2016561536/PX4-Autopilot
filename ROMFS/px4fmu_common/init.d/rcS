@@ -40,6 +40,7 @@ set VEHICLE_TYPE none
 # Print full system version.
 #
 ver all
+sleep 2
 
 #
 # Try to mount the microSD card.
@@ -492,7 +493,10 @@ else
 	#
 	# Start the logger.
 	#
-	. ${R}etc/init.d/rc.logging
+	if [ $SDCARD_AVAILABLE = yes ]
+	then
+		. ${R}etc/init.d/rc.logging
+	fi
 
 	#
 	# Set additional parameters and env variables for selected AUTOSTART.

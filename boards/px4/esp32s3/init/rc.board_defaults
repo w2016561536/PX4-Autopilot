@@ -8,7 +8,6 @@ param set-default BAT1_A_PER_V 1
 param set-default BAT1_V_EMPTY 3.2
 param set-default BAT1_V_LOAD_DROP 0.100
 param set-default BAT1_V_CHARGED 4.2
-param set-default SDLOG_MODE -1
 param set-default CBRK_SUPPLY_CHK 894281
 param set-default COM_POWER_COUNT 0
 
@@ -40,7 +39,6 @@ param set-default PWM_MAIN_DIS4 0
 
 param set-default IMU_GYRO_RATEMAX 250
 param set-default IMU_INTEG_RATE 200
-param set-default EKF2_PREDICT_US 10000
 param set-default COM_CPU_MAX -1
 param set-default BAT1_SOURCE 1
 param set-default BAT1_N_CELLS 1

@@ -45,7 +45,7 @@ int board_mcu_version(char *rev, const char **revstr, const char **errata)
 {
 	*rev = 'A';
 	*revstr = "ESP32S3";
-	*errata = NULL;
+	//*errata = NULL;
 	return 0x1000;
 }
 
