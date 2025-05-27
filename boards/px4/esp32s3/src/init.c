@@ -319,11 +319,11 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 #endif
 	int ret =0;
 
-	ret = board_sdmmc_initialize();
-  	if (ret < 0)
-  	{
-  	  	syslog(LOG_ERR, "ERROR: Failed to initialize SDMMC: %d\n", ret);
-  	}
+	// ret = board_sdmmc_initialize();
+  	// if (ret < 0)
+  	// {
+  	//   	syslog(LOG_ERR, "ERROR: Failed to initialize SDMMC: %d\n", ret);
+  	// }
 
 
 

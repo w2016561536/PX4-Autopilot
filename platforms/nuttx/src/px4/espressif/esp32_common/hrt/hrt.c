@@ -254,7 +254,7 @@ hrt_tim_init(void)
  * Handle the compare interrupt by calling the callout dispatcher
  * and then re-scheduling the next deadline.
  */
-static int IRAM_ATTR
+static int __attribute__ ((section(".iram1")))
 hrt_tim_isr(int irq, void *context, void *arg)
 {
 
@@ -283,7 +283,7 @@ hrt_tim_isr(int irq, void *context, void *arg)
  * Fetch a never-wrapping absolute time value in microseconds from
  * some arbitrary epoch shortly after system start.
  */
-hrt_abstime IRAM_ATTR
+hrt_abstime __attribute__ ((section(".iram1")))
 hrt_absolute_time(void)
 {
 	hrt_abstime	abstime;
@@ -336,7 +336,7 @@ hrt_absolute_time(void)
 /**
  * Store the absolute time in an interrupt-safe fashion
  */
-void
+void __attribute__ ((section(".iram1")))
 hrt_store_absolute_time(volatile hrt_abstime *t)
 {
 	irqstate_t flags = px4_enter_critical_section();
