@@ -10,7 +10,7 @@ param set-default BAT1_V_LOAD_DROP 0.100
 param set-default BAT1_V_CHARGED 4.2
 param set-default CBRK_SUPPLY_CHK 894281
 param set-default COM_POWER_COUNT 0
-
+param set-default SDLOG_MODE -1
 param set-default COM_ARM_HFLT_CHK 0
 
 param set-default COM_ARM_SDCARD 0
