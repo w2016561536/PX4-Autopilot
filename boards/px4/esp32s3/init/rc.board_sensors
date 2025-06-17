@@ -16,7 +16,7 @@ then
 	spl06 -I -a 119 start
 fi
 
-# ip5109 start -X
+ip5109 start -X
 
 #flow3953 start -d /dev/ttyS2
 
