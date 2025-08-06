@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2020 ECL Development Team. All rights reserved.
+ *   Copyright (c) 2020-2023 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -61,9 +61,8 @@ public:
 	// Setup the Ekf with synthetic measurements
 	void SetUp() override
 	{
-		// run briefly to init, then manually set in air and at rest (default for a real vehicle)
+		// Init, then manually set in air and at rest (default for a real vehicle)
 		_ekf->init(0);
-		_sensor_simulator.runSeconds(0.1);
 		_ekf->set_in_air_status(false);
 		_ekf->set_vehicle_at_rest(true);
 
@@ -82,9 +81,10 @@ public:
 void EkfGpsHeadingTest::runConvergenceScenario(float yaw_offset_rad, float antenna_offset_rad)
 {
 	// GIVEN: an initial GPS yaw, not aligned with the current one
-	float gps_heading = matrix::wrap_pi(_ekf_wrapper.getYawAngle() + yaw_offset_rad);
+	// The yaw antenna offset has already been corrected in the driver
+	float gps_heading = matrix::wrap_pi(_ekf_wrapper.getYawAngle());
 
-	_sensor_simulator._gps.setYaw(gps_heading);
+	_sensor_simulator._gps.setYaw(gps_heading); // used to remove the correction to fuse the real measurement
 	_sensor_simulator._gps.setYawOffset(antenna_offset_rad);
 
 	// WHEN: the GPS yaw fusion is activated
@@ -92,7 +92,7 @@ void EkfGpsHeadingTest::runConvergenceScenario(float yaw_offset_rad, float anten
 	_sensor_simulator.runSeconds(5);
 
 	// THEN: the estimate is reset and stays close to the measurement
-	checkConvergence(gps_heading, 0.05f);
+	checkConvergence(gps_heading, 0.01f);
 }
 
 void EkfGpsHeadingTest::checkConvergence(float truth, float tolerance_deg)
@@ -304,9 +304,12 @@ TEST_F(EkfGpsHeadingTest, yawJumpInAir)
 	_sensor_simulator.runSeconds(7.5);
 
 	// THEN: after a few seconds, the fusion should stop and
-	// the estimator should fall back to mag fusion
+	// the estimator doesn't fall back to mag fusion because it has
+	// been declared inconsistent with the filter states
 	EXPECT_FALSE(_ekf_wrapper.isIntendingGpsHeadingFusion());
-	EXPECT_TRUE(_ekf_wrapper.isIntendingMagHeadingFusion());
+	EXPECT_FALSE(_ekf_wrapper.isMagHeadingConsistent());
+	//TODO: should we force a reset to mag if the GNSS yaw fusion was forced to stop?
+	EXPECT_FALSE(_ekf_wrapper.isIntendingMagHeadingFusion());
 }
 
 TEST_F(EkfGpsHeadingTest, stopOnGround)
@@ -331,10 +334,9 @@ TEST_F(EkfGpsHeadingTest, stopOnGround)
 	_ekf_wrapper.setMagFuseTypeNone();
 
 	// WHEN: running without yaw aiding
-	const matrix::Vector4f quat_variance_before = _ekf_wrapper.getQuaternionVariance();
+	const float yaw_variance_before = _ekf->getYawVar();
 	_sensor_simulator.runSeconds(20.0);
-	const matrix::Vector4f quat_variance_after = _ekf_wrapper.getQuaternionVariance();
 
-	// THEN: the yaw variance is constrained by fusing constant data
-	EXPECT_LT(quat_variance_after(3), quat_variance_before(3));
+	// THEN: the yaw variance increases
+	EXPECT_GT(_ekf->getYawVar(), yaw_variance_before);
 }

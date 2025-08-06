@@ -40,6 +40,7 @@
 #include <math.h>
 #include <matrix/math.hpp>
 #include <lib/geo/geo.h>
+#include <lib/modes/ui.hpp>
 
 // clock access
 #include <px4_platform_common/defines.h>
@@ -77,94 +78,7 @@ msp_name_t construct_display_message(const vehicle_status_s &vehicle_status,
 		}
 
 		// display flight mode
-		switch (vehicle_status.nav_state) {
-		case vehicle_status_s::NAVIGATION_STATE_MANUAL:
-			display.set(MessageDisplayType::FLIGHT_MODE, "MANUAL");
-			break;
-
-		case vehicle_status_s::NAVIGATION_STATE_ALTCTL:
-			display.set(MessageDisplayType::FLIGHT_MODE, "ALTCTL");
-			break;
-
-		case vehicle_status_s::NAVIGATION_STATE_POSCTL:
-			display.set(MessageDisplayType::FLIGHT_MODE, "POSCTL");
-			break;
-
-		case vehicle_status_s::NAVIGATION_STATE_AUTO_MISSION:
-			display.set(MessageDisplayType::FLIGHT_MODE, "AUTO_MISSION");
-			break;
-
-		case vehicle_status_s::NAVIGATION_STATE_AUTO_LOITER:
-			display.set(MessageDisplayType::FLIGHT_MODE, "AUTO_LOITER");
-			break;
-
-		case vehicle_status_s::NAVIGATION_STATE_AUTO_RTL:
-			display.set(MessageDisplayType::FLIGHT_MODE, "AUTO_RTL");
-			break;
-
-		case vehicle_status_s::NAVIGATION_STATE_UNUSED:
-			display.set(MessageDisplayType::FLIGHT_MODE, "UNUSED");
-			break;
-
-		case vehicle_status_s::NAVIGATION_STATE_ACRO:
-			display.set(MessageDisplayType::FLIGHT_MODE, "ACRO");
-			break;
-
-		case vehicle_status_s::NAVIGATION_STATE_UNUSED1:
-			display.set(MessageDisplayType::FLIGHT_MODE, "UNUSED1");
-			break;
-
-		case vehicle_status_s::NAVIGATION_STATE_DESCEND:
-			display.set(MessageDisplayType::FLIGHT_MODE, "DESCEND");
-			break;
-
-		case vehicle_status_s::NAVIGATION_STATE_TERMINATION:
-			display.set(MessageDisplayType::FLIGHT_MODE, "TERMINATION");
-			break;
-
-		case vehicle_status_s::NAVIGATION_STATE_OFFBOARD:
-			display.set(MessageDisplayType::FLIGHT_MODE, "OFFBOARD");
-			break;
-
-		case vehicle_status_s::NAVIGATION_STATE_STAB:
-			display.set(MessageDisplayType::FLIGHT_MODE, "STAB");
-			break;
-
-		case vehicle_status_s::NAVIGATION_STATE_UNUSED2:
-			display.set(MessageDisplayType::FLIGHT_MODE, "UNUSED2");
-			break;
-
-		case vehicle_status_s::NAVIGATION_STATE_AUTO_TAKEOFF:
-			display.set(MessageDisplayType::FLIGHT_MODE, "AUTO_TAKEOFF");
-			break;
-
-		case vehicle_status_s::NAVIGATION_STATE_AUTO_LAND:
-			display.set(MessageDisplayType::FLIGHT_MODE, "AUTO_LAND");
-			break;
-
-		case vehicle_status_s::NAVIGATION_STATE_AUTO_FOLLOW_TARGET:
-			display.set(MessageDisplayType::FLIGHT_MODE, "AUTO_FOLLOW_TARGET");
-			break;
-
-		case vehicle_status_s::NAVIGATION_STATE_AUTO_PRECLAND:
-			display.set(MessageDisplayType::FLIGHT_MODE, "AUTO_PRECLAND");
-			break;
-
-		case vehicle_status_s::NAVIGATION_STATE_ORBIT:
-			display.set(MessageDisplayType::FLIGHT_MODE, "ORBIT");
-			break;
-
-		case vehicle_status_s::NAVIGATION_STATE_AUTO_VTOL_TAKEOFF:
-			display.set(MessageDisplayType::FLIGHT_MODE, "AUTO_VTOL_TAKEOFF");
-			break;
-
-		case vehicle_status_s::NAVIGATION_STATE_MAX:
-			display.set(MessageDisplayType::FLIGHT_MODE, "MAX");
-			break;
-
-		default:
-			display.set(MessageDisplayType::FLIGHT_MODE, "???");
-		}
+		display.set(MessageDisplayType::FLIGHT_MODE, mode_util::nav_state_names[vehicle_status.nav_state]);
 	}
 
 	// display, if updated
@@ -314,9 +228,9 @@ msp_raw_gps_t construct_RAW_GPS(const sensor_gps_s &vehicle_gps_position,
 	msp_raw_gps_t raw_gps {0};
 
 	if (vehicle_gps_position.fix_type >= 2) {
-		raw_gps.lat = vehicle_gps_position.lat;
-		raw_gps.lon = vehicle_gps_position.lon;
-		raw_gps.alt =  vehicle_gps_position.alt / 10;
+		raw_gps.lat = static_cast<int32_t>(vehicle_gps_position.latitude_deg * 1e7);
+		raw_gps.lon = static_cast<int32_t>(vehicle_gps_position.longitude_deg * 1e7);
+		raw_gps.alt = static_cast<int16_t>(vehicle_gps_position.altitude_msl_m * 100.0);
 
 		float course = math::degrees(vehicle_gps_position.cog_rad);
 
@@ -365,7 +279,6 @@ msp_raw_gps_t construct_RAW_GPS(const sensor_gps_s &vehicle_gps_position,
 }
 
 msp_comp_gps_t construct_COMP_GPS(const home_position_s &home_position,
-				  const estimator_status_s &estimator_status,
 				  const vehicle_global_position_s &vehicle_global_position,
 				  const bool heartbeat)
 {
@@ -375,7 +288,8 @@ msp_comp_gps_t construct_COMP_GPS(const home_position_s &home_position,
 	// Calculate distance and direction to home
 	if (home_position.valid_hpos
 	    && home_position.valid_lpos
-	    && estimator_status.solution_status_flags & (1 << 4)) {
+	    && (hrt_elapsed_time(&vehicle_global_position.timestamp) < 1_s)) {
+
 		float bearing_to_home = math::degrees(get_bearing_to_next_waypoint(vehicle_global_position.lat,
 						      vehicle_global_position.lon,
 						      home_position.lat, home_position.lon));
@@ -425,21 +339,20 @@ msp_attitude_t construct_ATTITUDE(const vehicle_attitude_s &vehicle_attitude)
 }
 
 msp_altitude_t construct_ALTITUDE(const sensor_gps_s &vehicle_gps_position,
-				  const estimator_status_s &estimator_status,
 				  const vehicle_local_position_s &vehicle_local_position)
 {
 	// initialize result
 	msp_altitude_t altitude {0};
 
 	if (vehicle_gps_position.fix_type >= 2) {
-		altitude.estimatedActualPosition = vehicle_gps_position.alt / 10;
+		altitude.estimatedActualPosition = static_cast<int32_t>(vehicle_gps_position.altitude_msl_m * 100.0);	// cm
 
 	} else {
 		altitude.estimatedActualPosition = 0;
 	}
 
-	if (estimator_status.solution_status_flags & (1 << 5)) {
-		altitude.estimatedActualVelocity = -vehicle_local_position.vz * 10; //m/s to cm/s
+	if (vehicle_local_position.v_z_valid) {
+		altitude.estimatedActualVelocity = -vehicle_local_position.vz * 100; //m/s to cm/s
 
 	} else {
 		altitude.estimatedActualVelocity = 0;

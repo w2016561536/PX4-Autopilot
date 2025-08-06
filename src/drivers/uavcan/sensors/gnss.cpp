@@ -155,7 +155,7 @@ UavcanGnssBridge::gnss_fix_sub_cb(const uavcan::ReceivedDataStructure<uavcan::eq
 	float vel_cov[9];
 	msg.velocity_covariance.unpackSquareMatrix(vel_cov);
 
-	process_fixx(msg, fix_type, pos_cov, vel_cov, valid_pos_cov, valid_vel_cov, NAN, NAN, NAN);
+	process_fixx(msg, fix_type, pos_cov, vel_cov, valid_pos_cov, valid_vel_cov, NAN, NAN, NAN, -1, -1, 0, 0);
 }
 
 void
@@ -299,9 +299,16 @@ UavcanGnssBridge::gnss_fix2_sub_cb(const uavcan::ReceivedDataStructure<uavcan::e
 	float heading_offset = NAN;
 	float heading_accuracy = NAN;
 
+	int32_t noise_per_ms = -1;
+	int32_t jamming_indicator = -1;
+	uint8_t jamming_state = 0;
+	uint8_t spoofing_state = 0;
+
 	// Use ecef_position_velocity for now... There is no heading field
 	if (!msg.ecef_position_velocity.empty()) {
-		heading = msg.ecef_position_velocity[0].velocity_xyz[0];
+		if (!std::isnan(msg.ecef_position_velocity[0].velocity_xyz[0])) {
+			heading = msg.ecef_position_velocity[0].velocity_xyz[0];
+		}
 
 		if (!std::isnan(msg.ecef_position_velocity[0].velocity_xyz[1])) {
 			heading_offset = msg.ecef_position_velocity[0].velocity_xyz[1];
@@ -310,10 +317,16 @@ UavcanGnssBridge::gnss_fix2_sub_cb(const uavcan::ReceivedDataStructure<uavcan::e
 		if (!std::isnan(msg.ecef_position_velocity[0].velocity_xyz[2])) {
 			heading_accuracy = msg.ecef_position_velocity[0].velocity_xyz[2];
 		}
+
+		noise_per_ms = msg.ecef_position_velocity[0].position_xyz_mm[0];
+		jamming_indicator = msg.ecef_position_velocity[0].position_xyz_mm[1];
+
+		jamming_state = msg.ecef_position_velocity[0].position_xyz_mm[2] >> 8;
+		spoofing_state = msg.ecef_position_velocity[0].position_xyz_mm[2] & 0xFF;
 	}
 
 	process_fixx(msg, fix_type, pos_cov, vel_cov, valid_covariances, valid_covariances, heading, heading_offset,
-		     heading_accuracy);
+		     heading_accuracy, noise_per_ms, jamming_indicator, jamming_state, spoofing_state);
 }
 
 template <typename FixType>
@@ -322,7 +335,9 @@ void UavcanGnssBridge::process_fixx(const uavcan::ReceivedDataStructure<FixType>
 				    const float (&pos_cov)[9], const float (&vel_cov)[9],
 				    const bool valid_pos_cov, const bool valid_vel_cov,
 				    const float heading, const float heading_offset,
-				    const float heading_accuracy)
+				    const float heading_accuracy, const int32_t noise_per_ms,
+				    const int32_t jamming_indicator, const uint8_t jamming_state,
+				    const uint8_t spoofing_state)
 {
 	sensor_gps_s report{};
 	report.device_id = get_device_id();
@@ -337,10 +352,10 @@ void UavcanGnssBridge::process_fixx(const uavcan::ReceivedDataStructure<FixType>
 	 */
 	report.timestamp = hrt_absolute_time();
 
-	report.lat           = msg.latitude_deg_1e8 / 10;
-	report.lon           = msg.longitude_deg_1e8 / 10;
-	report.alt           = msg.height_msl_mm;
-	report.alt_ellipsoid = msg.height_ellipsoid_mm;
+	report.latitude_deg         = msg.latitude_deg_1e8 / 1e8;
+	report.longitude_deg        = msg.longitude_deg_1e8 / 1e8;
+	report.altitude_msl_m       = msg.height_msl_mm / 1e3;
+	report.altitude_ellipsoid_m = msg.height_ellipsoid_mm / 1e3;
 
 	if (valid_pos_cov) {
 		// Horizontal position uncertainty
@@ -452,6 +467,11 @@ void UavcanGnssBridge::process_fixx(const uavcan::ReceivedDataStructure<FixType>
 	report.heading_offset = heading_offset;
 	report.heading_accuracy = heading_accuracy;
 
+	report.noise_per_ms = noise_per_ms;
+	report.jamming_indicator = jamming_indicator;
+	report.jamming_state = jamming_state;
+	report.spoofing_state = spoofing_state;
+
 	publish(msg.getSrcNodeID().get(), &report);
 }
 
@@ -497,7 +517,7 @@ void UavcanGnssBridge::handleInjectDataTopic()
 	// GPS injections should consist of 1-4 packets (GPS, Glonass, BeiDou, Galileo).
 	// Looking at 8 packets thus guarantees, that at least a full injection
 	// data set is evaluated.
-	// Moving Base reuires a higher rate, so we allow up to 8 packets.
+	// Moving Base requires a higher rate, so we allow up to 8 packets.
 	const size_t max_num_injections = gps_inject_data_s::ORB_QUEUE_LENGTH;
 	size_t num_injections = 0;
 

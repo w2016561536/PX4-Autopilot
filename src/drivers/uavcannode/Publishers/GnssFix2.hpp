@@ -81,10 +81,10 @@ public:
 
 			fix2.gnss_time_standard = fix2.GNSS_TIME_STANDARD_UTC;
 			fix2.gnss_timestamp.usec = gps.time_utc_usec;
-			fix2.latitude_deg_1e8 = (int64_t)gps.lat * 10;
-			fix2.longitude_deg_1e8 = (int64_t)gps.lon * 10;
-			fix2.height_msl_mm = gps.alt;
-			fix2.height_ellipsoid_mm = gps.alt_ellipsoid;
+			fix2.latitude_deg_1e8 = (int64_t)(gps.latitude_deg * 1e8);
+			fix2.longitude_deg_1e8 = (int64_t)(gps.longitude_deg * 1e8);
+			fix2.height_msl_mm = (int32_t)(gps.altitude_msl_m * 1e3);
+			fix2.height_ellipsoid_mm = (int32_t)(gps.altitude_ellipsoid_m * 1e3);
 			fix2.status = gps.fix_type;
 			fix2.ned_velocity[0] = gps.vel_n_m_s;
 			fix2.ned_velocity[1] = gps.vel_e_m_s;
@@ -127,6 +127,11 @@ public:
 			ecefpositionvelocity.velocity_xyz[1] = NAN;
 			ecefpositionvelocity.velocity_xyz[2] = NAN;
 
+			// Use ecef_position_velocity for now... There are no fields for these
+			ecefpositionvelocity.position_xyz_mm[0] = gps.noise_per_ms;
+			ecefpositionvelocity.position_xyz_mm[1] = gps.jamming_indicator;
+			ecefpositionvelocity.position_xyz_mm[2] = (gps.jamming_state << 8) | gps.spoofing_state;
+
 			// Use ecef_position_velocity for now... There is no heading field
 			if (!std::isnan(gps.heading)) {
 				ecefpositionvelocity.velocity_xyz[0] = gps.heading;
@@ -138,9 +143,9 @@ public:
 				if (!std::isnan(gps.heading_accuracy)) {
 					ecefpositionvelocity.velocity_xyz[2] = gps.heading_accuracy;
 				}
-
-				fix2.ecef_position_velocity.push_back(ecefpositionvelocity);
 			}
+
+			fix2.ecef_position_velocity.push_back(ecefpositionvelocity);
 
 			uavcan::Publisher<uavcan::equipment::gnss::Fix2>::broadcast(fix2);
 

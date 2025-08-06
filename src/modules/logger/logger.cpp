@@ -44,12 +44,14 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include <uORB/uORBMessageFields.hpp>
 #include <uORB/Publication.hpp>
 #include <uORB/topics/uORBTopics.hpp>
 #include <uORB/topics/parameter_update.h>
 #include <uORB/topics/vehicle_command_ack.h>
 #include <uORB/topics/battery_status.h>
 
+#include <containers/Bitset.hpp>
 #include <drivers/drv_hrt.h>
 #include <mathlib/math/Limits.hpp>
 #include <px4_platform/cpuload.h>
@@ -66,6 +68,10 @@
 #include <component_information/checksums.h>
 
 //#define DBGPRINT //write status output every few seconds
+
+static_assert(uORB::orb_untokenized_fields_max_length < sizeof(ulog_message_format_s::format) -
+	      HEATSHRINK_DECODER_INPUT_BUFFER_SIZE(_),
+	      "msg definition too long / buffer too short");
 
 #if defined(DBGPRINT)
 // needed for mallinfo
@@ -887,6 +893,8 @@ void Logger::run()
 			was_started = false;
 		}
 
+		handle_file_write_error();
+
 		update_params();
 
 		// wait for next loop iteration...
@@ -1117,8 +1125,8 @@ bool Logger::start_stop_logging()
 
 		if (_vehicle_status_sub.update(&vehicle_status)) {
 
-			desired_state = (vehicle_status.arming_state == vehicle_status_s::ARMING_STATE_ARMED) || (_prev_state
-					&& _log_mode == LogMode::arm_until_shutdown);
+			desired_state = (vehicle_status.arming_state == vehicle_status_s::ARMING_STATE_ARMED) ||
+					(_prev_file_log_start_state && _log_mode == LogMode::arm_until_shutdown);
 			updated = true;
 		}
 	}
@@ -1126,8 +1134,8 @@ bool Logger::start_stop_logging()
 	desired_state = desired_state || _manually_logging_override;
 
 	// only start/stop if this is a state transition
-	if (updated && _prev_state != desired_state) {
-		_prev_state = desired_state;
+	if (updated && _prev_file_log_start_state != desired_state) {
+		_prev_file_log_start_state = desired_state;
 
 		if (desired_state) {
 			if (_should_stop_file_log) { // happens on quick stop/start toggling
@@ -1394,6 +1402,7 @@ void Logger::start_log_file(LogType type)
 	}
 
 	PX4_INFO("Start file log (type: %s)", log_type_str(type));
+	_statistics[(int) type].start_time_file = 0;
 
 	char file_name[LOG_DIR_LEN] = "";
 
@@ -1409,34 +1418,35 @@ void Logger::start_log_file(LogType type)
 		_param_sdlog_crypto_exchange_key.get());
 #endif
 
-	_writer.start_log_file(type, file_name);
-	_writer.select_write_backend(LogWriter::BackendFile);
-	_writer.set_need_reliable_transfer(true);
+	if (_writer.start_log_file(type, file_name)) {
+		_writer.select_write_backend(LogWriter::BackendFile);
+		_writer.set_need_reliable_transfer(true);
 
-	write_header(type);
-	write_version(type);
-	write_formats(type);
+		write_header(type);
+		write_version(type);
+		write_formats(type);
 
-	if (type == LogType::Full) {
-		write_parameters(type);
-		write_parameter_defaults(type);
-		write_perf_data(PrintLoadReason::Preflight);
-		write_console_output();
-		write_events_file(LogType::Full);
-		write_excluded_optional_topics(type);
+		if (type == LogType::Full) {
+			write_parameters(type);
+			write_parameter_defaults(type);
+			write_perf_data(PrintLoadReason::Preflight);
+			write_console_output();
+			write_events_file(LogType::Full);
+			write_excluded_optional_topics(type);
+		}
+
+		write_all_add_logged_msg(type);
+		_writer.set_need_reliable_transfer(false);
+		_writer.unselect_write_backend();
+		_writer.notify();
+
+		if (type == LogType::Full) {
+			/* reset performance counters to get in-flight min and max values in post flight log */
+			perf_reset_all();
+		}
+
+		_statistics[(int) type].start_time_file = hrt_absolute_time();
 	}
-
-	write_all_add_logged_msg(type);
-	_writer.set_need_reliable_transfer(false);
-	_writer.unselect_write_backend();
-	_writer.notify();
-
-	if (type == LogType::Full) {
-		/* reset performance counters to get in-flight min and max values in post flight log */
-		perf_reset_all();
-	}
-
-	_statistics[(int)type].start_time_file = hrt_absolute_time();
 
 }
 
@@ -1513,6 +1523,19 @@ struct perf_callback_data_t {
 	char *buffer;
 };
 
+void Logger::handle_file_write_error()
+{
+	// Check for write errors, but do not immediately retry
+	if (_writer.had_file_write_error() && !_writer.is_started(LogType::Full, LogWriter::BackendFile)
+	    && _prev_file_log_start_state) {
+		if (_statistics[(int)LogType::Full].start_time_file != 0
+		    && hrt_absolute_time() > _statistics[(int)LogType::Full].start_time_file + 10_s) {
+			PX4_DEBUG("Restarting due to write failure");
+			start_log_file(LogType::Full);
+		}
+	}
+}
+
 void Logger::perf_iterate_callback(perf_counter_t handle, void *user)
 {
 	perf_callback_data_t *callback_data = (perf_callback_data_t *)user;
@@ -1587,6 +1610,11 @@ void Logger::print_load_callback(void *user)
 
 void Logger::initialize_load_output(PrintLoadReason reason)
 {
+	// If already in progress, don't try to start again
+	if (_next_load_print != 0) {
+		return;
+	}
+
 	init_print_load(&_load);
 
 	if (reason == PrintLoadReason::Watchdog) {
@@ -1642,156 +1670,134 @@ void Logger::write_console_output()
 
 }
 
-void Logger::write_format(LogType type, const orb_metadata &meta, WrittenFormats &written_formats,
-			  ulog_message_format_s &msg, int subscription_index, int level)
-{
-	if (level > 3) {
-		// precaution: limit recursion level. If we land here it's either a bug or nested topic definitions. In the
-		// latter case, increase the maximum level.
-		PX4_ERR("max recursion level reached (%i)", level);
-		return;
-	}
-
-	// check if we already wrote the format: either if at a previous _subscriptions index or in written_formats
-	for (const auto &written_format : written_formats) {
-		if (written_format == &meta) {
-			PX4_DEBUG("already added: %s", meta.o_name);
-			return;
-		}
-	}
-
-	for (int i = 0; i < subscription_index; ++i) {
-		if (_subscriptions[i].get_topic() == &meta) {
-			PX4_DEBUG("already in _subscriptions: %s", meta.o_name);
-			return;
-		}
-	}
-
-	PX4_DEBUG("writing format for %s", meta.o_name);
-
-	// Write the current format (we don't need to check if we already added it to written_formats)
-	int format_len = snprintf(msg.format, sizeof(msg.format), "%s:", meta.o_name);
-
-	for (int format_idx = 0; meta.o_fields[format_idx] != 0;) {
-		const char *end_field = strchr(meta.o_fields + format_idx, ';');
-
-		if (!end_field) {
-			PX4_ERR("Format error in %s", meta.o_fields);
-			return;
-		}
-
-		const char *c_type = orb_get_c_type(meta.o_fields[format_idx]);
-
-		if (c_type) {
-			format_len += snprintf(msg.format + format_len, sizeof(msg.format) - format_len, "%s", c_type);
-			++format_idx;
-		}
-
-		int len = end_field - (meta.o_fields + format_idx) + 1;
-
-		if (len >= (int)sizeof(msg.format) - format_len) {
-			PX4_WARN("skip topic %s, format string is too large, max is %zu", meta.o_name,
-				 sizeof(ulog_message_format_s::format));
-			return;
-		}
-
-		memcpy(msg.format + format_len, meta.o_fields + format_idx, len);
-		format_len += len;
-		format_idx += len;
-	}
-
-	msg.format[format_len] = '\0';
-	size_t msg_size = sizeof(msg) - sizeof(msg.format) + format_len;
-	msg.msg_size = msg_size - ULOG_MSG_HEADER_LEN;
-
-	write_message(type, &msg, msg_size);
-
-	if (level > 1 && !written_formats.push_back(&meta)) {
-		PX4_ERR("Array too small");
-	}
-
-	// Now go through the fields and check for nested type usages.
-	// o_fields looks like this for example: "<chr> timestamp;<chr>[5] array;"
-	const char *fmt = meta.o_fields;
-
-	while (fmt && *fmt) {
-		// extract the type name
-		char type_name[64];
-		const char *space = strchr(fmt, ' ');
-
-		if (!space) {
-			PX4_ERR("invalid format %s", fmt);
-			break;
-		}
-
-		const char *array_start = strchr(fmt, '['); // check for an array
-
-		int type_length;
-
-		if (array_start && array_start < space) {
-			type_length = array_start - fmt;
-
-		} else {
-			type_length = space - fmt;
-		}
-
-		if (type_length >= (int)sizeof(type_name)) {
-			PX4_ERR("buf len too small");
-			break;
-		}
-
-		memcpy(type_name, fmt, type_length);
-		type_name[type_length] = '\0';
-
-		// ignore built-in types
-		if (orb_get_c_type(type_name[0]) == nullptr) {
-
-			// find orb meta for type
-			const orb_metadata *const *topics = orb_get_topics();
-			const orb_metadata *found_topic = nullptr;
-
-			for (size_t i = 0; i < orb_topics_count(); i++) {
-				if (strcmp(topics[i]->o_name, type_name) == 0) {
-					found_topic = topics[i];
-				}
-			}
-
-			if (found_topic) {
-
-				write_format(type, *found_topic, written_formats, msg, subscription_index, level + 1);
-
-			} else {
-				PX4_ERR("No definition for topic %s found", fmt);
-			}
-		}
-
-		fmt = strchr(fmt, ';');
-
-		if (fmt) { ++fmt; }
-	}
-}
-
 void Logger::write_formats(LogType type)
 {
 	_writer.lock();
 
-	// both of these are large and thus we need to be careful in terms of stack size requirements
+	// This is large and thus we need to be careful in terms of stack size requirements
 	ulog_message_format_s msg;
-	WrittenFormats written_formats;
 
-	// write all subscribed formats
+	// Write all subscribed formats
 	int sub_count = _num_subscriptions;
 
 	if (type == LogType::Mission) {
 		sub_count = _num_mission_subs;
 	}
 
+	// Keep a bitset of all required formats (nested definitions are added later on to the bitset)
+	px4::Bitset<ORB_TOPICS_COUNT> formats_to_write;
+
 	for (int i = 0; i < sub_count; ++i) {
 		const LoggerSubscription &sub = _subscriptions[i];
-		write_format(type, *sub.get_topic(), written_formats, msg, i);
+
+		if (sub.get_topic()->o_id < formats_to_write.size()) {
+			formats_to_write.set(sub.get_topic()->o_id);
+
+		} else {
+			PX4_ERR("logic error");
+		}
 	}
 
-	write_format(type, *_event_subscription.get_topic(), written_formats, msg, sub_count);
+	formats_to_write.set(_event_subscription.get_topic()->o_id);
+
+
+	static_assert(sizeof(msg.format) > uORB::orb_tokenized_fields_max_length, "uORB message definition too long");
+	uORB::MessageFormatReader format_reader(msg.format, sizeof(msg.format));
+	bool done = false;
+
+	while (!done) {
+		switch (format_reader.readMore()) {
+		case uORB::MessageFormatReader::State::FormatComplete: {
+				unsigned format_length = format_reader.formatLength();
+				// Move the left-over (the part after the format if any) to the end of the buffer
+				const unsigned leftover_length = format_reader.moveLeftoverToBufferEnd();
+
+				bool needs_expansion = true;
+				int last_name_length = 0;
+				bool format_error = false;
+
+				for (const orb_id_size_t orb_id : format_reader.orbIDs()) {
+					if (orb_id >= formats_to_write.size() || !formats_to_write[orb_id]) {
+						continue;
+					}
+
+					// Make sure to write dependencies too
+					for (const orb_id_size_t orb_id_dep : format_reader.orbIDsDependencies()) {
+						formats_to_write.set(orb_id_dep);
+					}
+
+					formats_to_write.set(orb_id, false);
+					const orb_metadata &meta = *get_orb_meta((ORB_ID) orb_id);
+
+					PX4_DEBUG("writing format for %s", meta.o_name);
+
+					// Expand if needed (first time only)
+					if (needs_expansion) {
+						const int ret = uORB::MessageFormatReader::expandMessageFormat(msg.format, format_length,
+								sizeof(msg.format) - leftover_length);
+
+						if (ret < 0) {
+							PX4_ERR("Format %s error (too long?)", meta.o_name);
+							format_error = true;
+
+						} else {
+							format_length = ret;
+						}
+
+						needs_expansion = false;
+					}
+
+					// Prepend format name and ':'
+					const int name_length = strlen(meta.o_name) + 1; // + 1 for ':'
+
+					if (format_length + name_length - last_name_length + 1 > sizeof(msg.format) - leftover_length) {
+						PX4_ERR("Format %s too long", meta.o_name);
+						format_error = true;
+					}
+
+					if (format_error) {
+						break;
+					}
+
+					if (last_name_length != name_length) {
+						memmove(msg.format + name_length, msg.format + last_name_length,
+							format_length + 1 - last_name_length);
+						msg.format[name_length - 1] = ':';
+						format_length += name_length - last_name_length;
+						last_name_length = name_length;
+					}
+
+					memcpy(msg.format, meta.o_name, name_length - 1);
+
+					size_t msg_size = sizeof(msg) - sizeof(msg.format) + format_length;
+					msg.msg_size = msg_size - ULOG_MSG_HEADER_LEN;
+					write_message(type, &msg, msg_size);
+				}
+
+				// Move left-over back
+				format_reader.clearFormatAndRestoreLeftover();
+				break;
+			}
+			break;
+
+		case uORB::MessageFormatReader::State::Failure:
+			PX4_ERR("Failed to read formats");
+			done = true;
+			break;
+
+		case uORB::MessageFormatReader::State::Complete:
+			done = true;
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	if (formats_to_write.count() > 0) {
+		// Getting here is a bug. Maybe the ordering of nested formats is not as expected?
+		PX4_ERR("Not all formats written");
+	}
 
 	_writer.unlock();
 }
@@ -2075,12 +2081,6 @@ void Logger::write_version(LogType type)
 	write_info(type, "sys_toolchain", px4_toolchain_name());
 	write_info(type, "sys_toolchain_ver", px4_toolchain_version());
 
-	const char *ecl_version = px4_ecl_lib_version_string();
-
-	if (ecl_version && ecl_version[0]) {
-		write_info(type, "sys_lib_ecl_ver", ecl_version);
-	}
-
 	char revision = 'U';
 	const char *chip_name = nullptr;
 
@@ -2092,7 +2092,8 @@ void Logger::write_version(LogType type)
 
 	// data versioning: increase this on every larger data change (format/semantic)
 	// 1: switch to FIFO drivers (disabled on-chip DLPF)
-	write_info(type, "ver_data_format", static_cast<uint32_t>(1));
+	// 2: changed lat/lon/alt* to double to accommodate RTK GPS centimeter level precision
+	write_info(type, "ver_data_format", static_cast<uint32_t>(2));
 
 #ifndef BOARD_HAS_NO_UUID
 

@@ -81,8 +81,6 @@ ActuatorEffectivenessRotors::ActuatorEffectivenessRotors(ModuleParams *parent, A
 		}
 	}
 
-	_count_handle = param_find("CA_ROTOR_COUNT");
-
 	updateParams();
 }
 
@@ -90,14 +88,7 @@ void ActuatorEffectivenessRotors::updateParams()
 {
 	ModuleParams::updateParams();
 
-
-
-	if (param_get(_count_handle, &count) != 0) {
-		PX4_ERR("param_get failed");
-		return;
-	}
-
-	_geometry.num_rotors = math::min(NUM_ROTORS_MAX, count);
+	_geometry.num_rotors = math::min(NUM_ROTORS_MAX, static_cast<int>(_param_ca_rotor_count.get()));
 
 	for (int i = 0; i < _geometry.num_rotors; ++i) {
 		Vector3f &position = _geometry.rotors[i].position;

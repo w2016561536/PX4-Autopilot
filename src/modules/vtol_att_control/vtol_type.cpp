@@ -45,11 +45,17 @@
 #include <float.h>
 #include <px4_platform_common/defines.h>
 #include <matrix/math.hpp>
+#include <lib/atmosphere/atmosphere.h>
 
 using namespace matrix;
 
 #define THROTTLE_BLENDING_DUR_S 1.0f
 
+// [.] minimum ratio between the actual vehicle weight and the vehicle nominal weight (weight at which the performance limits are derived)
+static constexpr float kMinWeightRatio = 0.5f;
+
+// [.] maximum ratio between the actual vehicle weight and the vehicle nominal weight (weight at which the performance limits are derived)
+static constexpr float kMaxWeightRatio = 2.0f;
 
 VtolType::VtolType(VtolAttitudeControl *att_controller) :
 	ModuleParams(nullptr),
@@ -176,7 +182,7 @@ float VtolType::update_and_get_backtransition_pitch_sp()
 	// get accel error, positive means decelerating too slow, need to pitch up (must reverse dec_max, as it is a positive number)
 	const float accel_error_forward = dec_sp + accel_body_forward;
 
-	const float pitch_sp_new = _param_vt_b_dec_ff.get() * dec_sp + _accel_to_pitch_integ;
+	const float pitch_sp_new = _accel_to_pitch_integ;
 
 	float integrator_input = _param_vt_b_dec_i.get() * accel_error_forward;
 
@@ -202,7 +208,7 @@ bool VtolType::isFrontTransitionCompletedBase()
 {
 	// continue the transition to fw mode while monitoring airspeed for a final switch to fw mode
 	const bool airspeed_triggers_transition = PX4_ISFINITE(_airspeed_validated->calibrated_airspeed_m_s)
-			&& !_param_fw_arsp_mode.get();
+			&& _param_fw_use_airspd.get();
 	const bool minimum_trans_time_elapsed = _time_since_trans_start > getMinimumFrontTransitionTime();
 	const bool openloop_trans_time_elapsed = _time_since_trans_start > getOpenLoopFrontTransitionTime();
 
@@ -210,7 +216,7 @@ bool VtolType::isFrontTransitionCompletedBase()
 
 	if (airspeed_triggers_transition) {
 		transition_to_fw = minimum_trans_time_elapsed
-				   && _airspeed_validated->calibrated_airspeed_m_s >= _param_vt_arsp_trans.get();
+				   && _airspeed_validated->calibrated_airspeed_m_s >= getTransitionAirspeed();
 
 	} else {
 		transition_to_fw = openloop_trans_time_elapsed;
@@ -280,13 +286,17 @@ bool VtolType::isUncommandedDescent()
 	    && (current_altitude < _tecs_status->altitude_reference)
 	    && hrt_elapsed_time(&_tecs_status->timestamp) < 1_s) {
 
+		if (!PX4_ISFINITE(_quadchute_ref_alt)) {
+			_quadchute_ref_alt = current_altitude;
+		}
+
 		_quadchute_ref_alt = math::min(math::max(_quadchute_ref_alt, current_altitude),
 					       _tecs_status->altitude_reference);
 
 		return (_quadchute_ref_alt - current_altitude) > _param_vt_qc_alt_loss.get();
 
 	} else {
-		_quadchute_ref_alt = -MAXFLOAT;
+		_quadchute_ref_alt = NAN;
 	}
 
 	return false;
@@ -304,6 +314,20 @@ bool VtolType::isFrontTransitionAltitudeLoss()
 	}
 
 	return result;
+}
+
+void VtolType::handleEkfResets()
+{
+	// check if there is a reset in the z-direction, and if so, shift the transition start z as well
+	if (_local_pos->z_reset_counter != _altitude_reset_counter) {
+		_local_position_z_start_of_transition += _local_pos->delta_z;
+		_altitude_reset_counter = _local_pos->z_reset_counter;
+
+		if (PX4_ISFINITE(_quadchute_ref_alt)) {
+			_quadchute_ref_alt += _local_pos->delta_z;
+		}
+
+	}
 }
 
 bool VtolType::isPitchExceeded()
@@ -420,16 +444,21 @@ float VtolType::pusher_assist()
 
 	}
 
+	// the vehicle is "landing" if it is in auto mode and the type is set to LAND, and
+	// "descending" if it is in auto and climb rate controlled but not altitude controlled
+	const bool vehicle_is_landing_or_descending = _v_control_mode->flag_control_auto_enabled
+			&& ((_attc->get_pos_sp_triplet()->current.valid
+			     && _attc->get_pos_sp_triplet()->current.type == position_setpoint_s::SETPOINT_TYPE_LAND) ||
+			    (_v_control_mode->flag_control_climb_rate_enabled && !_v_control_mode->flag_control_altitude_enabled));
+
 	// disable pusher assist depending on setting of forward_thrust_enable_mode:
 	switch (_param_vt_fwd_thrust_en.get()) {
 	case DISABLE: // disable in all modes
 		return 0.0f;
 		break;
 
-	case ENABLE_WITHOUT_LAND: // disable in land mode
-		if (_attc->get_pos_sp_triplet()->current.valid
-		    && _attc->get_pos_sp_triplet()->current.type == position_setpoint_s::SETPOINT_TYPE_LAND
-		    && _v_control_mode->flag_control_auto_enabled) {
+	case ENABLE_WITHOUT_LAND: // disable in land/descend mode
+		if (vehicle_is_landing_or_descending) {
 			return 0.0f;
 		}
 
@@ -449,10 +478,8 @@ float VtolType::pusher_assist()
 
 		break;
 
-	case ENABLE_ABOVE_MPC_LAND_ALT1_WITHOUT_LAND: // disable if below MPC_LAND_ALT1 or in land mode
-		if ((_attc->get_pos_sp_triplet()->current.valid
-		     && _attc->get_pos_sp_triplet()->current.type == position_setpoint_s::SETPOINT_TYPE_LAND
-		     && _v_control_mode->flag_control_auto_enabled) ||
+	case ENABLE_ABOVE_MPC_LAND_ALT1_WITHOUT_LAND: // disable if below MPC_LAND_ALT1 or in land/descend mode
+		if (vehicle_is_landing_or_descending ||
 		    (!PX4_ISFINITE(dist_to_ground) || (dist_to_ground < _param_mpc_land_alt1.get()))) {
 			return 0.0f;
 		}
@@ -460,9 +487,7 @@ float VtolType::pusher_assist()
 		break;
 
 	case ENABLE_ABOVE_MPC_LAND_ALT2_WITHOUT_LAND: // disable if below MPC_LAND_ALT2 or in land mode
-		if ((_attc->get_pos_sp_triplet()->current.valid
-		     && _attc->get_pos_sp_triplet()->current.type == position_setpoint_s::SETPOINT_TYPE_LAND
-		     && _v_control_mode->flag_control_auto_enabled) ||
+		if (vehicle_is_landing_or_descending ||
 		    (!PX4_ISFINITE(dist_to_ground) || (dist_to_ground < _param_mpc_land_alt2.get()))) {
 			return 0.0f;
 		}
@@ -470,10 +495,9 @@ float VtolType::pusher_assist()
 		break;
 	}
 
-	// if the thrust scale param is zero or the drone is not in some position or altitude control mode,
+	// if the thrust scale param is zero or the drone is not in a climb rate controlled mode,
 	// then the pusher-for-pitch strategy is disabled and we can return
-	if (_param_vt_fwd_thrust_sc.get() < FLT_EPSILON || !(_v_control_mode->flag_control_position_enabled
-			|| _v_control_mode->flag_control_altitude_enabled)) {
+	if (_param_vt_fwd_thrust_sc.get() < FLT_EPSILON || !(_v_control_mode->flag_control_climb_rate_enabled)) {
 		return 0.0f;
 	}
 
@@ -560,7 +584,7 @@ float VtolType::getFrontTransitionTimeFactor() const
 	const float rho = math::constrain(_attc->getAirDensity(), 0.7f, 1.5f);
 
 	if (PX4_ISFINITE(rho)) {
-		float rho0_over_rho = CONSTANTS_AIR_DENSITY_SEA_LEVEL_15C / rho;
+		float rho0_over_rho = atmosphere::kAirDensitySeaLevelStandardAtmos / rho;
 		return sqrtf(rho0_over_rho) * rho0_over_rho;
 	}
 
@@ -580,4 +604,23 @@ float VtolType::getFrontTransitionTimeout() const
 float VtolType::getOpenLoopFrontTransitionTime() const
 {
 	return getFrontTransitionTimeFactor() * _param_vt_f_tr_ol_tm.get();
+}
+float VtolType::getTransitionAirspeed() const
+{
+	// Since the stall airspeed increases with vehicle weight, we increase the transition airspeed
+	// by the same factor.
+
+	float weight_ratio = 1.0f;
+
+	if (_param_weight_base.get() > FLT_EPSILON && _param_weight_gross.get() > FLT_EPSILON) {
+		weight_ratio = math::constrain(_param_weight_gross.get() /
+					       _param_weight_base.get(), kMinWeightRatio, kMaxWeightRatio);
+	}
+
+	return sqrtf(weight_ratio) * _param_vt_arsp_trans.get();
+}
+
+float VtolType::getBlendAirspeed() const
+{
+	return _param_vt_arsp_blend.get();
 }

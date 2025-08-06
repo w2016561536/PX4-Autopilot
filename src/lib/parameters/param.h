@@ -268,6 +268,18 @@ __EXPORT void		param_set_used(param_t param);
 __EXPORT int		param_set_no_notification(param_t param, const void *val);
 
 /**
+ * Set the value of a parameter, but do not update the remote system. This avoids
+ * a set loop between primary and remote.
+ *
+ * @param param		A handle returned by param_find or passed by param_foreach.
+ * @param val		The value to set; assumed to point to a variable of the parameter type.
+ *			For structures, the pointer is assumed to point to a structure to be copied.
+ * @param notify	Set this to true for the primary (to send out a param update) and false on client
+ * @return		Zero if the parameter's value could be set from a scalar, nonzero otherwise.
+ */
+__EXPORT int		param_set_no_remote_update(param_t param, const void *val, bool notify);
+
+/**
  * Notify the system about parameter changes. Can be used for example after several calls to
  * param_set_no_notification() to avoid unnecessary system notifications.
  */
@@ -400,13 +412,17 @@ __EXPORT const char	*param_get_backup_file(void);
 
 /**
  * Save parameters to the default file.
+ *
  * Note: this method requires a large amount of stack size!
  *
  * This function saves all parameters with non-default values.
  *
- * @return		Zero on success.
+ * @param blocking	If true, in case the default file is busy, the function blocks
+ * 			until the file is available for writing.
+ *
+ * @return		Zero on success, -EWOULDBLOCK if the file is busy and blocking is false.
  */
-__EXPORT int 		param_save_default(void);
+__EXPORT int 		param_save_default(bool blocking);
 
 /**
  * Load parameters from the default parameter file.

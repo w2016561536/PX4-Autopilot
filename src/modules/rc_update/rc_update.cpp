@@ -57,6 +57,7 @@ static bool operator ==(const manual_control_switches_s &a, const manual_control
 		a.gear_switch == b.gear_switch &&
 		a.photo_switch == b.photo_switch &&
 		a.video_switch == b.video_switch &&
+		a.payload_power_switch == b.payload_power_switch &&
 		a.engage_main_motor_switch == b.engage_main_motor_switch);
 }
 
@@ -72,23 +73,23 @@ RCUpdate::RCUpdate() :
 		char nbuf[16];
 
 		/* min values */
-		sprintf(nbuf, "RC%d_MIN", i + 1);
+		snprintf(nbuf, sizeof(nbuf), "RC%d_MIN", i + 1);
 		_parameter_handles.min[i] = param_find(nbuf);
 
 		/* trim values */
-		sprintf(nbuf, "RC%d_TRIM", i + 1);
+		snprintf(nbuf, sizeof(nbuf), "RC%d_TRIM", i + 1);
 		_parameter_handles.trim[i] = param_find(nbuf);
 
 		/* max values */
-		sprintf(nbuf, "RC%d_MAX", i + 1);
+		snprintf(nbuf, sizeof(nbuf), "RC%d_MAX", i + 1);
 		_parameter_handles.max[i] = param_find(nbuf);
 
 		/* channel reverse */
-		sprintf(nbuf, "RC%d_REV", i + 1);
+		snprintf(nbuf, sizeof(nbuf), "RC%d_REV", i + 1);
 		_parameter_handles.rev[i] = param_find(nbuf);
 
 		/* channel deadzone */
-		sprintf(nbuf, "RC%d_DZ", i + 1);
+		snprintf(nbuf, sizeof(nbuf), "RC%d_DZ", i + 1);
 		_parameter_handles.dz[i] = param_find(nbuf);
 	}
 
@@ -101,7 +102,7 @@ RCUpdate::RCUpdate() :
 	}
 
 	rc_parameter_map_poll(true /* forced */);
-	parameters_updated();
+	updateParams(); // Call is needed to populate the _rc.function array
 
 	_button_pressed_hysteresis.set_hysteresis_time_from(false, 50_ms);
 }
@@ -123,11 +124,12 @@ bool RCUpdate::init()
 	return true;
 }
 
-void RCUpdate::parameters_updated()
+void RCUpdate::updateParams()
 {
+	ModuleParams::updateParams();
+
 	// rc values
 	for (unsigned int i = 0; i < RC_MAX_CHAN_COUNT; i++) {
-
 		float min = 0.f;
 		param_get(_parameter_handles.min[i], &min);
 		_parameters.min[i] = min;
@@ -154,6 +156,12 @@ void RCUpdate::parameters_updated()
 	}
 
 	update_rc_functions();
+
+	_rc_calibrated = _param_rc_chan_cnt.get() > 0
+			 && (_param_rc_map_throttle.get() > 0
+			     || _param_rc_map_roll.get() > 0
+			     || _param_rc_map_pitch.get() > 0
+			     || _param_rc_map_yaw.get() > 0);
 
 	// deprecated parameters, will be removed post v1.12 once QGC is updated
 	{
@@ -246,6 +254,8 @@ void RCUpdate::update_rc_functions()
 	_rc.function[rc_channels_s::FUNCTION_AUX_4] = _param_rc_map_aux4.get() - 1;
 	_rc.function[rc_channels_s::FUNCTION_AUX_5] = _param_rc_map_aux5.get() - 1;
 	_rc.function[rc_channels_s::FUNCTION_AUX_6] = _param_rc_map_aux6.get() - 1;
+
+	_rc.function[rc_channels_s::FUNCTION_PAYLOAD_POWER] = _param_rc_map_payload_sw.get() - 1;
 
 	for (int i = 0; i < rc_parameter_map_s::RC_PARAM_MAP_NCHAN; i++) {
 		_rc.function[rc_channels_s::FUNCTION_PARAM_1 + i] = _parameters.rc_map_param[i] - 1;
@@ -383,7 +393,6 @@ void RCUpdate::Run()
 
 		// update parameters from storage
 		updateParams();
-		parameters_updated();
 	}
 
 	rc_parameter_map_poll();
@@ -645,6 +654,11 @@ void RCUpdate::UpdateManualSwitches(const hrt_abstime &timestamp_sample)
 	switches.video_switch = getRCSwitchOnOffPosition(rc_channels_s::FUNCTION_AUX_4, 0.5f);
 #endif
 
+#if defined(PAYLOAD_POWER_EN)
+	switches.payload_power_switch = getRCSwitchOnOffPosition(rc_channels_s::FUNCTION_PAYLOAD_POWER,
+					_param_rc_payload_th.get());
+#endif
+
 	// last 2 switch updates identical within 1 second (simple protection from bad RC data)
 	if ((switches == _manual_switches_previous)
 	    && (switches.timestamp_sample < _manual_switches_previous.timestamp_sample + VALID_DATA_MIN_INTERVAL_US)) {
@@ -688,6 +702,7 @@ void RCUpdate::UpdateManualControlInput(const hrt_abstime &timestamp_sample)
 	manual_control_input.aux4  = get_rc_value(rc_channels_s::FUNCTION_AUX_4,   -1.f, 1.f);
 	manual_control_input.aux5  = get_rc_value(rc_channels_s::FUNCTION_AUX_5,   -1.f, 1.f);
 	manual_control_input.aux6  = get_rc_value(rc_channels_s::FUNCTION_AUX_6,   -1.f, 1.f);
+	manual_control_input.valid = _rc_calibrated;
 
 	// publish manual_control_input topic
 	manual_control_input.timestamp = hrt_absolute_time();

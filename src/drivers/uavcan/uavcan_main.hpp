@@ -46,15 +46,36 @@
 #include <px4_platform_common/atomic.h>
 #include <px4_platform_common/px4_work_queue/ScheduledWorkItem.hpp>
 
+#if defined(CONFIG_UAVCAN_OUTPUTS_CONTROLLER)
 #include "actuators/esc.hpp"
-#include "actuators/hardpoint.hpp"
 #include "actuators/servo.hpp"
+#endif
+
+#if defined(CONFIG_UAVCAN_HARDPOINT_CONTROLLER)
+#include "actuators/hardpoint.hpp"
+#endif
+
+
 #include "allocator.hpp"
+
+#if defined(CONFIG_UAVCAN_ARMING_CONTROLLER)
 #include "arming_status.hpp"
+#endif
+
+#if defined(CONFIG_UAVCAN_BEEP_CONTROLLER)
 #include "beep.hpp"
+#endif
+
 #include "logmessage.hpp"
+
+#if defined(CONFIG_UAVCAN_RGB_CONTROLLER)
 #include "rgbled.hpp"
+#endif
+
+#if defined(CONFIG_UAVCAN_SAFETY_STATE_CONTROLLER)
 #include "safety_state.hpp"
+#endif
+
 #include "sensors/sensor_bridge.hpp"
 #include "uavcan_driver.hpp"
 #include "uavcan_servers.hpp"
@@ -75,6 +96,7 @@
 #include <uORB/Publication.hpp>
 #include <uORB/Subscription.hpp>
 #include <uORB/SubscriptionInterval.hpp>
+#include <uORB/topics/can_interface_status.h>
 #include <uORB/topics/parameter_update.h>
 #include <uORB/topics/uavcan_parameter_request.h>
 #include <uORB/topics/uavcan_parameter_value.h>
@@ -91,6 +113,8 @@ class UavcanNode;
  * a fixed rate or upon bus updates).
  * All work items are expected to run on the same work queue.
  */
+
+#if defined(CONFIG_UAVCAN_OUTPUTS_CONTROLLER)
 class UavcanMixingInterfaceESC : public OutputModuleInterface
 {
 public:
@@ -143,6 +167,7 @@ private:
 	UavcanServoController &_servo_controller;
 	MixingOutput _mixing_output{"UAVCAN_SV", UavcanServoController::MAX_ACTUATORS, *this, MixingOutput::SchedulingPolicy::Auto, false, false};
 };
+#endif
 
 /**
  * A UAVCAN node.
@@ -225,16 +250,30 @@ private:
 	uavcan::Node<>			_node;				///< library instance
 	pthread_mutex_t			_node_mutex;
 
+#if defined(CONFIG_UAVCAN_ARMING_CONTROLLER)
 	UavcanArmingStatus		_arming_status_controller;
+#endif
+#if defined(CONFIG_UAVCAN_BEEP_CONTROLLER)
 	UavcanBeepController		_beep_controller;
+#endif
+#if defined(CONFIG_UAVCAN_OUTPUTS_CONTROLLER)
 	UavcanEscController		_esc_controller;
-	UavcanServoController		_servo_controller;
 	UavcanMixingInterfaceESC 	_mixing_interface_esc{_node_mutex, _esc_controller};
+
+	UavcanServoController		_servo_controller;
 	UavcanMixingInterfaceServo 	_mixing_interface_servo{_node_mutex, _servo_controller};
+#endif
+#if defined(CONFIG_UAVCAN_HARDPOINT_CONTROLLER)
 	UavcanHardpointController	_hardpoint_controller;
+#endif
+#if defined(CONFIG_UAVCAN_SAFETY_STATE_CONTROLLER)
 	UavcanSafetyState         	_safety_state_controller;
-	UavcanLogMessage                _log_message_controller;
+#endif
+#if defined(CONFIG_UAVCAN_RGB_CONTROLLER)
 	UavcanRGBController             _rgbled_controller;
+#endif
+
+	UavcanLogMessage                _log_message_controller;
 
 	uavcan::GlobalTimeSyncMaster	_time_sync_master;
 	uavcan::GlobalTimeSyncSlave	_time_sync_slave;
@@ -271,6 +310,10 @@ private:
 
 	uORB::Publication<uavcan_parameter_value_s> _param_response_pub{ORB_ID(uavcan_parameter_value)};
 	uORB::Publication<vehicle_command_ack_s>	_command_ack_pub{ORB_ID(vehicle_command_ack)};
+	uORB::PublicationMulti<can_interface_status_s> _can_status_pub{ORB_ID(can_interface_status)};
+
+	hrt_abstime _last_can_status_pub{0};
+	orb_advert_t _can_status_pub_handles[UAVCAN_NUM_IFACES] = {nullptr};
 
 	/*
 	 * The MAVLink parameter bridge needs to know the maximum parameter index

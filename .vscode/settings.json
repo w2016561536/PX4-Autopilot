@@ -59,10 +59,5 @@
         "yaml.schemas": {
                 "${workspaceFolder}/validation/module_schema.yaml": "${workspaceFolder}/src/modules/*/module.yaml"
         },
-        "[c]": {
-                "editor.defaultFormatter": "ms-vscode.cpptools"
-        },
-        "[cpp]": {
-                "editor.defaultFormatter": "ms-vscode.cpptools"
-        }
+        "ros.distro": "humble"
 }

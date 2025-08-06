@@ -60,10 +60,10 @@ sensor_gps_s GpsBlendingTest::getDefaultGpsData()
 	sensor_gps_s gps_data{};
 	gps_data.timestamp = _time_now_us - 10e3;
 	gps_data.time_utc_usec = 0;
-	gps_data.lat = 47e7;
-	gps_data.lon = 9e7;
-	gps_data.alt = 800e3;
-	gps_data.alt_ellipsoid = 800e3;
+	gps_data.latitude_deg = 47.0;
+	gps_data.longitude_deg = 9.0;
+	gps_data.altitude_msl_m = 800.0;
+	gps_data.altitude_ellipsoid_m = 800.0;
 	gps_data.s_variance_m_s = 0.2f;
 	gps_data.c_variance_rad = 0.5f;
 	gps_data.eph = 0.7f;
@@ -213,9 +213,9 @@ TEST_F(GpsBlendingTest, dualReceiverBlendingHPos)
 	EXPECT_FLOAT_EQ(gps_blending.getOutputGpsData().eph, gps_data1.eph); // TODO: should be greater than
 	EXPECT_EQ(gps_blending.getOutputGpsData().timestamp, gps_data0.timestamp);
 	EXPECT_EQ(gps_blending.getOutputGpsData().timestamp_sample, gps_data0.timestamp_sample);
-	EXPECT_EQ(gps_blending.getOutputGpsData().lat, gps_data0.lat);
-	EXPECT_EQ(gps_blending.getOutputGpsData().lon, gps_data0.lon);
-	EXPECT_EQ(gps_blending.getOutputGpsData().alt, gps_data0.alt);
+	EXPECT_EQ(gps_blending.getOutputGpsData().latitude_deg, gps_data0.latitude_deg);
+	EXPECT_EQ(gps_blending.getOutputGpsData().latitude_deg, gps_data0.latitude_deg);
+	EXPECT_EQ(gps_blending.getOutputGpsData().altitude_msl_m, gps_data0.altitude_msl_m);
 }
 
 TEST_F(GpsBlendingTest, dualReceiverFailover)
@@ -235,16 +235,14 @@ TEST_F(GpsBlendingTest, dualReceiverFailover)
 	const float duration_s = 10.f;
 	runSeconds(duration_s, gps_blending, gps_data1, 1);
 
-	// THEN: the primary instance should be selected even if
-	// not available. No data is then available
-	EXPECT_EQ(gps_blending.getSelectedGps(), 0);
+	// THEN: the secondary instance as the primary one is not available
+	EXPECT_EQ(gps_blending.getSelectedGps(), 1);
 	EXPECT_EQ(gps_blending.getNumberOfGpsSuitableForBlending(), 1);
-	EXPECT_FALSE(gps_blending.isNewOutputDataAvailable());
+	EXPECT_TRUE(gps_blending.isNewOutputDataAvailable());
 
 	// BUT WHEN: the data of the primary receiver is avaialbe
 	sensor_gps_s gps_data0 = getDefaultGpsData();
-	gps_blending.setGpsData(gps_data0, 0);
-	gps_blending.update(_time_now_us);
+	runSeconds(1.f, gps_blending, gps_data0, gps_data1);
 
 	// THEN: the primary instance is selected and the data
 	// is available
@@ -274,4 +272,50 @@ TEST_F(GpsBlendingTest, dualReceiverFailover)
 	// THEN: the primary receiver should be used again
 	EXPECT_EQ(gps_blending.getSelectedGps(), 0);
 	EXPECT_TRUE(gps_blending.isNewOutputDataAvailable());
+
+	// BUT IF: the secondary receiver has better metrics than the primary one
+	gps_data1.satellites_used = gps_data0.satellites_used + 2;
+
+	runSeconds(1.f, gps_blending, gps_data0, gps_data1);
+
+	// THEN: the selector shouldn't switch again as the primary one is available
+	EXPECT_EQ(gps_blending.getSelectedGps(), 0);
+	EXPECT_TRUE(gps_blending.isNewOutputDataAvailable());
+
+	// BUT IF: the primary receiver looses its fix
+	gps_data0.fix_type = 1;
+
+	runSeconds(1.f, gps_blending, gps_data0, gps_data1);
+
+	// THEN: the selector should switch as the primary one is unable to provide correct data
+	EXPECT_EQ(gps_blending.getSelectedGps(), 1);
+	EXPECT_TRUE(gps_blending.isNewOutputDataAvailable());
+}
+
+TEST_F(GpsBlendingTest, dualReceiverUTCTime)
+{
+	GpsBlending gps_blending;
+	sensor_gps_s gps_data0 = getDefaultGpsData();
+	sensor_gps_s gps_data1 = getDefaultGpsData();
+
+	// WHEN: Only GPS1 has a nonzero UTC time
+	gps_blending = GpsBlending();
+	gps_data1.time_utc_usec = 1700000000000000ULL;
+	gps_blending.setGpsData(gps_data0, 0);
+	gps_blending.setGpsData(gps_data1, 1);
+	gps_blending.setBlendingUseHPosAccuracy(true);
+	gps_blending.update(_time_now_us);
+	// THEN: GPS 1 time should be used
+	EXPECT_EQ(gps_blending.getOutputGpsData().time_utc_usec, gps_data1.time_utc_usec);
+
+	// WHEN: Both GPSes have a nonzero UTC time
+	gps_blending = GpsBlending();
+	gps_data0.time_utc_usec = 1700000000001000ULL;
+	gps_data1.time_utc_usec = 1700000000000000ULL;
+	gps_blending.setGpsData(gps_data0, 0);
+	gps_blending.setGpsData(gps_data1, 1);
+	gps_blending.setBlendingUseHPosAccuracy(true);
+	gps_blending.update(_time_now_us);
+	// THEN: The average of the two timestamps should be used
+	EXPECT_EQ(gps_blending.getOutputGpsData().time_utc_usec, 1700000000000500ULL);
 }

@@ -37,8 +37,8 @@
 using namespace matrix;
 using namespace time_literals;
 
-ActuatorEffectivenessHelicopter::ActuatorEffectivenessHelicopter(ModuleParams *parent)
-	: ModuleParams(parent)
+ActuatorEffectivenessHelicopter::ActuatorEffectivenessHelicopter(ModuleParams *parent, ActuatorType tail_actuator_type)
+	: ModuleParams(parent), _tail_actuator_type(tail_actuator_type)
 {
 	for (int i = 0; i < NUM_SWASH_PLATE_SERVOS_MAX; ++i) {
 		char buffer[17];
@@ -104,8 +104,7 @@ void ActuatorEffectivenessHelicopter::updateParams()
 	_geometry.yaw_sign = (yaw_ccw == 1) ? -1.f : 1.f;
 }
 
-bool
-ActuatorEffectivenessHelicopter::getEffectivenessMatrix(Configuration &configuration,
+bool ActuatorEffectivenessHelicopter::getEffectivenessMatrix(Configuration &configuration,
 		EffectivenessUpdateReason external_update)
 {
 	if (external_update == EffectivenessUpdateReason::NO_EXTERNAL_UPDATE) {
@@ -115,8 +114,8 @@ ActuatorEffectivenessHelicopter::getEffectivenessMatrix(Configuration &configura
 	// As the allocation is non-linear, we use updateSetpoint() instead of the matrix
 	configuration.addActuator(ActuatorType::MOTORS, Vector3f{}, Vector3f{});
 
-	// Tail (yaw) motor
-	configuration.addActuator(ActuatorType::MOTORS, Vector3f{}, Vector3f{});
+	// Tail (yaw) (either ESC or Servo)
+	configuration.addActuator(_tail_actuator_type, Vector3f{}, Vector3f{});
 
 	// N swash plate servos
 	_first_swash_plate_servo_index = configuration.num_actuators_matrix[0];
@@ -221,7 +220,6 @@ void ActuatorEffectivenessHelicopter::setSaturationFlag(float coeff, bool &posit
 
 void ActuatorEffectivenessHelicopter::getUnallocatedControl(int matrix_index, control_allocator_status_s &status)
 {
-
 	// Note: the values '-1', '1' and '0' are just to indicate a negative,
 	// positive or no saturation to the rate controller. The actual magnitude is not used.
 	if (_saturation_flags.roll_pos) {

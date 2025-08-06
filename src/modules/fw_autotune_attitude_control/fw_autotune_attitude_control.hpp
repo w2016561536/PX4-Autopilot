@@ -44,6 +44,7 @@
 #include <lib/perf/perf_counter.h>
 #include <lib/pid_design/pid_design.hpp>
 #include <lib/system_identification/system_identification.hpp>
+#include <lib/system_identification/signal_generator.hpp>
 #include <px4_platform_common/defines.h>
 #include <px4_platform_common/module.h>
 #include <px4_platform_common/module_params.h>
@@ -63,6 +64,12 @@
 #include <lib/systemlib/mavlink_log.h>
 
 using namespace time_literals;
+
+enum class SignalType : uint8_t {
+	kStep = 0,
+	kLinearSineSweep,
+	kLogSineSweep
+};
 
 class FwAutotuneAttitudeControl : public ModuleBase<FwAutotuneAttitudeControl>, public ModuleParams,
 	public px4::WorkItem
@@ -193,14 +200,23 @@ private:
 		(ParamFloat<px4::params::FW_RR_P>) _param_fw_rr_p,
 		(ParamFloat<px4::params::FW_RR_I>) _param_fw_rr_i,
 		(ParamFloat<px4::params::FW_RR_FF>) _param_fw_rr_ff,
+		(ParamFloat<px4::params::FW_R_RMAX>) _param_fw_r_rmax,
 		(ParamFloat<px4::params::FW_R_TC>) _param_fw_r_tc,
 		(ParamFloat<px4::params::FW_PR_P>) _param_fw_pr_p,
 		(ParamFloat<px4::params::FW_PR_I>) _param_fw_pr_i,
 		(ParamFloat<px4::params::FW_PR_FF>) _param_fw_pr_ff,
+		(ParamFloat<px4::params::FW_P_RMAX_POS>) _param_fw_p_rmax_pos,
+		(ParamFloat<px4::params::FW_P_RMAX_NEG>) _param_fw_p_rmax_neg,
 		(ParamFloat<px4::params::FW_P_TC>) _param_fw_p_tc,
 		(ParamFloat<px4::params::FW_YR_P>) _param_fw_yr_p,
 		(ParamFloat<px4::params::FW_YR_I>) _param_fw_yr_i,
-		(ParamFloat<px4::params::FW_YR_FF>) _param_fw_yr_ff
+		(ParamFloat<px4::params::FW_YR_FF>) _param_fw_yr_ff,
+		(ParamFloat<px4::params::FW_Y_RMAX>) _param_fw_y_rmax,
+
+		(ParamFloat<px4::params::FW_AT_SYSID_F0>) _param_fw_at_sysid_f0,
+		(ParamFloat<px4::params::FW_AT_SYSID_F1>) _param_fw_at_sysid_f1,
+		(ParamFloat<px4::params::FW_AT_SYSID_TIME>) _param_fw_sysid_time,
+		(ParamInt<px4::params::FW_AT_SYSID_TYPE>) _param_fw_sysid_signal_type
 	)
 
 	static constexpr float _publishing_dt_s = 100e-3f;

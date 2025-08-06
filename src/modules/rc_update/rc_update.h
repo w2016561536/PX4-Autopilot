@@ -89,6 +89,7 @@ public:
 
 	int print_status() override;
 
+protected:
 	static constexpr uint64_t VALID_DATA_MIN_INTERVAL_US{1_s / 3}; // assume valid RC input is at least 3 Hz
 
 	void Run() override;
@@ -109,7 +110,7 @@ public:
 	/**
 	 * Update our local parameter cache.
 	 */
-	void		parameters_updated();
+	void updateParams() override;
 
 	/**
 	 * Get and limit value for specified RC function. Returns NAN if not mapped.
@@ -171,6 +172,7 @@ public:
 	manual_control_switches_s _manual_switches_previous{};
 	manual_control_switches_s _manual_switches_last_publish{};
 	rc_channels_s _rc{};
+	bool _rc_calibrated{false};
 
 	rc_parameter_map_s _rc_parameter_map {};
 	float _param_rc_values[rc_parameter_map_s::RC_PARAM_MAP_NCHAN] {};	/**< parameter values for RC control */
@@ -228,6 +230,8 @@ public:
 
 		(ParamInt<px4::params::RC_FAILS_THR>) _param_rc_fails_thr,
 
+		(ParamInt<px4::params::RC_MAP_PAY_SW>) _param_rc_map_payload_sw,
+
 		(ParamFloat<px4::params::RC_LOITER_TH>) _param_rc_loiter_th,
 		(ParamFloat<px4::params::RC_OFFB_TH>) _param_rc_offb_th,
 		(ParamFloat<px4::params::RC_KILLSWITCH_TH>) _param_rc_killswitch_th,
@@ -236,6 +240,7 @@ public:
 		(ParamFloat<px4::params::RC_GEAR_TH>) _param_rc_gear_th,
 		(ParamFloat<px4::params::RC_RETURN_TH>) _param_rc_return_th,
 		(ParamFloat<px4::params::RC_ENG_MOT_TH>) _param_rc_eng_mot_th,
+		(ParamFloat<px4::params::RC_PAYLOAD_TH>) _param_rc_payload_th,
 
 		(ParamInt<px4::params::RC_CHAN_CNT>) _param_rc_chan_cnt
 	)

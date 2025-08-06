@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2015-2020 Estimation and Control Library (ECL). All rights reserved.
+ *   Copyright (c) 2015-2023 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -12,7 +12,7 @@
  *    notice, this list of conditions and the following disclaimer in
  *    the documentation and/or other materials provided with the
  *    distribution.
- * 3. Neither the name ECL nor the names of its contributors may be
+ * 3. Neither the name PX4 nor the names of its contributors may be
  *    used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -68,15 +68,13 @@ void Ekf::controlFusionModes(const imuSample &imu_delayed)
 	// monitor the tilt alignment
 	if (!_control_status.flags.tilt_align) {
 		// whilst we are aligning the tilt, monitor the variances
-		const Vector3f angle_err_var_vec = calcRotVecVariances();
-
-		// Once the tilt variances have reduced to equivalent of 3deg uncertainty
+		// Once the tilt variances have reduced to equivalent of 3 deg uncertainty
 		// and declare the tilt alignment complete
-		if ((angle_err_var_vec(0) + angle_err_var_vec(1)) < sq(math::radians(3.0f))) {
+		if (getTiltVariance() < sq(math::radians(3.f))) {
 			_control_status.flags.tilt_align = true;
 
 			// send alignment status message to the console
-			const char *height_source = nullptr;
+			const char *height_source = "unknown";
 
 			if (_control_status.flags.baro_hgt) {
 				height_source = "baro";
@@ -89,27 +87,35 @@ void Ekf::controlFusionModes(const imuSample &imu_delayed)
 
 			} else if (_control_status.flags.rng_hgt) {
 				height_source = "rng";
-
-			} else {
-				height_source = "unknown";
-
 			}
 
-			if (height_source) {
-				ECL_INFO("%llu: EKF aligned, (%s hgt, IMU buf: %i, OBS buf: %i)",
-					 (unsigned long long)imu_delayed.time_us, height_source, (int)_imu_buffer_length, (int)_obs_buffer_length);
-			}
+			ECL_INFO("%llu: EKF aligned, (%s hgt, IMU buf: %i, OBS buf: %i)",
+				 (unsigned long long)imu_delayed.time_us, height_source, (int)_imu_buffer_length, (int)_obs_buffer_length);
+
+			ECL_DEBUG("tilt aligned, roll: %.3f, pitch %.3f, yaw: %.3f",
+				  (double)matrix::Eulerf(_state.quat_nominal).phi(),
+				  (double)matrix::Eulerf(_state.quat_nominal).theta(),
+				  (double)matrix::Eulerf(_state.quat_nominal).psi()
+				 );
 		}
 	}
 
+#if defined(CONFIG_EKF2_MAGNETOMETER)
 	// control use of observations for aiding
 	controlMagFusion();
+#endif // CONFIG_EKF2_MAGNETOMETER
 
 #if defined(CONFIG_EKF2_OPTICAL_FLOW)
 	controlOpticalFlowFusion(imu_delayed);
 #endif // CONFIG_EKF2_OPTICAL_FLOW
 
+#if defined(CONFIG_EKF2_GNSS)
 	controlGpsFusion(imu_delayed);
+#endif // CONFIG_EKF2_GNSS
+
+#if defined(CONFIG_EKF2_AUX_GLOBAL_POSITION) && defined(MODULE_NAME)
+	_aux_global_position.update(*this, imu_delayed);
+#endif // CONFIG_EKF2_AUX_GLOBAL_POSITION
 
 #if defined(CONFIG_EKF2_AIRSPEED)
 	controlAirDataFusion(imu_delayed);
@@ -120,11 +126,14 @@ void Ekf::controlFusionModes(const imuSample &imu_delayed)
 #endif // CONFIG_EKF2_SIDESLIP
 
 #if defined(CONFIG_EKF2_DRAG_FUSION)
-	controlDragFusion();
+	controlDragFusion(imu_delayed);
 #endif // CONFIG_EKF2_DRAG_FUSION
 
 	controlHeightFusion(imu_delayed);
+
+#if defined(CONFIG_EKF2_GRAVITY_FUSION)
 	controlGravityFusion(imu_delayed);
+#endif // CONFIG_EKF2_GRAVITY_FUSION
 
 #if defined(CONFIG_EKF2_EXTERNAL_VISION)
 	// Additional data odometry data from an external estimator can be fused.
@@ -138,7 +147,11 @@ void Ekf::controlFusionModes(const imuSample &imu_delayed)
 
 	controlZeroInnovationHeadingUpdate();
 
-	controlZeroVelocityUpdate();
+	_zero_velocity_update.update(*this, imu_delayed);
+
+	if (_params.imu_ctrl & static_cast<int32_t>(ImuCtrl::GyroBias)) {
+		_zero_gyro_update.update(*this, imu_delayed);
+	}
 
 	// Fake position measurement for constraining drift when no other velocity or position measurements
 	controlFakePosFusion();

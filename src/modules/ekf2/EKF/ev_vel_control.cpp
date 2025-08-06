@@ -80,8 +80,7 @@ void Ekf::controlEvVelFusion(const extVisionSample &ev_sample, const bool common
 
 		} else {
 			// rotate EV to the EKF reference frame
-			const Quatf q_error((_state.quat_nominal * ev_sample.quat.inversed()).normalized());
-			const Dcmf R_ev_to_ekf = Dcmf(q_error);
+			const Dcmf R_ev_to_ekf = Dcmf(_ev_q_error_filt.getState());
 
 			vel = R_ev_to_ekf * ev_sample.vel - vel_offset_earth;
 			vel_cov = R_ev_to_ekf * matrix::diag(ev_sample.velocity_var) * R_ev_to_ekf.transpose();
@@ -107,12 +106,14 @@ void Ekf::controlEvVelFusion(const extVisionSample &ev_sample, const bool common
 		break;
 	}
 
+#if defined(CONFIG_EKF2_GNSS)
 	// increase minimum variance if GPS active (position reference)
 	if (_control_status.flags.gps) {
 		for (int i = 0; i < 2; i++) {
 			vel_cov(i, i) = math::max(vel_cov(i, i), sq(_params.gps_vel_noise));
 		}
 	}
+#endif // CONFIG_EKF2_GNSS
 
 	const Vector3f measurement{vel};
 
@@ -139,7 +140,6 @@ void Ekf::controlEvVelFusion(const extVisionSample &ev_sample, const bool common
 			&& ((Vector3f(aid_src.test_ratio).max() < 0.1f) || !isHorizontalAidingActive());
 
 	if (_control_status.flags.ev_vel) {
-		aid_src.fusion_enabled = true;
 
 		if (continuing_conditions_passing) {
 

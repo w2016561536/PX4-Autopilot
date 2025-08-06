@@ -120,10 +120,19 @@
 #include "streams/VFR_HUD.hpp"
 #include "streams/VIBRATION.hpp"
 #include "streams/WIND_COV.hpp"
+#if defined(MAVLINK_MSG_ID_FIGURE_EIGHT_EXECUTION_STATUS)
+#include "streams/FIGURE_EIGHT_EXECUTION_STATUS.hpp"
+#endif // MAVLINK_MSG_ID_FIGURE_EIGHT_EXECUTION_STATUS
+
+#ifdef MAVLINK_MSG_ID_AVAILABLE_MODES // Only defined if development.xml is used
+#include "streams/AVAILABLE_MODES.hpp"
+#include "streams/CURRENT_MODE.hpp"
+#endif
 
 #if !defined(CONSTRAINED_FLASH)
 # include "streams/ADSB_VEHICLE.hpp"
 # include "streams/AUTOPILOT_STATE_FOR_GIMBAL_DEVICE.hpp"
+# include "streams/BATTERY_INFO.hpp"
 # include "streams/DEBUG.hpp"
 # include "streams/DEBUG_FLOAT_ARRAY.hpp"
 # include "streams/DEBUG_VECT.hpp"
@@ -131,6 +140,7 @@
 # include "streams/GIMBAL_DEVICE_SET_ATTITUDE.hpp"
 # include "streams/GIMBAL_MANAGER_INFORMATION.hpp"
 # include "streams/GIMBAL_MANAGER_STATUS.hpp"
+# include "streams/GIMBAL_DEVICE_INFORMATION.hpp"
 # include "streams/GPS2_RAW.hpp"
 # include "streams/HIGH_LATENCY2.hpp"
 # include "streams/LINK_NODE_STATUS.hpp"
@@ -138,10 +148,8 @@
 # include "streams/ODOMETRY.hpp"
 # include "streams/SCALED_PRESSURE2.hpp"
 # include "streams/SCALED_PRESSURE3.hpp"
-# include "streams/SMART_BATTERY_INFO.hpp"
 # include "streams/UAVIONIX_ADSB_OUT_CFG.hpp"
 # include "streams/UAVIONIX_ADSB_OUT_DYNAMIC.hpp"
-# include "streams/UTM_GLOBAL_POSITION.hpp"
 #endif // !CONSTRAINED_FLASH
 
 // ensure PX4 rotation enum and MAV_SENSOR_ROTATION align
@@ -228,7 +236,12 @@ static_assert(MAV_SENSOR_ROTATION_ROLL_90_PITCH_68_YAW_293 == static_cast<MAV_SE
 static_assert(MAV_SENSOR_ROTATION_PITCH_315 == static_cast<MAV_SENSOR_ORIENTATION>(ROTATION_PITCH_315), "Pitch: 315");
 static_assert(MAV_SENSOR_ROTATION_ROLL_90_PITCH_315 == static_cast<MAV_SENSOR_ORIENTATION>(ROTATION_ROLL_90_PITCH_315),
 	      "Roll: 90, Pitch: 315");
+
+// Note: Update the number (41, as of writing) below to the number of 'normal' rotation enums in MAVLink spec:
+// https://mavlink.io/en/messages/common.html#MAV_SENSOR_ORIENTATION
 static_assert(41 == ROTATION_MAX, "Keep MAV_SENSOR_ROTATION and PX4 Rotation in sync");
+
+static_assert(MAV_SENSOR_ROTATION_CUSTOM == static_cast<MAV_SENSOR_ORIENTATION>(ROTATION_CUSTOM), "Custom Rotation");
 
 
 static const StreamListItem streams_list[] = {
@@ -241,13 +254,13 @@ static const StreamListItem streams_list[] = {
 #if defined(COMMAND_LONG_HPP)
 	create_stream_list_item<MavlinkStreamCommandLong>(),
 #endif // COMMAND_LONG_HPP
-#if defined(SYSTEM_TIME_HPP)
+#if defined(SYS_STATUS_HPP)
 	create_stream_list_item<MavlinkStreamSysStatus>(),
-#endif // SYSTEM_TIME_HPP
+#endif // SYS_STATUS_HPP
 	create_stream_list_item<MavlinkStreamBatteryStatus>(),
-#if defined(SMART_BATTERY_INFO_HPP)
-	create_stream_list_item<MavlinkStreamSmartBatteryInfo>(),
-#endif // SMART_BATTERY_INFO_HPP
+#if defined(BATTERY_INFO_HPP)
+	create_stream_list_item<MavlinkStreamBatteryInfo>(),
+#endif // BATTERY_INFO_HPP
 #if defined(HIGHRES_IMU_HPP)
 	create_stream_list_item<MavlinkStreamHighresIMU>(),
 #endif // HIGHRES_IMU_HPP
@@ -329,6 +342,9 @@ static const StreamListItem streams_list[] = {
 #if defined(GIMBAL_MANAGER_INFORMATION_HPP)
 	create_stream_list_item<MavlinkStreamGimbalManagerInformation>(),
 #endif // GIMBAL_MANAGER_INFORMATION_HPP
+#if defined(GIMBAL_DEVICE_INFORMATION_HPP)
+	create_stream_list_item<MavlinkStreamGimbalDeviceInformation>(),
+#endif // GIMBAL_DEVICE_INFORMATION_HPP
 #if defined(GIMBAL_MANAGER_STATUS_HPP)
 	create_stream_list_item<MavlinkStreamGimbalManagerStatus>(),
 #endif // GIMBAL_MANAGER_STATUS_HPP
@@ -402,9 +418,6 @@ static const StreamListItem streams_list[] = {
 #if defined(ADSB_VEHICLE_HPP)
 	create_stream_list_item<MavlinkStreamADSBVehicle>(),
 #endif // ADSB_VEHICLE_HPP
-#if defined(UTM_GLOBAL_POSITION_HPP)
-	create_stream_list_item<MavlinkStreamUTMGlobalPosition>(),
-#endif // UTM_GLOBAL_POSITION_HPP
 #if defined(COLLISION_HPP)
 	create_stream_list_item<MavlinkStreamCollision>(),
 #endif // COLLISION_HPP
@@ -426,6 +439,9 @@ static const StreamListItem streams_list[] = {
 #if defined(ORBIT_EXECUTION_STATUS_HPP)
 	create_stream_list_item<MavlinkStreamOrbitStatus>(),
 #endif // ORBIT_EXECUTION_STATUS_HPP
+#if defined(FIGURE_EIGHT_EXECUTION_STATUS_HPP)
+	create_stream_list_item<MavlinkStreamFigureEightStatus>(),
+#endif // FIGURE_EIGHT_EXECUTION_STATUS_HPP
 #if defined(OBSTACLE_DISTANCE_HPP)
 	create_stream_list_item<MavlinkStreamObstacleDistance>(),
 #endif // OBSTACLE_DISTANCE_HPP
@@ -481,8 +497,14 @@ static const StreamListItem streams_list[] = {
 	create_stream_list_item<MavlinkStreamUavionixADSBOutCfg>(),
 #endif // UAVIONIX_ADSB_OUT_CFG_HPP
 #if defined(UAVIONIX_ADSB_OUT_DYNAMIC_HPP)
-	create_stream_list_item<MavlinkStreamUavionixADSBOutDynamic>()
+	create_stream_list_item<MavlinkStreamUavionixADSBOutDynamic>(),
 #endif // UAVIONIX_ADSB_OUT_DYNAMIC_HPP
+#if defined(AVAILABLE_MODES_HPP)
+	create_stream_list_item<MavlinkStreamAvailableModes>(),
+#endif // AVAILABLE_MODES_HPP
+#if defined(CURRENT_MODE_HPP)
+	create_stream_list_item<MavlinkStreamCurrentMode>(),
+#endif // CURRENT_MODE_HPP
 };
 
 const char *get_stream_name(const uint16_t msg_id)

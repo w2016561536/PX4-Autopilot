@@ -95,8 +95,7 @@ void Ekf::controlEvPosFusion(const extVisionSample &ev_sample, const bool common
 
 		} else {
 			// rotate EV to the EKF reference frame
-			const Quatf q_error((_state.quat_nominal * ev_sample.quat.inversed()).normalized());
-			const Dcmf R_ev_to_ekf = Dcmf(q_error);
+			const Dcmf R_ev_to_ekf = Dcmf(_ev_q_error_filt.getState());
 
 			pos = R_ev_to_ekf * ev_sample.pos - pos_offset_earth;
 			pos_cov = R_ev_to_ekf * matrix::diag(ev_sample.position_var) * R_ev_to_ekf.transpose();
@@ -126,12 +125,14 @@ void Ekf::controlEvPosFusion(const extVisionSample &ev_sample, const bool common
 		break;
 	}
 
+#if defined(CONFIG_EKF2_GNSS)
 	// increase minimum variance if GPS active (position reference)
 	if (_control_status.flags.gps) {
 		for (int i = 0; i < 2; i++) {
 			pos_cov(i, i) = math::max(pos_cov(i, i), sq(_params.gps_pos_noise));
 		}
 	}
+#endif // CONFIG_EKF2_GNSS
 
 	const Vector2f measurement{pos(0), pos(1)};
 
@@ -165,7 +166,7 @@ void Ekf::controlEvPosFusion(const extVisionSample &ev_sample, const bool common
 	if (measurement_valid && quality_sufficient) {
 		_ev_pos_b_est.setMaxStateNoise(Vector2f(sqrtf(measurement_var(0)), sqrtf(measurement_var(1))));
 		_ev_pos_b_est.setProcessNoiseSpectralDensity(_params.ev_hgt_bias_nsd); // TODO
-		_ev_pos_b_est.fuseBias(measurement - Vector2f(_state.pos.xy()), measurement_var + Vector2f(P(7, 7), P(8, 8)));
+		_ev_pos_b_est.fuseBias(measurement - Vector2f(_state.pos.xy()), measurement_var + Vector2f(getStateVariance<State::pos>()));
 	}
 
 	if (!measurement_valid) {
@@ -176,7 +177,6 @@ void Ekf::controlEvPosFusion(const extVisionSample &ev_sample, const bool common
 			&& continuing_conditions_passing;
 
 	if (_control_status.flags.ev_pos) {
-		aid_src.fusion_enabled = true;
 
 		if (continuing_conditions_passing) {
 			const bool bias_estimator_change = (bias_fusion_was_active != _ev_pos_b_est.fusionActive());

@@ -44,6 +44,11 @@ def create_pdf_report(ulog: ULog, multi_instance: int, output_plot_filename: str
         raise PreconditionError('could not find estimator_states instance', multi_instance)
 
     try:
+        estimator_sensor_bias = ulog.get_dataset('estimator_sensor_bias', multi_instance).data
+    except:
+        raise PreconditionError('could not find estimator_sensor_bias instance', multi_instance)
+
+    try:
         estimator_innovations = ulog.get_dataset('estimator_innovations', multi_instance).data
         estimator_innovation_variances = ulog.get_dataset('estimator_innovation_variances', multi_instance).data
         innovation_data = estimator_innovations
@@ -222,7 +227,7 @@ def create_pdf_report(ulog: ULog, multi_instance: int, output_plot_filename: str
         data_plot = CheckFlagsPlot(
             status_flags_time, estimator_status_flags, [['reject_hor_vel', 'reject_hor_pos'], ['reject_ver_vel', 'reject_ver_pos',
                                                                                'reject_hagl'],
-                                       ['reject_mag_x', 'reject_mag_y', 'reject_mag_z',
+                                       ['fs_bad_mag_x', 'fs_bad_mag_y', 'fs_bad_mag_z',
                                         'reject_yaw'], ['reject_airspeed'], ['reject_sideslip'],
                                        ['reject_optflow_x',
                                         'reject_optflow_y']], x_label='time (sec)',
@@ -299,21 +304,21 @@ def create_pdf_report(ulog: ULog, multi_instance: int, output_plot_filename: str
         data_plot.save()
         data_plot.close()
 
-        # Plot the delta angle bias estimates
+        # Plot the gyro bias estimates
         data_plot = CheckFlagsPlot(
-            1e-6 * estimator_states['timestamp'], estimator_states,
-            [['states[10]'], ['states[11]'], ['states[12]']],
-            x_label='time (sec)', y_labels=['X (rad)', 'Y (rad)', 'Z (rad)'],
-            plot_title='Delta Angle Bias Estimates', annotate=False, pdf_handle=pdf_pages)
+            1e-6 * estimator_sensor_bias['timestamp'], estimator_sensor_bias,
+            [['gyro_bias[0]'], ['gyro_bias[1]'], ['gyro_bias[2]']],
+            x_label='time (sec)', y_labels=['X (rad/s)', 'Y (rad/s)', 'Z (rad/s)'],
+            plot_title='Gyro Bias Estimates', annotate=False, pdf_handle=pdf_pages)
         data_plot.save()
         data_plot.close()
 
-        # Plot the delta velocity bias estimates
+        # Plot the accel bias estimates
         data_plot = CheckFlagsPlot(
-            1e-6 * estimator_states['timestamp'], estimator_states,
-            [['states[13]'], ['states[14]'], ['states[15]']],
-            x_label='time (sec)', y_labels=['X (m/s)', 'Y (m/s)', 'Z (m/s)'],
-            plot_title='Delta Velocity Bias Estimates', annotate=False, pdf_handle=pdf_pages)
+            1e-6 * estimator_sensor_bias['timestamp'], estimator_sensor_bias,
+            [['accel_bias[0]'], ['accel_bias[1]'], ['accel_bias[2]']],
+            x_label='time (sec)', y_labels=['X (m/s^2)', 'Y (m/s^2)', 'Z (m/s^2)'],
+            plot_title='Accel Bias Estimates', annotate=False, pdf_handle=pdf_pages)
         data_plot.save()
         data_plot.close()
 

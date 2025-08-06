@@ -78,9 +78,12 @@ MissionFeasibilityChecker::checkMissionFeasible(const mission_s &mission)
 
 	for (size_t i = 0; i < mission.count; i++) {
 		struct mission_item_s missionitem = {};
-		const ssize_t len = sizeof(struct mission_item_s);
 
-		if (dm_read((dm_item_t)mission.dataman_id, i, &missionitem, len) != len) {
+		bool success = _dataman_client.readSync((dm_item_t)mission.mission_dataman_id, i,
+							reinterpret_cast<uint8_t *>(&missionitem),
+							sizeof(mission_item_s));
+
+		if (!success) {
 			_navigator->get_mission_result()->warning = true;
 			/* not supposed to happen unless the datamanager can't access the SD card, etc. */
 			return false;
@@ -95,7 +98,7 @@ MissionFeasibilityChecker::checkMissionFeasible(const mission_s &mission)
 
 	failed |= _feasibility_checker.someCheckFailed();
 
-	failed |= !checkGeofence(mission, _navigator->get_home_position()->alt, home_valid);
+	failed |= !checkMissionAgainstGeofence(mission, _navigator->get_home_position()->alt, home_valid);
 
 	_navigator->get_mission_result()->warning = failed;
 
@@ -103,7 +106,7 @@ MissionFeasibilityChecker::checkMissionFeasible(const mission_s &mission)
 }
 
 bool
-MissionFeasibilityChecker::checkGeofence(const mission_s &mission, float home_alt, bool home_valid)
+MissionFeasibilityChecker::checkMissionAgainstGeofence(const mission_s &mission, float home_alt, bool home_valid)
 {
 	if (_navigator->get_geofence().isHomeRequired() && !home_valid) {
 		mavlink_log_critical(_navigator->get_mavlink_log_pub(), "Geofence requires valid home position\t");
@@ -116,9 +119,12 @@ MissionFeasibilityChecker::checkGeofence(const mission_s &mission, float home_al
 	if (_navigator->get_geofence().valid()) {
 		for (size_t i = 0; i < mission.count; i++) {
 			struct mission_item_s missionitem = {};
-			const ssize_t len = sizeof(missionitem);
 
-			if (dm_read((dm_item_t)mission.dataman_id, i, &missionitem, len) != len) {
+			bool success = _dataman_client.readSync((dm_item_t)mission.mission_dataman_id, i,
+								reinterpret_cast<uint8_t *>(&missionitem),
+								sizeof(mission_item_s));
+
+			if (!success) {
 				/* not supposed to happen unless the datamanager can't access the SD card, etc. */
 				return false;
 			}
@@ -133,7 +139,8 @@ MissionFeasibilityChecker::checkGeofence(const mission_s &mission, float home_al
 			// Geofence function checks against home altitude amsl
 			missionitem.altitude = missionitem.altitude_is_relative ? missionitem.altitude + home_alt : missionitem.altitude;
 
-			if (MissionBlock::item_contains_position(missionitem) && !_navigator->get_geofence().check(missionitem)) {
+			if (MissionBlock::item_contains_position(missionitem) && !_navigator->get_geofence().checkPointAgainstAllGeofences(
+				    missionitem.lat, missionitem.lon, missionitem.altitude)) {
 
 				mavlink_log_critical(_navigator->get_mavlink_log_pub(), "Geofence violation for waypoint %zu\t", i + 1);
 				events::send<int16_t>(events::ID("navigator_mis_geofence_violation"), {events::Log::Error, events::LogInternal::Info},

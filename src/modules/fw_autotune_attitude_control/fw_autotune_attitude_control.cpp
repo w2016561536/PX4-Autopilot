@@ -75,6 +75,7 @@ bool FwAutotuneAttitudeControl::init()
 
 void FwAutotuneAttitudeControl::reset()
 {
+	_param_fw_at_start.reset();
 }
 
 void FwAutotuneAttitudeControl::Run()
@@ -180,7 +181,11 @@ void FwAutotuneAttitudeControl::Run()
 		Vector3f kid = pid_design::computePidGmvc(num_design, den, _sample_interval_avg, 0.2f, 0.f, 0.4f);
 		_kiff(0) = kid(0);
 		_kiff(1) = kid(1);
-		_attitude_p = 8.f / (M_PI_F * (_kiff(2) + _kiff(0))); // Maximum control power at an attitude error of pi/8
+
+		// To compute the attitude gain, use the following empirical rule:
+		// "An error of 60 degrees should produce the maximum control output"
+		// or K_att * (K_rate + K_ff) * rad(60) = 1
+		_attitude_p = math::constrain(1.f / (math::radians(60.f) * (_kiff(0) + _kiff(2))), 1.f, 5.f);
 
 		const Vector<float, 5> &coeff_var = _sys_id.getVariances();
 		const Vector3f rate_sp = _sys_id.areFiltersInitialized()
@@ -615,22 +620,52 @@ void FwAutotuneAttitudeControl::saveGainsToParams()
 
 const Vector3f FwAutotuneAttitudeControl::getIdentificationSignal()
 {
-	if (_steps_counter > _max_steps) {
-		_signal_sign = (_signal_sign == 1) ? 0 : 1;
-		_steps_counter = 0;
 
-		if (_max_steps > 1) {
-			_max_steps--;
 
-		} else {
-			_max_steps = 5;
+	const hrt_abstime now = hrt_absolute_time();
+	const float t = static_cast<float>(now - _state_start_time) * 1e-6f;
+	float signal = 0.0f;
+
+	switch (_param_fw_sysid_signal_type.get()) {
+	case  static_cast<int32_t>(SignalType::kStep): {
+			if (_steps_counter > _max_steps) {
+				_signal_sign = (_signal_sign == 1) ? 0 : 1;
+				_steps_counter = 0;
+
+				if (_max_steps > 1) {
+					_max_steps--;
+
+				} else {
+					_max_steps = 5;
+				}
+			}
+
+			_steps_counter++;
+			signal = float(_signal_sign);
 		}
+		break;
+
+	case static_cast<int32_t>(SignalType::kLinearSineSweep): {
+
+			signal = signal_generator::getLinearSineSweep(_param_fw_at_sysid_f0.get(),
+					_param_fw_at_sysid_f1.get(),
+					_param_fw_sysid_time.get(), t);
+		}
+		break;
+
+	case static_cast<int32_t>(SignalType::kLogSineSweep): {
+			signal = signal_generator::getLogSineSweep(_param_fw_at_sysid_f0.get(), _param_fw_at_sysid_f1.get(),
+					_param_fw_sysid_time.get(), t);
+		}
+		break;
+
+	default:
+		signal = 0.f;
+		break;
 	}
 
-	_steps_counter++;
 
-	const float signal = float(_signal_sign) * _param_fw_at_sysid_amp.get();
-
+	signal *= _param_fw_at_sysid_amp.get();
 	Vector3f rate_sp{};
 
 	float signal_scaled = 0.f;
@@ -638,19 +673,21 @@ const Vector3f FwAutotuneAttitudeControl::getIdentificationSignal()
 	if (_state == state::roll || _state == state::test) {
 		// Scale the signal such that the attitude controller is
 		// able to cancel it completely at an attitude error of pi/8
-		signal_scaled = signal * M_PI_F / (8.f * _param_fw_r_tc.get());
+		signal_scaled = math::min(signal * M_PI_F / (8.f * _param_fw_r_tc.get()), math::radians(_param_fw_r_rmax.get()));
 		rate_sp(0) = signal_scaled - _signal_filter.getState();
 	}
 
 	if (_state ==  state::pitch || _state == state::test) {
-		signal_scaled = signal * M_PI_F / (8.f * _param_fw_p_tc.get());
+		const float pitch_rate_max_deg = math::min(_param_fw_p_rmax_pos.get(), _param_fw_p_rmax_neg.get());
+		signal_scaled = math::min(signal * M_PI_F / (8.f * _param_fw_p_tc.get()), math::radians(pitch_rate_max_deg));
 		rate_sp(1) = signal_scaled - _signal_filter.getState();
 
 	}
 
 	if (_state ==  state::yaw) {
 		// Do not send a signal that produces more than a full deflection of the rudder
-		signal_scaled = math::min(signal, 1.f / (_param_fw_yr_ff.get() + _param_fw_yr_p.get()));
+		signal_scaled = math::min(signal, 1.f / (_param_fw_yr_ff.get() + _param_fw_yr_p.get()),
+					  math::radians(_param_fw_y_rmax.get()));
 		rate_sp(2) = signal_scaled - _signal_filter.getState();
 	}
 
