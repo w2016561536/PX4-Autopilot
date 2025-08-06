@@ -454,8 +454,6 @@ bool Ekf::isTerrainEstimateValid() const
 	}
 #endif // CONFIG_EKF2_RANGE_FINDER
 
-#endif // CONFIG_EKF2_RANGE_FINDER
-
 #if defined(CONFIG_EKF2_OPTICAL_FLOW)
 
 	// we have been fusing optical flow measurements for terrain estimation within the last 5 seconds

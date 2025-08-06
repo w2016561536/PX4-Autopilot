@@ -45,7 +45,7 @@
 
 #include <sys/types.h>
 #include <stdint.h>
-#include <crc32.h>
+#include <nuttx/crc32.h>
 
 // Needed for Linux
 #define FAR

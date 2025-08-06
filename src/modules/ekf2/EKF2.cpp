@@ -544,7 +544,7 @@ void EKF2::Run()
 				if ((imu.accel_calibration_count != _accel_calibration_count)
 				    || (imu.accel_device_id != _device_id_accel)) {
 
-					PX4_WARN("%d - resetting accelerometer bias", _instance);
+					PX4_DEBUG("%d - resetting accelerometer bias", _instance);
 					_device_id_accel = imu.accel_device_id;
 
 					_ekf.resetAccelBias();
@@ -557,7 +557,7 @@ void EKF2::Run()
 				if ((imu.gyro_calibration_count != _gyro_calibration_count)
 				    || (imu.gyro_device_id != _device_id_gyro)) {
 
-					PX4_WARN("%d - resetting rate gyro bias", _instance);
+					PX4_DEBUG("%d - resetting rate gyro bias", _instance);
 					_device_id_gyro = imu.gyro_device_id;
 
 					_ekf.resetGyroBias();
@@ -597,7 +597,7 @@ void EKF2::Run()
 
 			if (sensor_combined.accel_calibration_count != _accel_calibration_count) {
 
-				PX4_WARN("%d - resetting accelerometer bias", _instance);
+				PX4_DEBUG("%d - resetting accelerometer bias", _instance);
 
 				_ekf.resetAccelBias();
 				_accel_calibration_count = sensor_combined.accel_calibration_count;
@@ -608,7 +608,7 @@ void EKF2::Run()
 
 			if (sensor_combined.gyro_calibration_count != _gyro_calibration_count) {
 
-				PX4_WARN("%d - resetting rate gyro bias", _instance);
+				PX4_DEBUG("%d - resetting rate gyro bias", _instance);
 
 				_ekf.resetGyroBias();
 				_gyro_calibration_count = sensor_combined.gyro_calibration_count;
@@ -1334,10 +1334,6 @@ void EKF2::PublishInnovations(const hrt_abstime &timestamp)
 		_preflt_checker.setUsingGpsAiding(_ekf.control_status_flags().gps);
 #if defined(CONFIG_EKF2_OPTICAL_FLOW)
 		_preflt_checker.setUsingFlowAiding(_ekf.control_status_flags().opt_flow);
-
-		// set dist bottom to scale flow innovation
-		const float dist_bottom = _ekf.getTerrainVertPos() - _ekf.getPosition()(2);
-		_preflt_checker.setDistBottom(dist_bottom);
 #endif // CONFIG_EKF2_OPTICAL_FLOW
 
 #if defined(CONFIG_EKF2_TERRAIN) && defined(CONFIG_EKF2_OPTICAL_FLOW)
@@ -2149,14 +2145,14 @@ void EKF2::UpdateBaroSample(ekf2_timestamps_s &ekf2_timestamps)
 		// check if barometer has changed
 		if (airdata.baro_device_id != _device_id_baro) {
 			if (_device_id_baro != 0) {
-				PX4_WARN("%d - baro sensor ID changed %" PRIu32 " -> %" PRIu32, _instance, _device_id_baro, airdata.baro_device_id);
+				PX4_DEBUG("%d - baro sensor ID changed %" PRIu32 " -> %" PRIu32, _instance, _device_id_baro, airdata.baro_device_id);
 			}
 
 			reset = true;
 
 		} else if (airdata.calibration_count != _baro_calibration_count) {
 			// existing calibration has changed, reset saved baro bias
-			PX4_WARN("%d - baro %" PRIu32 " calibration updated, resetting bias", _instance, _device_id_baro);
+			PX4_DEBUG("%d - baro %" PRIu32 " calibration updated, resetting bias", _instance, _device_id_baro);
 			reset = true;
 		}
 
@@ -2448,14 +2444,14 @@ void EKF2::UpdateMagSample(ekf2_timestamps_s &ekf2_timestamps)
 		// check if magnetometer has changed
 		if (magnetometer.device_id != _device_id_mag) {
 			if (_device_id_mag != 0) {
-				PX4_WARN("%d - mag sensor ID changed %" PRIu32 " -> %" PRIu32, _instance, _device_id_mag, magnetometer.device_id);
+				PX4_DEBUG("%d - mag sensor ID changed %" PRIu32 " -> %" PRIu32, _instance, _device_id_mag, magnetometer.device_id);
 			}
 
 			reset = true;
 
 		} else if (magnetometer.calibration_count != _mag_calibration_count) {
 			// existing calibration has changed, reset saved mag bias
-			PX4_WARN("%d - mag %" PRIu32 " calibration updated, resetting bias", _instance, _device_id_mag);
+			PX4_DEBUG("%d - mag %" PRIu32 " calibration updated, resetting bias", _instance, _device_id_mag);
 			reset = true;
 		}
 
@@ -2820,7 +2816,7 @@ int EKF2::task_spawn(int argc, char *argv[])
 									multi_instances_allocated++;
 									ekf2_instance_created[imu][mag] = true;
 
-									PX4_WARN("starting instance %d, IMU:%" PRIu8 " (%" PRIu32 "), MAG:%" PRIu8 " (%" PRIu32 ")", actual_instance,
+									PX4_DEBUG("starting instance %d, IMU:%" PRIu8 " (%" PRIu32 "), MAG:%" PRIu8 " (%" PRIu32 ")", actual_instance,
 										  imu, vehicle_imu_sub.get().accel_device_id,
 										  mag, vehicle_mag_sub.get().device_id);
 
