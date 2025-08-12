@@ -591,7 +591,7 @@ autosave_worker(void *arg)
 {
 	bool disabled = false;
 
-	if (!param_get_default_file()) {
+	if ((!param_get_default_file()) || true) {
 		// In case we save to FLASH, defer param writes until disarmed,
 		// as writing to FLASH can stall the entire CPU (in rare cases around 300ms on STM32F7)
 		uORB::SubscriptionData<actuator_armed_s> armed_sub{ORB_ID(actuator_armed)};
