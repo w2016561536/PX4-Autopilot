@@ -61,34 +61,26 @@
 #define BOARD_ARMED_STATE_LED  LED_RED
 
 
-//#define GPIO_SENSORS_3V3_EN           (GPIO_OUTPUT | 12)
-
 #define HRT_TIMER                    0  /* use timer 3 for the HRT */
 
 #define BOARD_SPI_BUS_MAX_BUS_ITEMS 4
-//#define PRINTF_LOG
 
 
 /**
  * ADC channels:
  * These are the channel numbers of the ADCs of the microcontroller that can be used by the Px4 Firmware in the adc driver.
  */
-#define ADC_5V_RAIL_SENSE_IO		36
-#define ADC_BATTERY_VOLTAGE_CHANNEL_IO	39
-#define ADC_BATTERY_CURRENT_CHANNEL_IO	34
 
-#define ADC_5V_RAIL_SENSE            	0
-#define ADC_BATTERY_VOLTAGE_CHANNEL    	3
-#define ADC_BATTERY_CURRENT_CHANNEL    	6
+#define ADC_BATTERY_VOLTAGE_CHANNEL   4
+#define ADC_BATTERY_CURRENT_CHANNEL  5
 
 #define ADC_CHANNELS \
-(	(1 << ADC_5V_RAIL_SENSE) 		|\
- 	(1 << ADC_BATTERY_VOLTAGE_CHANNEL) 	|\
-  	(1 << ADC_BATTERY_CURRENT_CHANNEL))
+((1 << ADC_BATTERY_VOLTAGE_CHANNEL) |\
+(1 << ADC_BATTERY_CURRENT_CHANNEL))
+
+
 
 #define ADC_V5_V_FULL_SCALE (7.17f)
-
-//#define RC_SERIAL_PORT		"/dev/ttyS2"
 
 #define GPIO_HEATER_OUTPUT   /* PA8 */ (GPIO_OUTPUT| 46)
 #define HEATER_OUTPUT_EN(on_true)      px4_arch_gpiowrite(GPIO_HEATER_OUTPUT, (on_true))
