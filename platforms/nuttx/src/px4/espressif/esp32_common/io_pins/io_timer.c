@@ -62,7 +62,7 @@
 uint32_t io_timer_get_group(unsigned timer)
 {
 	if(timer == 0)
-		return 0x0F;
+		return 0x1F;
 	return 0;
 
 }

@@ -37,7 +37,7 @@
 constexpr px4_spi_bus_t px4_spi_buses[SPI_BUS_MAX_BUS_ITEMS] = {
 #ifdef CONFIG_ESP32S3_SPI2
 	initSPIBus(SPI::Bus::SPI2, {
-		initSPIDevice(DRV_IMU_DEVTYPE_ICM42688P, SPI::CS{1}, SPI::DRDY{40}),
+		initSPIDevice(DRV_IMU_DEVTYPE_ICM42688P, SPI::CS{7}, SPI::DRDY{11}),
 		//initSPIDevice(DRV_IMU_DEVTYPE_ICM20602, SPI::CS{9}, SPI::DRDY{14})
 	}),
 #endif

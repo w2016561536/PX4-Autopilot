@@ -50,9 +50,9 @@
 /* PX4FMU GPIOs ***********************************************************************************/
 /* LEDs */
 
-#define GPIO_LED_RED                 (GPIO_OUTPUT|11)
+#define GPIO_LED_RED                 (GPIO_OUTPUT|38)
 //#define GPIO_LED_GREEN               (GPIO_OUTPUT|12)
-#define GPIO_LED_BLUE                (GPIO_OUTPUT|12)
+#define GPIO_LED_BLUE                (GPIO_OUTPUT|39)
 // #define GPIO_LED_SAFETY              GPIO_LED_BLUE
 
 #define BOARD_HAS_CONTROL_STATUS_LEDS 1
@@ -71,8 +71,8 @@
  * These are the channel numbers of the ADCs of the microcontroller that can be used by the Px4 Firmware in the adc driver.
  */
 
-#define ADC_BATTERY_VOLTAGE_CHANNEL   4
-#define ADC_BATTERY_CURRENT_CHANNEL  5
+#define ADC_BATTERY_VOLTAGE_CHANNEL   1
+#define ADC_BATTERY_CURRENT_CHANNEL  2
 
 #define ADC_CHANNELS \
 ((1 << ADC_BATTERY_VOLTAGE_CHANNEL) |\
@@ -87,7 +87,7 @@
 
 /* AUX PWMs
  */
-#define DIRECT_PWM_OUTPUT_CHANNELS	4
+#define DIRECT_PWM_OUTPUT_CHANNELS	5
 
 // #define BOARD_ENABLE_CONSOLE_BUFFER
 

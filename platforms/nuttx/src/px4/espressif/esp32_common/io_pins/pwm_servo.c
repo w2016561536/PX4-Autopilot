@@ -113,7 +113,7 @@ int up_pwm_servo_init(uint32_t channel_mask)
 	pwm_info.channels[1].duty=0,
 	pwm_info.channels[2].duty=0,
 	pwm_info.channels[3].duty=0,
-	// pwm_info.channels[4].duty=0,
+	pwm_info.channels[4].duty=0,
 	// pwm_info.channels[5].duty=0,
 	// pwm_info.channels[6].duty=0,
 	// pwm_info.channels[7].duty=0,
@@ -156,7 +156,7 @@ uint32_t up_pwm_servo_get_rate_group(unsigned group)
 {
 	//syslog(LOG_INFO, "up_pwm_servo_get_rate_group: %d\n", group);
 	if(group == 0)
-		return 0x0F;
+		return 0x1F;
 
 	return 0;
 }
@@ -165,7 +165,7 @@ void
 up_pwm_servo_arm(bool armed, uint32_t channel_mask)
 {
 	//syslog(LOG_INFO, "up_pwm_servo_arm armed:%d channel_mask:%02X\n", armed,channel_mask);
-	if(channel_mask == 0x0F)
+	if(channel_mask == 0x1F)
 	{
 		if(armed)
 		{
