@@ -67,7 +67,7 @@ ICM42688P::ICM42688P(const I2CSPIDriverConfig &config) :
 		_enable_clock_input = false;
 	}
 
-	ConfigureSampleRate(_px4_gyro.get_max_rate_hz());
+	ConfigureSampleRate(400);
 }
 
 ICM42688P::~ICM42688P()
