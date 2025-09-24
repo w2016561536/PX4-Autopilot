@@ -92,6 +92,7 @@ function(px4_add_common_flags)
 		-Wunused-variable
 
 		-Wno-error=array-bounds=
+	        -Wno-error=header-guard
 			#-Wno-error=frame-larger-than=
 
 		# disabled warnings

@@ -74,6 +74,7 @@ PX4Accelerometer::PX4Accelerometer(uint32_t device_id, enum Rotation rotation) :
 	_sensor_pub.advertise();
 
 	param_get(param_find("IMU_GYRO_RATEMAX"), &_imu_gyro_rate_max);
+	_imu_gyro_rate_max = 400;
 }
 
 PX4Accelerometer::~PX4Accelerometer()

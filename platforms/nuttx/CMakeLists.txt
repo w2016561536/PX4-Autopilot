@@ -339,7 +339,7 @@ else()
 		#TARGET px4  POST_BUILD
 
 		#COMMAND ${CMAKE_OBJCOPY} -O binary ${PX4_BINARY_DIR_REL}/${FW_NAME} ${PX4_BINARY_OUTPUT}
-		COMMAND esptool --chip esp32s3 elf2image -o ${PX4_BINARY_OUTPUT} ${PX4_BINARY_DIR_REL}/${FW_NAME}
+		COMMAND esptool.py --chip esp32s3 elf2image -o ${PX4_BINARY_OUTPUT} ${PX4_BINARY_DIR_REL}/${FW_NAME}
 		DEPENDS px4
 	)
 
