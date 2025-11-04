@@ -10,7 +10,6 @@ MEMORY
   rtc_reserved_seg(RW) : org = 0x600fe000 + 0x2000 - 24, len = 24
   rtc_slow_seg(RW) : org = 0x50000000 + 0,
                          len = 0x2000 - 0
-  extern_ram_seg(RWX) : org = 0x3c000020 , len = 0x2000000-0x20
 }
   REGION_ALIAS("default_rodata_seg", drom0_0_seg);
   REGION_ALIAS("default_code_seg", irom0_0_seg);

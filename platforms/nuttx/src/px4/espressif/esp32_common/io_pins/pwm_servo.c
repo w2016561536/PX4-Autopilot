@@ -120,9 +120,9 @@ return PX4_ERROR;
 
 int up_pwm_servo_init(uint32_t channel_mask)
 {
-	syslog(LOG_INFO, "[ESP PWM] init channel_mask: %02X\n", channel_mask);
+	syslog(LOG_INFO, "[ESP PWM] init channel_mask: %02lX\n", channel_mask);
 
-	int ret = 0;
+	// int ret = 0;
 	if (channel_mask & io_timer_get_group(0)) {
   	pwm0 = esp32s3_ledc_init(0);
   	if (!pwm0)
@@ -140,7 +140,7 @@ int up_pwm_servo_init(uint32_t channel_mask)
 
 	pwm0->ops->start(pwm0,&pwm_info0);
 
-	syslog(LOG_INFO, "[ESP PWM] SYSPWM INIT OK, group 0 , channel mask: %02X\n", channel_mask);
+	syslog(LOG_INFO, "[ESP PWM] SYSPWM INIT OK, group 0 , channel mask: %02lX\n", channel_mask);
 
 
 	//return channel_mask;
@@ -164,7 +164,7 @@ int up_pwm_servo_init(uint32_t channel_mask)
 
 		pwm1->ops->start(pwm1,&pwm_info1);
 
-		syslog(LOG_INFO, "[ESP PWM] SYSPWM INIT OK, group 1 , channel mask: %02X\n", channel_mask);
+		syslog(LOG_INFO, "[ESP PWM] SYSPWM INIT OK, group 1 , channel mask: %02lX\n", channel_mask);
 		//return channel_mask;
 	}
 #endif
@@ -234,7 +234,7 @@ uint32_t up_pwm_servo_get_rate_group(unsigned group)
 void
 up_pwm_servo_arm(bool armed, uint32_t channel_mask)
 {
-	syslog(LOG_INFO, "[ESP PWM] up_pwm_servo_arm armed:%d channel_mask:%02X\n", armed,channel_mask);
+	syslog(LOG_INFO, "[ESP PWM] up_pwm_servo_arm armed:%d channel_mask:%02lX\n", armed,channel_mask);
 
 	if (channel_mask & io_timer_get_group(0)) {
 		if (armed) {

@@ -192,7 +192,7 @@ static inline void adc_samplecfg(int channel)
 
 static uint32_t adc_read_work(struct adc_dev_s *dev)
 {
-  int ret;
+  // int ret;
   //int32_t adc;
   struct adc_chan_s *priv = (struct adc_chan_s *)dev->ad_priv;
 

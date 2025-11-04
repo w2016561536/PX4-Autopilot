@@ -42,6 +42,7 @@ add_library(drivers_board
 	#esp32s3_board_tim.c
 	esp32s3_board_wlan.c
 	esp32s3_board_sdmmc.c
+	esp32s3_adc.c
 	mtd.cpp
 )
 
