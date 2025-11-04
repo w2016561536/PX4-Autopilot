@@ -42,7 +42,7 @@
 #elif defined(__PX4_POSIX)
 
 #include <stdint.h>
-#include <queue.h>
+#include <nuttx/queue.h>
 
 __BEGIN_DECLS
 
