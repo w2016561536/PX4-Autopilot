@@ -8,23 +8,23 @@
 #include <stdio.h>
 #include <syslog.h>
 
-#define ESP32S3_NGPIOS       49 /* GPIO0-44 */
+#define ESP32_NGPIOS       40 /* GPIO0-44 */
 
-int px4_esp32s3_configgpio(uint32_t pinset)
+int px4_esp32_configgpio(uint32_t pinset)
 {
-	if ((pinset & GPIO_NUM_MASK) >= ESP32S3_NGPIOS) {
+	if ((pinset & GPIO_NUM_MASK) >= ESP32_NGPIOS) {
 		return -EINVAL;
 	}
-	return esp32s3_configgpio((int)(pinset & GPIO_NUM_MASK),(uint16_t)((pinset >> GPIO_SET_SHIFT) & 0xffff) );
+	return esp32_configgpio((int)(pinset & GPIO_NUM_MASK),(uint16_t)((pinset >> GPIO_SET_SHIFT) & 0xffff) );
 }
 
-int px4_esp32s3_unconfiggpio(uint32_t pinset)
+int px4_esp32_unconfiggpio(uint32_t pinset)
 {
-	return px4_esp32s3_configgpio((pinset & GPIO_NUM_MASK) | GPIO_INPUT | GPIO_OPEN_DRAIN);
+	return px4_esp32_configgpio((pinset & GPIO_NUM_MASK) | GPIO_INPUT | GPIO_OPEN_DRAIN);
 }
 
 /****************************************************************************
- * Name: esp32s3_gpiosetevent
+ * Name: esp32_gpiosetevent
  *
  * Description:
  *   Sets/clears GPIO based event and interrupt triggers.
@@ -42,11 +42,11 @@ int px4_esp32s3_unconfiggpio(uint32_t pinset)
  *   nature of the failure.
  *
  ****************************************************************************/
-int esp32s3_gpiosetevent(uint32_t pinset, bool risingedge, bool fallingedge,
+int esp32_gpiosetevent(uint32_t pinset, bool risingedge, bool fallingedge,
                        bool event, xcpt_t func, void *arg)
 {
 	uint32_t pin = pinset & GPIO_NUM_MASK;
-	int irq = ESP32S3_PIN2IRQ(pin);
+	int irq = ESP32_PIN2IRQ(pin);
 
 	if(event == true)
 	{
@@ -58,16 +58,16 @@ int esp32s3_gpiosetevent(uint32_t pinset, bool risingedge, bool fallingedge,
 		}
 
 		if(risingedge == true && fallingedge == true)
-			esp32s3_gpioirqenable(irq, CHANGE);
+			esp32_gpioirqenable(irq, CHANGE);
 		else if(risingedge == true && fallingedge == false)
-			esp32s3_gpioirqenable(irq, RISING);
+			esp32_gpioirqenable(irq, RISING);
 		else if(risingedge == false && fallingedge == true)
-			esp32s3_gpioirqenable(irq, FALLING);
+			esp32_gpioirqenable(irq, FALLING);
 	}
 	else{
-		esp32s3_gpioirqdisable(irq);
+		esp32_gpioirqdisable(irq);
 	}
 
-	//syslog(LOG_INFO, "esp32s3_gpiosetevent: %d\n", ret);
+	//syslog(LOG_INFO, "esp32_gpiosetevent: %d\n", ret);
   	return OK;
 }

@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (C) 2021 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2020 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,52 +30,45 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
+#pragma once
 
-/**
- * @file io_timer.c
- *
- * Servo driver supporting PWM servos connected to RP2040 PWM blocks.
- */
+#include "../../../esp32_common/include/px4_arch/spi_hw_description.h"
 
-#include <px4_platform_common/px4_config.h>
-#include <systemlib/px4_macros.h>
-#include <nuttx/arch.h>
-#include <nuttx/irq.h>
+#if defined(CONFIG_SPI)
 
-#include <sys/types.h>
-#include <stdbool.h>
-
-#include <assert.h>
-#include <debug.h>
-#include <time.h>
-#include <nuttx/queue.h>
-#include <errno.h>
-#include <string.h>
-#include <stdio.h>
-
-#include <arch/board/board.h>
-#include <drivers/drv_pwm_output.h>
-
-#include <px4_arch/io_timer.h>
-
-
-uint32_t io_timer_get_group(unsigned timer)
+constexpr bool validateSPIConfig(const px4_spi_bus_t spi_busses_conf[SPI_BUS_MAX_BUS_ITEMS])
 {
-	uint32_t channel_mask = 0;
-	if(timer == 0){
-		for (int i = 0; i < CONFIG_ESP32_LEDC_TIM0_CHANNELS; i++){
-			channel_mask |= (1 << i);
-		}
-		return channel_mask;
-	}
-#if defined(CONFIG_ESP32_LEDC_TIM1) && defined(CONFIG_ESP32_LEDC_TIM1_CHANNELS)
-	else if (timer == 1){
-		for (int i = 0; i < CONFIG_ESP32_LEDC_TIM1_CHANNELS; i++){
-			channel_mask |= (1 << (i + CONFIG_ESP32_LEDC_TIM0_CHANNELS));
-		}
-		return channel_mask;
-	}
+	const bool nuttx_enabled_spi_buses[] = {
+		false,
+#ifdef CONFIG_ESP32_SPI2
+		true,
+#else
+		false,
 #endif
-	return 0;
+#ifdef CONFIG_ESP32_SPI3
+		true,
+#else
+		false,
+#endif
+		false,
+		false,
+		false,
+	};
 
+	for (unsigned i = 0; i < sizeof(nuttx_enabled_spi_buses) / sizeof(nuttx_enabled_spi_buses[0]); ++i) {
+		bool found_bus = false;
+
+		for (int j = 0; j < SPI_BUS_MAX_BUS_ITEMS; ++j) {
+			if (spi_busses_conf[j].bus == (int)i + 1) {
+				found_bus = true;
+			}
+		}
+
+		// Either the bus is enabled in NuttX and configured in spi_busses_conf, or disabled and not configured
+		constexpr_assert(found_bus == nuttx_enabled_spi_buses[i], "SPI bus config mismatch (CONFIG_ESP32_SPIx)");
+	}
+
+	return false;
 }
+
+#endif // CONFIG_SPI

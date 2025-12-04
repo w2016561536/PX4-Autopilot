@@ -250,7 +250,8 @@ else()
 	${PX4_STARTUP_DIR}/xtensa_windowspill.o
 	${PX4_STARTUP_DIR}/xtensa_int_handlers.o
 	${PX4_STARTUP_DIR}/xtensa_user_handler.o
-	${PX4_STARTUP_DIR}/esp32s3_start.o
+	${PX4_STARTUP_DIR}/esp32_start.o
+	${PX4_STARTUP_DIR}/esp32_wdt.o
 
 
 	# ${PX4_STARTUP_DIR}/xtensa_cpupause.o
@@ -274,13 +275,14 @@ else()
 			drivers_board
 			arch_hrt
 			arch_board_reset
-			${PX4_STARTUP_DIR}/esp32s3/esp-hal-3rdparty/components/esp_wifi/lib/esp32s3/libnet80211.a
-			${PX4_STARTUP_DIR}/esp32s3/esp-hal-3rdparty/components/esp_wifi/lib/esp32s3/libcore.a
-			${PX4_STARTUP_DIR}/esp32s3/esp-hal-3rdparty/components/esp_wifi/lib/esp32s3/libpp.a
-			${PX4_STARTUP_DIR}/esp32s3/esp-hal-3rdparty/components/esp_wifi/lib/esp32s3/libwapi.a
-			${PX4_STARTUP_DIR}/chip/esp-hal-3rdparty/components/esp_phy/lib/esp32s3/libphy.a
-
-	)
+			${PX4_STARTUP_DIR}/esp32/esp-hal-3rdparty/components/esp_wifi/lib/esp32/libnet80211.a
+			${PX4_STARTUP_DIR}/esp32/esp-hal-3rdparty/components/esp_wifi/lib/esp32/libcore.a
+			${PX4_STARTUP_DIR}/esp32/esp-hal-3rdparty/components/esp_wifi/lib/esp32/libpp.a
+			${PX4_STARTUP_DIR}/esp32/esp-hal-3rdparty/components/esp_wifi/lib/esp32/libwapi.a
+			${PX4_STARTUP_DIR}/esp32/esp-hal-3rdparty/components/esp_phy/lib/esp32/libphy.a
+			${PX4_STARTUP_DIR}/esp32/esp-hal-3rdparty/components/esp_coex/lib/esp32/libcoexist.a
+			${PX4_STARTUP_DIR}/esp32/esp-hal-3rdparty/components/esp_phy/lib/esp32/librtc.a
+			)
 
 	target_link_libraries(nuttx_c INTERFACE nuttx_drivers)
 	target_link_libraries(nuttx_drivers INTERFACE nuttx_c nuttx_mm nuttx_fs)
@@ -297,12 +299,15 @@ else()
 		-fno-exceptions
 		-fno-rtti
 		#-Wl,--script=${NUTTX_CONFIG_DIR_CYG}/scripts/${SCRIPT_PREFIX}script.ld
-		-Wl,-T ${NUTTX_CONFIG_DIR_CYG}/scripts/${SCRIPT_PREFIX}esp32s3_peripherals.ld
-		-T ${NUTTX_CONFIG_DIR_CYG}/scripts/${SCRIPT_PREFIX}esp32s3_rom.ld
-		# -T ${NUTTX_CONFIG_DIR_CYG}/scripts/${SCRIPT_PREFIX}esp32s3_rom_api.ld
-		-T ${NUTTX_CONFIG_DIR_CYG}/scripts/${SCRIPT_PREFIX}esp32s3_rom_aliases.ld
-		-T ${NUTTX_CONFIG_DIR_CYG}/scripts/${SCRIPT_PREFIX}flat_memory.ld
-		-T ${NUTTX_CONFIG_DIR_CYG}/scripts/${SCRIPT_PREFIX}legacy_sections.ld
+		 -Wl,-T ${NUTTX_CONFIG_DIR_CYG}/scripts/esp32.peripherals.ld
+		-T ${NUTTX_CONFIG_DIR_CYG}/scripts/esp32.rom.api.ld
+		-T ${NUTTX_CONFIG_DIR_CYG}/scripts/esp32.rom.ld
+		-T ${NUTTX_CONFIG_DIR_CYG}/scripts/esp32.rom.libgcc.ld
+		-T ${NUTTX_CONFIG_DIR_CYG}/scripts/esp32.rom.newlib-data.ld
+		-T ${NUTTX_CONFIG_DIR_CYG}/scripts/esp32.rom.newlib-funcs.ld
+		-T ${NUTTX_CONFIG_DIR_CYG}/scripts/esp32.rom.syscalls.ld
+		-T ${NUTTX_CONFIG_DIR_CYG}/scripts/flat_memory.ld
+		-T ${NUTTX_CONFIG_DIR_CYG}/scripts/legacy_sections.ld
 		# -L ${NUTTX_CONFIG_DIR_CYG}/scripts
 		-Wl,-Map=${PX4_CONFIG}.map
 		-Wl,--warn-common
@@ -311,10 +316,10 @@ else()
 		-Wl,--start-group
 			${nuttx_libs}
 			${NUTTX_STARTUP_OBJS}
-			${PX4_STARTUP_DIR}/esp32s3/esp-hal-3rdparty/components/esp_wifi/lib/esp32s3/libnet80211.a
-			${PX4_STARTUP_DIR}/esp32s3/esp-hal-3rdparty/components/esp_wifi/lib/esp32s3/libcore.a
-			${PX4_STARTUP_DIR}/esp32s3/esp-hal-3rdparty/components/esp_wifi/lib/esp32s3/libpp.a
-			${PX4_STARTUP_DIR}/esp32s3/esp-hal-3rdparty/components/esp_wifi/lib/esp32s3/libwapi.a
+			${PX4_STARTUP_DIR}/esp32/esp-hal-3rdparty/components/esp_wifi/lib/esp32/libnet80211.a
+			${PX4_STARTUP_DIR}/esp32/esp-hal-3rdparty/components/esp_wifi/lib/esp32/libcore.a
+			${PX4_STARTUP_DIR}/esp32/esp-hal-3rdparty/components/esp_wifi/lib/esp32/libpp.a
+			${PX4_STARTUP_DIR}/esp32/esp-hal-3rdparty/components/esp_wifi/lib/esp32/libwapi.a
 
 		-Wl,--end-group
 
@@ -335,7 +340,7 @@ else()
 
 	add_custom_command(OUTPUT ${PX4_BINARY_OUTPUT}
 		#COMMAND ${CMAKE_OBJCOPY} -O binary ${PX4_BINARY_DIR_REL}/${FW_NAME} ${PX4_BINARY_OUTPUT}
-		COMMAND esptool.py --chip esp32s3 elf2image -o ${PX4_BINARY_OUTPUT} ${PX4_BINARY_DIR_REL}/${FW_NAME}
+		COMMAND esptool.py --chip esp32 elf2image -o ${PX4_BINARY_OUTPUT} ${PX4_BINARY_DIR_REL}/${FW_NAME}
 		DEPENDS px4
 	)
 

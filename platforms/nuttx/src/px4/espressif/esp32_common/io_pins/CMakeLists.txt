@@ -32,7 +32,7 @@
 ############################################################################
 
 px4_add_library(arch_io_pins
-	esp32s3_pinset.c
+	esp32_pinset.c
 	pwm_servo.c
 	io_timer.c
 )

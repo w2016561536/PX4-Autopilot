@@ -1,6 +1,6 @@
 ############################################################################
 #
-#   Copyright (c) 2015-2019 PX4 Development Team. All rights reserved.
+#   Copyright (c) 2015 PX4 Development Team. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -31,23 +31,35 @@
 #
 ############################################################################
 
-px4_add_library(arch_hrt
-	hrt.c
+add_library(drivers_board
+	init.c
+	led.c
+	i2c.cpp
+	spi.cpp
+	timer_config.cpp
+	#esp32s3_board_usb.c
+	# esp32s3_ledc.c
+	#esp32s3_board_tim.c
+	esp32_board_wlan.c
+	#esp32s3_board_sdmmc.c
+	#esp32s3_adc.c
+	mtd.cpp
 )
-target_include_directories(arch_hrt PRIVATE
 
-../../../../../NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/components/soc/esp32/include/
-../../../../../NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/components/esp_common/include/
-../../../../../NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/nuttx/esp32/include/
-../../../../../NuttX/nuttx/arch/xtensa/src/chip/esp-hal-3rdparty/components/esp_hw_support/include/
-
-)
-target_compile_options(arch_hrt
+target_link_libraries(drivers_board
 	PRIVATE
-		${MAX_CUSTOM_OPT_LEVEL}
-		-Wno-cast-align # TODO: fix and enable
+		arch_io_pins
+		arch_spi
+		drivers__led # drv_led_start
+		nuttx_arch # sdio
+		nuttx_drivers # sdio
+		px4_layer
 )
-target_link_libraries(arch_hrt
-INTERFACE
-	nuttx_arch
+
+target_include_directories(drivers_board PRIVATE
+
+../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/soc/esp32s3/include/
+../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/esp_common/include/
+../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/nuttx/esp32s3/include/
+
 )

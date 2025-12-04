@@ -64,8 +64,8 @@
 
 #include <px4_platform_common/log.h>
 
-#include "hardware/esp32s3_soc.h"
-#include "hardware/esp32s3_tim.h"
+#include "hardware/esp32_soc.h"
+#include "hardware/esp32_tim.h"
 #include "esp_private/esp_clk.h"
 
 #ifdef CONFIG_DEBUG_HRT
@@ -74,107 +74,10 @@
 #  define hrtinfo(x...)
 #endif
 
-#if !defined(CONFIG_BUILD_FLAT)
-#include <px4_platform_common/defines.h>
-#include <px4_platform/board_ctrl.h>
-#include <px4_platform_common/sem.h>
+#define ESP32_HRT_TIMER HRT_TIMER
 
-#define HRT_ENTRY_QUEUE_MAX_SIZE 3
-static px4_sem_t g_wait_sem;
-static struct hrt_call *next_hrt_entry[HRT_ENTRY_QUEUE_MAX_SIZE];
-static int hrt_entry_queued = 0;
-static bool suppress_entry_queue_error = false;
-static bool hrt_entry_queue_error = false;
-
-void hrt_usr_call(void *arg)
-{
-	// This is called from hrt interrupt
-	if (hrt_entry_queued < HRT_ENTRY_QUEUE_MAX_SIZE) {
-		next_hrt_entry[hrt_entry_queued++] = (struct hrt_call *)arg;
-
-	} else {
-		hrt_entry_queue_error = true;
-	}
-
-	px4_sem_post(&g_wait_sem);
-}
-
-#endif
-
-
-
-#ifdef HRT_TIMER
-#define ESP32S3_HRT_TIMER HRT_TIMER
-#define ESP32S3_HRT_TIMER_PRESCALER (APB_CLK_FREQ / (1000 * 1000))
-/* HRT configuration */
-#if   HRT_TIMER == 0
-# define HRT_TIMER_BASE		0x6001F000
-# if CONFIG_ESP32S3_TIM1
-#  error must not set CONFIG_ESP32S3_TIM0=y and HRT_TIMER=0
-# endif
-#elif HRT_TIMER == 1
-# define HRT_TIMER_BASE		0x60020000
-# if CONFIG_ESP32S3_TIM2
-#  error must not set CONFIG_ESP32S3_TIM1=y and HRT_TIMER=1
-# endif
-#elif HRT_TIMER == 2
-# define HRT_TIMER_BASE		0x60020000
-# if CONFIG_ESP32S3_TIM2
-#  error must not set CONFIG_ESP32S3_TIM2=y and HRT_TIMER=2
-# endif
-#elif HRT_TIMER == 3
-# define HRT_TIMER_BASE		0x6001F000
-# if CONFIG_ESP32_TIM3
-#  error must not set CONFIG_ESP32_TIM3=y and HRT_TIMER=3
-# endif
-#else
-# error HRT_TIMER must be a value between 0 and 3
-#endif
-
-
-
-#define REG(_reg)	(*(volatile uint32_t *)(HRT_TIMER_BASE + _reg))
-
-
-#define rLO 		REG(TIM_LO_OFFSET)
-#define rHI 		REG(TIM_HI_OFFSET)
-#define rUPDATE 	REG(TIM_UPDATE_OFFSET)
-#define rALARMLO 	REG(TIMG_ALARM_LO_OFFSET)
-#define rALARMHI 	REG(TIMG_ALARM_HI_OFFSET)
-
-/**
- * Minimum/maximum deadlines.
- *
- * These are suitable for use with a 16-bit timer/counter clocked
- * at 1MHz.  The high-resolution timer need only guarantee that it
- * not wrap more than once in the 50ms period for absolute time to
- * be consistently maintained.
- *
- * The minimum deadline must be such that the time taken between
- * reading a time and writing a deadline to the timer cannot
- * result in missing the deadline.
- */
 #define HRT_INTERVAL_MIN	50
 #define HRT_INTERVAL_MAX	50000
-
-/*
- * Period of the free-running counter, in microseconds.
- */
-#define HRT_COUNTER_PERIOD	65536
-
-/*
- * Scaling factor(s) for the free-running counter; convert an input
- * in counts to a time in microseconds.
- */
-#define HRT_COUNTER_SCALE(_c)	(_c)
-
-/*
- * Timer register accessors
- */
-// #define REG(_reg)	(*(volatile uint32_t *)(HRT_TIMER_BASE + _reg))
-
-// #define rCNT     	((uint64_t)((REG(TIM_HI_OFFSET) << 32) | REG(TIM_LO_OFFSET)))
-
 
 /*
  * Queue of callout entries.
@@ -182,10 +85,10 @@ void hrt_usr_call(void *arg)
 static struct sq_queue_s	callout_queue;
 
 /* latency baseline (last compare value applied) */
-static uint16_t			latency_baseline;
+// static uint16_t			latency_baseline;
 
 /* timer count at interrupt (for latency purposes) */
-static uint16_t			latency_actual;
+// static uint16_t			latency_actual;
 
 /* latency histogram */
 const uint16_t latency_bucket_count = LATENCY_BUCKET_COUNT;
@@ -207,7 +110,7 @@ static void		hrt_call_enter(struct hrt_call *entry);
 static void		hrt_call_reschedule(void);
 static void		hrt_call_invoke(void);
 
-static struct esp32s3_tim_dev_s *tim;
+static struct esp32_tim_dev_s *tim;
 
 int hrt_ioctl(unsigned int cmd, unsigned long arg);
 /**
@@ -218,13 +121,13 @@ hrt_tim_init(void)
 {
 	irqstate_t flags = px4_enter_critical_section();
 
-	tim = esp32s3_tim_init(ESP32S3_HRT_TIMER);
+	tim = esp32_tim_init(1);
 
 	if (!tim)
 	{
-		PX4_ERR("ERROR: Failed to initialize ESP32S3 timer\n");
+		PX4_ERR("ERROR: Failed to initialize ESP32 timer\n");
 	}
-	ESP32S3_TIM_CLK_SRC(tim, ESP32S3_TIM_APB_CLK);
+	//ESP32_TIM_CLK_SRC(tim, ESP32_TIM_APB_CLK);
 
   	/* Calculate the suitable prescaler according to the current APB
   	 * frequency to generate a period of 1 us.
@@ -233,20 +136,27 @@ hrt_tim_init(void)
 
   	pre = esp_clk_apb_freq() / 1000000;
 
-	ESP32S3_TIM_SETPRE(tim, pre);
-	ESP32S3_TIM_SETMODE(tim, ESP32S3_TIM_MODE_UP);
-	ESP32S3_TIM_CLEAR(tim);
+	syslog(LOG_ERR, "HRT pre: %u\n",pre);
 
-	ESP32S3_TIM_SETCTR(tim, 0); //set counter value
-	ESP32S3_TIM_RLD_NOW(tim);   //reload value now
+	if (tim == NULL) {
+	    syslog(LOG_ERR, "tim is NULL in ESP32_TIM_SETPRE!\n");
+	    syslog(LOG_ERR, "tim is NULL in ESP32_TIM_SETPRE!\n");
+	}
 
-	ESP32S3_TIM_SETALRVL(tim, 1000);		//alarm value
-        ESP32S3_TIM_SETALRM(tim, true);		//enable alarm
-	ESP32S3_TIM_SETARLD(tim, false);		//auto reload
+	ESP32_TIM_SETPRE(tim, pre);
+	ESP32_TIM_SETMODE(tim, ESP32_TIM_MODE_UP);
+	ESP32_TIM_CLEAR(tim);
 
-	ESP32S3_TIM_SETISR(tim, hrt_tim_isr, NULL);
-	ESP32S3_TIM_ENABLEINT(tim);
-	ESP32S3_TIM_START(tim);
+	ESP32_TIM_SETCTR(tim, 0); //set counter value
+	ESP32_TIM_RLD_NOW(tim);   //reload value now
+
+	ESP32_TIM_SETALRVL(tim, 1000);		//alarm value
+        ESP32_TIM_SETALRM(tim, true);		//enable alarm
+	ESP32_TIM_SETARLD(tim, false);		//auto reload
+
+	ESP32_TIM_SETISR(tim, hrt_tim_isr, NULL);
+	ESP32_TIM_ENABLEINT(tim);
+	ESP32_TIM_START(tim);
 	px4_leave_critical_section(flags);
 }
 
@@ -269,8 +179,8 @@ hrt_tim_isr(int irq, void *context, void *arg)
 	// rALARMLO = (uint32_t)(set & 0xffffffff);
 	// rALARMHI = (uint32_t)((set >> 32) & 0xffffffff);
 
-	ESP32S3_TIM_ACKINT(tim);
-        ESP32S3_TIM_SETALRM(tim, true);			//enable alarm
+	ESP32_TIM_ACKINT(tim);
+        ESP32_TIM_SETALRM(tim, true);			//enable alarm
 
 // (*(volatile uint32_t *)(0x3FF4400C) = (1<<14));//LOW
 // (*(volatile uint32_t *)(0x3FF44008) = (1<<14));//HIGH
@@ -302,32 +212,10 @@ hrt_absolute_time(void)
 	/* prevent re-entry */
 	flags = px4_enter_critical_section();
 	uint64_t count;
-	ESP32S3_TIM_GETCTR(tim, &count);
+	ESP32_TIM_GETCTR(tim, &count);
 
 
 	abstime = (hrt_abstime)(count);
-
-	/* get the current counter value */
-	// rUPDATE = 1;
-	// count = rLO;
-
-	/*
-	 * Determine whether the counter has wrapped since the
-	 * last time we're called.
-	 *
-	 * This simple test is sufficient due to the guarantee that
-	 * we are always called at least once per counter period.
-	 */
-	// if (count < last_count) {
-	// 	base_time += HRT_COUNTER_PERIOD;
-	// }
-
-	// /* save the count for next time */
-	// last_count = count;
-
-	// /* compute the current time */
-	// abstime = HRT_COUNTER_SCALE(base_time + count);
-
 	px4_leave_critical_section(flags);
 
 	return abstime;
@@ -353,15 +241,6 @@ hrt_init(void)
 	sq_init(&callout_queue);
 	hrt_tim_init();
 
-#if !defined(CONFIG_BUILD_FLAT)
-	/* Create a semaphore for handling hrt driver callbacks */
-	px4_sem_init(&g_wait_sem, 0, 0);
-	/* this is a signalling semaphore */
-	px4_sem_setprotocol(&g_wait_sem, SEM_PRIO_NONE);
-
-	/* register ioctl callbacks */
-	px4_register_boardct_ioctl(_HRTIOCBASE, hrt_ioctl);
-#endif
 }
 
 /**
@@ -580,27 +459,27 @@ hrt_call_reschedule()
 	//rALARMLO = (uint32_t)(deadline & 0xffffffff);
 	//rALARMHI = (uint32_t)((deadline >> 32) & 0xffffffff);
 	//tim->ops->setalarmvalue(tim,deadline);
-	ESP32S3_TIM_SETALRVL(tim, (uint64_t)deadline);
+	ESP32_TIM_SETALRVL(tim, (uint64_t)deadline);
 
 }
 
-static void
-hrt_latency_update(void)
-{
-	uint16_t latency = latency_actual - latency_baseline;
-	unsigned	index;
+// static void
+// hrt_latency_update(void)
+// {
+// 	uint16_t latency = latency_actual - latency_baseline;
+// 	unsigned	index;
 
-	/* bounded buckets */
-	for (index = 0; index < LATENCY_BUCKET_COUNT; index++) {
-		if (latency <= latency_buckets[index]) {
-			latency_counters[index]++;
-			return;
-		}
-	}
+// 	/* bounded buckets */
+// 	for (index = 0; index < LATENCY_BUCKET_COUNT; index++) {
+// 		if (latency <= latency_buckets[index]) {
+// 			latency_counters[index]++;
+// 			return;
+// 		}
+// 	}
 
-	/* catch-all at the end */
-	latency_counters[index]++;
-}
+// 	/* catch-all at the end */
+// 	latency_counters[index]++;
+// }
 
 void __attribute__ ((section(".iram1")))
 hrt_call_init(struct hrt_call *entry)
@@ -614,96 +493,3 @@ hrt_call_delay(struct hrt_call *entry, hrt_abstime delay)
 	entry->deadline = hrt_absolute_time() + delay;
 }
 
-#if !defined(CONFIG_BUILD_FLAT)
-/* These functions are inlined in all but NuttX protected/kernel builds */
-
-latency_info_t get_latency(uint16_t bucket_idx, uint16_t counter_idx)
-{
-	latency_info_t ret = {latency_buckets[bucket_idx], latency_counters[counter_idx]};
-	return ret;
-}
-
-void reset_latency_counters(void)
-{
-	for (int i = 0; i <= get_latency_bucket_count(); i++) {
-		latency_counters[i] = 0;
-	}
-}
-
-/* board_ioctl interface for user-space hrt driver */
-int
-hrt_ioctl(unsigned int cmd, unsigned long arg)
-{
-	hrt_boardctl_t *h = (hrt_boardctl_t *)arg;
-
-	switch (cmd) {
-	case HRT_WAITEVENT: {
-			irqstate_t flags;
-			px4_sem_wait(&g_wait_sem);
-			/* Atomically update the pointer to user side hrt entry */
-			flags = px4_enter_critical_section();
-
-			/* This should be always true, but check it anyway */
-			if (hrt_entry_queued > 0) {
-				*(struct hrt_call **)arg = next_hrt_entry[--hrt_entry_queued];
-				next_hrt_entry[hrt_entry_queued] = NULL;
-
-			} else {
-				hrt_entry_queue_error = true;
-			}
-
-			px4_leave_critical_section(flags);
-
-			/* Warn once for entry queue being full */
-			if (hrt_entry_queue_error && !suppress_entry_queue_error) {
-				PX4_ERR("HRT entry error, queue size now %d", hrt_entry_queued);
-				suppress_entry_queue_error = true;
-			}
-		}
-		break;
-
-	case HRT_ABSOLUTE_TIME:
-		*(hrt_abstime *)arg = hrt_absolute_time();
-		break;
-
-	case HRT_CALL_AFTER:
-		hrt_call_after(h->entry, h->time, (hrt_callout)hrt_usr_call, h->entry);
-		break;
-
-	case HRT_CALL_AT:
-		hrt_call_at(h->entry, h->time, (hrt_callout)hrt_usr_call, h->entry);
-		break;
-
-	case HRT_CALL_EVERY:
-		hrt_call_every(h->entry, h->time, h->interval, (hrt_callout)hrt_usr_call, h->entry);
-		break;
-
-	case HRT_CANCEL:
-		if (h && h->entry) {
-			hrt_cancel(h->entry);
-
-		} else {
-			PX4_ERR("HRT_CANCEL called with NULL entry");
-		}
-
-		break;
-
-	case HRT_GET_LATENCY: {
-			latency_boardctl_t *latency = (latency_boardctl_t *)arg;
-			latency->latency = get_latency(latency->bucket_idx, latency->counter_idx);
-		}
-		break;
-
-	case HRT_RESET_LATENCY:
-		reset_latency_counters();
-		break;
-
-	default:
-		return -EINVAL;
-	}
-
-	return OK;
-}
-#endif
-
-#endif /* HRT_TIMER */

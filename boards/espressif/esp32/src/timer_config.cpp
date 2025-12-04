@@ -31,51 +31,29 @@
  *
  ****************************************************************************/
 
-/**
- * @file io_timer.c
- *
- * Servo driver supporting PWM servos connected to RP2040 PWM blocks.
- */
+#include <px4_arch/io_timer_hw_description.h>
 
-#include <px4_platform_common/px4_config.h>
-#include <systemlib/px4_macros.h>
-#include <nuttx/arch.h>
-#include <nuttx/irq.h>
+constexpr io_timers_t io_timers[MAX_IO_TIMERS] = {
+	initIOTimer(Timer::Timer0),
+	initIOTimer(Timer::Timer1),
+};
 
-#include <sys/types.h>
-#include <stdbool.h>
-
-#include <assert.h>
-#include <debug.h>
-#include <time.h>
-#include <nuttx/queue.h>
-#include <errno.h>
-#include <string.h>
-#include <stdio.h>
-
-#include <arch/board/board.h>
-#include <drivers/drv_pwm_output.h>
-
-#include <px4_arch/io_timer.h>
+constexpr timer_io_channels_t timer_io_channels[MAX_TIMER_IO_CHANNELS] = {
+	initIOTimerChannel(io_timers, {Timer::Timer0, 0}, {10}),
+	initIOTimerChannel(io_timers, {Timer::Timer0, 1}, {9}),
+	initIOTimerChannel(io_timers, {Timer::Timer1, 2}, {4}),
+	initIOTimerChannel(io_timers, {Timer::Timer1, 3}, {37}),
+	// initIOTimerChannel(io_timers, {Timer::Timer1, 4}, {13}),
 
 
-uint32_t io_timer_get_group(unsigned timer)
-{
-	uint32_t channel_mask = 0;
-	if(timer == 0){
-		for (int i = 0; i < CONFIG_ESP32_LEDC_TIM0_CHANNELS; i++){
-			channel_mask |= (1 << i);
-		}
-		return channel_mask;
-	}
-#if defined(CONFIG_ESP32_LEDC_TIM1) && defined(CONFIG_ESP32_LEDC_TIM1_CHANNELS)
-	else if (timer == 1){
-		for (int i = 0; i < CONFIG_ESP32_LEDC_TIM1_CHANNELS; i++){
-			channel_mask |= (1 << (i + CONFIG_ESP32_LEDC_TIM0_CHANNELS));
-		}
-		return channel_mask;
-	}
-#endif
-	return 0;
+};
+// Well, the pins here are invalid, it defined in defconfig
 
-}
+// constexpr io_timers_channel_mapping_t io_timers_channel_mapping = initIOTimerChannelMapping(io_timers,
+// 		timer_io_channels);
+
+	/*
+	initIOTimerChannel(io_timers, {Timer::Timer0, 4}, {37}),
+	initIOTimerChannel(io_timers, {Timer::Timer0, 5}, {35}),
+	initIOTimerChannel(io_timers, {Timer::Timer0, 6}, {45}),
+	initIOTimerChannel(io_timers, {Timer::Timer0, 7}, {48}),*/

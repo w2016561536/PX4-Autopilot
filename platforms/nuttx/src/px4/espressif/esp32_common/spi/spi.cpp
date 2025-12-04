@@ -56,7 +56,7 @@ static void spi_bus_configgpio_cs(const px4_spi_bus_t *bus)
 	// }
 }
 
-__EXPORT void esp32s3_spiinitialize()
+__EXPORT void esp32_spiinitialize()
 {
 	// px4_set_spi_buses_from_hw_version();
 	// board_control_spi_sensors_power_configgpio();
@@ -68,7 +68,7 @@ __EXPORT void esp32s3_spiinitialize()
 		}
 	}
 
-#if defined(CONFIG_ESP32S3_SPI2)
+#if defined(CONFIG_ESP32_SPI2)
 	ASSERT(_spi_bus2);
 
 	if (board_has_bus(BOARD_SPI_BUS, 2)) {
@@ -76,9 +76,9 @@ __EXPORT void esp32s3_spiinitialize()
 		spi_bus_configgpio_cs(_spi_bus2);
 	}
 
-#endif // CONFIG_ESP32S3_SPI2
+#endif // CONFIG_ESP32_SPI2
 
-#ifdef CONFIG_ESP32S3_SPI3
+#ifdef CONFIG_ESP32_SPI3
 	ASSERT(_spi_bus3);
 
 	if (board_has_bus(BOARD_SPI_BUS, 3)) {
@@ -86,61 +86,47 @@ __EXPORT void esp32s3_spiinitialize()
 		spi_bus_configgpio_cs(_spi_bus3);
 	}
 
-#endif // CONFIG_ESP32S3_SPI3
+#endif // CONFIG_ESP32_SPI3
 
 }
 
-// static void esp32s3_spixselect(const px4_spi_bus_t *bus, struct spi_dev_s *dev, uint32_t devid, bool selected)
-// {
-// 	//syslog(LOG_DEBUG, "esp32s3 spixselect %i\n", bus->bus);
-// 	for (int i = 0; i < SPI_BUS_MAX_BUS_ITEMS; i++) {
-// 		if (bus->devices[i].cs_gpio != 0) {
-// 		if (devid == bus->devices[i].devid) {
-// 			// SPI select is active low, so write !selected to select the device
-// 			//syslog(LOG_DEBUG, "esp32s3_gpiowrite %i , is selected: %d , gpio :%d\n", bus->bus, selected, bus->devices[i].cs_gpio);
-// 			px4_arch_gpiowrite(bus->devices[i].cs_gpio & GPIO_NUM_MASK, !selected);
-// 		}
-// 	}
-// 	}
-// }
-
 /************************************************************************************
- * Name: ESP32S3_spi2select and ESP32S3_spi2status
+ * Name: ESP32_spi2select and ESP32_spi2status
  *
  * Description:
- *   Called by ESP32S3 spi driver on bus 2.
+ *   Called by ESP32 spi driver on bus 2.
  *
  ************************************************************************************/
-#if defined(CONFIG_ESP32S3_SPI2)
-// __EXPORT void esp32s3_spi2_select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
-// {
-// 	esp32s3_spixselect(_spi_bus2, dev, devid, selected);
-// }
+#if defined(CONFIG_ESP32_SPI2)
+__EXPORT void esp32_spi2_select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
+{
+	// esp32_spixselect(_spi_bus2, dev, devid, selected);
+}
 
-__EXPORT uint8_t esp32s3_spi2_status(FAR struct spi_dev_s *dev, uint32_t devid)
+__EXPORT uint8_t esp32_spi2_status(FAR struct spi_dev_s *dev, uint32_t devid)
 {
 	return SPI_STATUS_PRESENT;
 }
-#endif // CONFIG_ESP32S3_SPI2
+#endif // CONFIG_ESP32_SPI2
 
 /************************************************************************************
- * Name: esp32s3_spi3select and esp32s3_spi3status
+ * Name: esp32_spi3select and esp32_spi3status
  *
  * Description:
- *   Called by ESP32S3 spi driver on bus 3.
+ *   Called by ESP32 spi driver on bus 3.
  *
  ************************************************************************************/
-#if defined(CONFIG_ESP32S3_SPI3)
-// __EXPORT void esp32s3_spi3_select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
-// {
-// 	esp32s3_spixselect(_spi_bus3, dev, devid, selected);
-// }
+#if defined(CONFIG_ESP32_SPI3)
+__EXPORT void esp32_spi3_select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
+{
+	// esp32_spixselect(_spi_bus3, dev, devid, selected);
+}
 
-__EXPORT uint8_t esp32s3_spi3_status(FAR struct spi_dev_s *dev, uint32_t devid)
+__EXPORT uint8_t esp32_spi3_status(FAR struct spi_dev_s *dev, uint32_t devid)
 {
 	return SPI_STATUS_PRESENT;
 }
-#endif // CONFIG_ESP32S3_SPI3
+#endif // CONFIG_ESP32_SPI3
 
 void board_control_spi_sensors_power(bool enable_power, int bus_mask)
 {
@@ -185,18 +171,6 @@ void board_control_spi_sensors_power_configgpio()
 
 #endif
 
-	// for (int bus = 0; bus < SPI_BUS_MAX_BUS_ITEMS; ++bus) {
-	// 	if (buses[bus].bus == -1) {
-	// 		break;
-	// 	}
-
-	// 	if (buses[bus].power_enable_gpio == 0 ||
-	// 	    !board_has_bus(BOARD_SPI_BUS, buses[bus].bus)) {
-	// 		continue;
-	// 	}
-
-	// 	px4_arch_configgpio(buses[bus].power_enable_gpio);
-	// }
 }
 
 #define _PIN_OFF(def) (((def) & GPIO_NUM_MASK) | (GPIO_INPUT|GPIO_PULLDOWN))
@@ -204,115 +178,4 @@ void board_control_spi_sensors_power_configgpio()
 __EXPORT void board_spi_reset(int ms, int bus_mask)
 {
 
-// 	bool has_power_enable = false;
-
-// 	// disable SPI bus
-// 	for (int bus = 0; bus < SPI_BUS_MAX_BUS_ITEMS; ++bus) {
-// 		if (px4_spi_buses[bus].bus == -1) {
-// 			break;
-// 		}
-
-// 		const bool bus_requested = bus_mask & (1 << (px4_spi_buses[bus].bus - 1));
-
-// 		if (px4_spi_buses[bus].power_enable_gpio == 0 ||
-// 		    !board_has_bus(BOARD_SPI_BUS, px4_spi_buses[bus].bus) ||
-// 		    !bus_requested) {
-// 			continue;
-// 		}
-
-// 		has_power_enable = true;
-
-// 		for (int i = 0; i < SPI_BUS_MAX_DEVICES; ++i) {
-// 			if (px4_spi_buses[bus].devices[i].cs_gpio != 0) {
-// 				px4_arch_configgpio(_PIN_OFF(px4_spi_buses[bus].devices[i].cs_gpio));
-// 			}
-
-// 			if (px4_spi_buses[bus].devices[i].drdy_gpio != 0) {
-// 				px4_arch_configgpio(_PIN_OFF(px4_spi_buses[bus].devices[i].drdy_gpio));
-// 			}
-// 		}
-
-// #if defined(CONFIG_ESP32S3_SPI2)
-
-// 		if (px4_spi_buses[bus].bus == 2) {
-// 			// px4_arch_configgpio(_PIN_OFF(GPIO_SPI2_SCK));
-// 			// px4_arch_configgpio(_PIN_OFF(GPIO_SPI2_MISO));
-// 			// px4_arch_configgpio(_PIN_OFF(GPIO_SPI2_MOSI));
-// 		}
-
-// #endif
-// #if defined(CONFIG_ESP32S3_SPI3)
-
-// 		if (px4_spi_buses[bus].bus == 3) {
-// 			// px4_arch_configgpio(_PIN_OFF(GPIO_SPI3_SCK));
-// 			// px4_arch_configgpio(_PIN_OFF(GPIO_SPI3_MISO));
-// 			// px4_arch_configgpio(_PIN_OFF(GPIO_SPI3_MOSI));
-// 		}
-
-// #endif
-// 	}
-
-// 	if (!has_power_enable) {
-// 		// board does not have power control over any of the sensor buses
-// 		return;
-// 	}
-
-// 	// set the sensor rail(s) off
-// 	board_control_spi_sensors_power(false, bus_mask);
-
-// 	// wait for the sensor rail to reach GND
-// 	usleep(ms * 1000);
-// 	syslog(LOG_DEBUG, "reset done, %d ms\n", ms);
-
-// 	/* re-enable power */
-
-// 	// switch the sensor rail back on
-// 	board_control_spi_sensors_power(true, bus_mask);
-
-// 	/* wait a bit before starting SPI, different times didn't influence results */
-// 	usleep(100);
-
-// 	/* reconfigure the SPI pins */
-// 	for (int bus = 0; bus < SPI_BUS_MAX_BUS_ITEMS; ++bus) {
-// 		if (px4_spi_buses[bus].bus == -1) {
-// 			break;
-// 		}
-
-// 		const bool bus_requested = bus_mask & (1 << (px4_spi_buses[bus].bus - 1));
-
-// 		if (px4_spi_buses[bus].power_enable_gpio == 0 ||
-// 		    !board_has_bus(BOARD_SPI_BUS, px4_spi_buses[bus].bus) ||
-// 		    !bus_requested) {
-// 			continue;
-// 		}
-
-// 		for (int i = 0; i < SPI_BUS_MAX_DEVICES; ++i) {
-// 			if (px4_spi_buses[bus].devices[i].cs_gpio != 0) {
-// 				px4_arch_configgpio(px4_spi_buses[bus].devices[i].cs_gpio);
-// 			}
-
-// 			if (px4_spi_buses[bus].devices[i].drdy_gpio != 0) {
-// 				px4_arch_configgpio(px4_spi_buses[bus].devices[i].drdy_gpio);
-// 			}
-// 		}
-
-// #if defined(CONFIG_ESP32_SPI2)
-
-// 		if (px4_spi_buses[bus].bus == 2) {
-// 			// px4_arch_configgpio(GPIO_SPI2_SCK);
-// 			// px4_arch_configgpio(GPIO_SPI2_MISO);
-// 			// px4_arch_configgpio(GPIO_SPI2_MOSI);
-// 		}
-
-// #endif
-// #if defined(CONFIG_ESP32_SPI3)
-
-// 		if (px4_spi_buses[bus].bus == 3) {
-// 			// px4_arch_configgpio(GPIO_SPI3_SCK);
-// 			// px4_arch_configgpio(GPIO_SPI3_MISO);
-// 			// px4_arch_configgpio(GPIO_SPI3_MOSI);
-// 		}
-
-// #endif
-	// }
 }

@@ -1,0 +1,6 @@
+close = 0x40001778;
+open = 0x4000178c;
+read = 0x400017dc;
+sbrk = 0x400017f4;
+times = 0x40001808;
+write = 0x4000181c;

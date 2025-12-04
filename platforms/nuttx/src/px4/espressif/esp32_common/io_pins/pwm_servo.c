@@ -60,14 +60,14 @@
 
 #include <px4_arch/io_timer.h>
 
-#include "esp32s3_ledc.h"
+#include "esp32_ledc.h"
 
 typedef uint16_t	servo_position_t;
 
 struct pwm_info_s pwm_info0;
 struct pwm_lowerhalf_s *pwm0;
 
-#if defined(CONFIG_ESP32S3_LEDC_TIM1)
+#if defined(CONFIG_ESP32_LEDC_TIM1)
 struct pwm_lowerhalf_s *pwm1;
 struct pwm_info_s pwm_info1;
 #endif
@@ -75,7 +75,7 @@ struct pwm_info_s pwm_info1;
 int up_pwm_servo_set(unsigned channel, servo_position_t value)
 {
 	//syslog(LOG_INFO, "[ESP PWM] PWM set ch: %d value:%d\n", channel,value);
-	if (channel < CONFIG_ESP32S3_LEDC_TIM0_CHANNELS) {
+	if (channel < CONFIG_ESP32_LEDC_TIM0_CHANNELS) {
 		if (pwm_info0.frequency == 15000 || pwm_info0.frequency > 400)
 		{
 			pwm_info0.channels[channel].duty = (value*400)/(1000000/65535);
@@ -85,9 +85,9 @@ int up_pwm_servo_set(unsigned channel, servo_position_t value)
 		return OK;
 
 	}
-#if defined(CONFIG_ESP32S3_LEDC_TIM1)
-	else if (channel < (CONFIG_ESP32S3_LEDC_TIM0_CHANNELS + CONFIG_ESP32S3_LEDC_TIM1_CHANNELS)) {
-		channel -= CONFIG_ESP32S3_LEDC_TIM0_CHANNELS; // adjust channel number for second timer
+#if defined(CONFIG_ESP32_LEDC_TIM1)
+	else if (channel < (CONFIG_ESP32_LEDC_TIM0_CHANNELS + CONFIG_ESP32_LEDC_TIM1_CHANNELS)) {
+		channel -= CONFIG_ESP32_LEDC_TIM0_CHANNELS; // adjust channel number for second timer
 		if (pwm_info1.frequency == 15000 || pwm_info1.frequency > 400)
 		{
 			pwm_info1.channels[channel].duty = (value*400)/(1000000/65535);
@@ -105,12 +105,12 @@ servo_position_t up_pwm_servo_get(unsigned channel)
 {
 
 	//syslog(LOG_INFO, "[ESP PWM]PWM get ch duty: %d\n", channel);
-	if (channel < CONFIG_ESP32S3_LEDC_TIM0_CHANNELS) {
+	if (channel < CONFIG_ESP32_LEDC_TIM0_CHANNELS) {
 		return pwm_info0.channels[channel].duty;
 	}
-#if defined(CONFIG_ESP32S3_LEDC_TIM1)
-	else if (channel < (CONFIG_ESP32S3_LEDC_TIM0_CHANNELS + CONFIG_ESP32S3_LEDC_TIM1_CHANNELS)) {
-		channel -= CONFIG_ESP32S3_LEDC_TIM0_CHANNELS; // adjust channel number for second timer
+#if defined(CONFIG_ESP32_LEDC_TIM1)
+	else if (channel < (CONFIG_ESP32_LEDC_TIM0_CHANNELS + CONFIG_ESP32_LEDC_TIM1_CHANNELS)) {
+		channel -= CONFIG_ESP32_LEDC_TIM0_CHANNELS; // adjust channel number for second timer
 		return pwm_info1.channels[channel].duty;
 	}
 #endif
@@ -124,7 +124,7 @@ int up_pwm_servo_init(uint32_t channel_mask)
 
 	// int ret = 0;
 	if (channel_mask & io_timer_get_group(0)) {
-  	pwm0 = esp32s3_ledc_init(0);
+  	pwm0 = esp32_ledc_init(0);
   	if (!pwm0)
     	{
       		syslog(LOG_ERR, "[ESP PWM][boot] Failed to get the LEDC PWM 0 lower half\n");
@@ -134,7 +134,7 @@ int up_pwm_servo_init(uint32_t channel_mask)
 	pwm0->ops->setup(pwm0);
 
 	pwm_info0.frequency=400;
-	for (int i = 0; i < CONFIG_ESP32S3_LEDC_TIM0_CHANNELS; i++) {
+	for (int i = 0; i < CONFIG_ESP32_LEDC_TIM0_CHANNELS; i++) {
 		pwm_info0.channels[i].duty=0;
 	}
 
@@ -146,9 +146,9 @@ int up_pwm_servo_init(uint32_t channel_mask)
 	//return channel_mask;
 }
 
-#ifdef CONFIG_ESP32S3_LEDC_TIM1
+#ifdef CONFIG_ESP32_LEDC_TIM1
 	if (channel_mask & io_timer_get_group(1)) {
-		pwm1 = esp32s3_ledc_init(1);
+		pwm1 = esp32_ledc_init(1);
 		if (!pwm1)
 		{
 			syslog(LOG_ERR, "[[ESP PWM]] Failed to get the LEDC PWM 1 lower half\n");
@@ -158,7 +158,7 @@ int up_pwm_servo_init(uint32_t channel_mask)
 		pwm1->ops->setup(pwm1);
 
 		pwm_info1.frequency=400;
-		for (int i = 0; i < CONFIG_ESP32S3_LEDC_TIM1_CHANNELS; i++) {
+		for (int i = 0; i < CONFIG_ESP32_LEDC_TIM1_CHANNELS; i++) {
 		pwm_info1.channels[i].duty=0;
 	}
 
@@ -192,7 +192,7 @@ int up_pwm_servo_set_rate_group_update(unsigned group, unsigned rate)
 		pwm_info0.frequency = rate;
 		return OK;
 	}
-	#ifdef CONFIG_ESP32S3_LEDC_TIM1
+	#ifdef CONFIG_ESP32_LEDC_TIM1
 	else if (group == 1)
 	{
 		if (rate == 0){
@@ -213,7 +213,7 @@ void up_pwm_update(unsigned channels_mask)
 	if (channels_mask & io_timer_get_group(0)) {
 		pwm0->ops->start(pwm0,&pwm_info0);
 	}
-#if defined(CONFIG_ESP32S3_LEDC_TIM1)
+#if defined(CONFIG_ESP32_LEDC_TIM1)
 	if (channels_mask & io_timer_get_group(1)) {
 		pwm1->ops->start(pwm1,&pwm_info1);
 	}
@@ -243,7 +243,7 @@ up_pwm_servo_arm(bool armed, uint32_t channel_mask)
 			pwm0->ops->stop(pwm0);
 		}
 	}
-#ifdef CONFIG_ESP32S3_LEDC_TIM1
+#ifdef CONFIG_ESP32_LEDC_TIM1
 	if (channel_mask & io_timer_get_group(1)) {
 		if (armed) {
 			pwm1->ops->start(pwm1,&pwm_info1);

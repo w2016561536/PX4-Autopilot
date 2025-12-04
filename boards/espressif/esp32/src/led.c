@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (C) 2021 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2013 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,50 +32,73 @@
  ****************************************************************************/
 
 /**
- * @file io_timer.c
+ * @file led.c
  *
- * Servo driver supporting PWM servos connected to RP2040 PWM blocks.
+ * PX4FMU LED backend.
  */
 
 #include <px4_platform_common/px4_config.h>
-#include <systemlib/px4_macros.h>
-#include <nuttx/arch.h>
-#include <nuttx/irq.h>
 
-#include <sys/types.h>
 #include <stdbool.h>
 
-#include <assert.h>
-#include <debug.h>
-#include <time.h>
-#include <nuttx/queue.h>
-#include <errno.h>
-#include <string.h>
-#include <stdio.h>
+#include "board_config.h"
 
 #include <arch/board/board.h>
-#include <drivers/drv_pwm_output.h>
 
-#include <px4_arch/io_timer.h>
+/*
+ * Ideally we'd be able to get these from arm_internal.h,
+ * but since we want to be able to disable the NuttX use
+ * of leds for system indication at will and there is no
+ * separate switch, we need to build independent of the
+ * CONFIG_ARCH_LEDS configuration switch.
+ */
+__BEGIN_DECLS
+extern void led_init(void);
+extern void led_on(int led);
+extern void led_off(int led);
+extern void led_toggle(int led);
+__END_DECLS
 
 
-uint32_t io_timer_get_group(unsigned timer)
+
+static uint32_t g_ledmap[] = {
+	GPIO_LED_BLUE,    // Indexed by LED_BLUE
+	//GPIO_LED_RED,     // Indexed by LED_RED, LED_AMBER
+	//GPIO_LED_GREEN,   // Indexed by LED_GREEN
+};
+
+__EXPORT void led_init(void)
 {
-	uint32_t channel_mask = 0;
-	if(timer == 0){
-		for (int i = 0; i < CONFIG_ESP32_LEDC_TIM0_CHANNELS; i++){
-			channel_mask |= (1 << i);
-		}
-		return channel_mask;
+	/* Configure LED GPIOs for output */
+	for (size_t l = 0; l < (sizeof(g_ledmap) / sizeof(g_ledmap[0])); l++) {
+		px4_arch_configgpio(g_ledmap[l]);
 	}
-#if defined(CONFIG_ESP32_LEDC_TIM1) && defined(CONFIG_ESP32_LEDC_TIM1_CHANNELS)
-	else if (timer == 1){
-		for (int i = 0; i < CONFIG_ESP32_LEDC_TIM1_CHANNELS; i++){
-			channel_mask |= (1 << (i + CONFIG_ESP32_LEDC_TIM0_CHANNELS));
-		}
-		return channel_mask;
-	}
-#endif
-	return 0;
+}
 
+static void phy_set_led(int led, bool state)
+{
+	/* Pull Down to switch on */
+	px4_arch_gpiowrite(g_ledmap[led], state);
+}
+
+static bool phy_get_led(int led)
+{
+
+	return px4_arch_gpioread(g_ledmap[led]);
+}
+
+__EXPORT void led_on(int led)
+{
+	phy_set_led(led, true);
+}
+
+__EXPORT void led_off(int led)
+{
+	phy_set_led(led, false);
+}
+
+__EXPORT void led_toggle(int led)
+{
+
+	phy_set_led(led, !phy_get_led(led));
 }

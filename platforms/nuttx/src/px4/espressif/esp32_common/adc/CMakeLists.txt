@@ -33,14 +33,25 @@
 
 px4_add_library(arch_adc
 	adc.cpp
-	#adc_oneshot.c
+	esp_adc.c
 )
 
 target_include_directories(arch_adc PUBLIC
-	${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/soc/esp32s3/include
-	${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/soc/esp32s3/include/
-${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/esp_common/include/
-${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/nuttx/esp32s3/include/
+	${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/components/soc/esp32/include
+	${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/components/soc/esp32/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/components/esp_common/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/nuttx/esp32/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/common/espressif/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/components/esp_adc/interface/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/components/esp_adc/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/components/hal/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/components/esp_adc/esp32/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/components/esp_hw_support/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/components/hal/esp32/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/components/soc/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/components/soc/esp32/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/components/hal/platform_port/include/
+
 )
 
 target_link_libraries(arch_adc

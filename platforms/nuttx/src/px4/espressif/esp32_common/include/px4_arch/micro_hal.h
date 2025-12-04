@@ -37,11 +37,11 @@
 
 __BEGIN_DECLS
 
-#include <esp32s3_tim.h>
-#include <esp32s3_spi.h>
-#include <esp32s3_i2c.h>
+#include <esp32_tim.h>
+#include <esp32_spi.h>
+#include <esp32_i2c.h>
 
-#include <esp32s3_gpio.h>
+#include <esp32_gpio.h>
 
 # define PX4_CPU_UUID_WORD32_UNIQUE_H            2 /* Most significant digits change the least */
 # define PX4_CPU_UUID_WORD32_UNIQUE_M            1 /* Middle significant digits */
@@ -100,24 +100,24 @@ __BEGIN_DECLS
 #define	GPIO_OPEN_DRAIN_MASK	0x800
 #define	GPIO_FUN_SELECT_MASK	0x7000
 
-int px4_esp32s3_configgpio(uint32_t pinset);
-int px4_esp32s3_unconfiggpio(uint32_t pinset);
-int esp32s3_gpiosetevent(uint32_t pinset, bool risingedge, bool fallingedge,bool event, xcpt_t func, void *arg);
+int px4_esp32_configgpio(uint32_t pinset);
+int px4_esp32_unconfiggpio(uint32_t pinset);
+int esp32_gpiosetevent(uint32_t pinset, bool risingedge, bool fallingedge,bool event, xcpt_t func, void *arg);
 
-#define px4_i2cbus_initialize(bus_num_1based)   	esp32s3_i2cbus_initialize(bus_num_1based)
-#define px4_i2cbus_uninitialize(pdev)           	esp32s3_i2cbus_uninitialize(pdev)
+#define px4_i2cbus_initialize(bus_num_1based)   	esp32_i2cbus_initialize(bus_num_1based)
+#define px4_i2cbus_uninitialize(pdev)           	esp32_i2cbus_uninitialize(pdev)
 
-#define px4_arch_configgpio(pinset)			px4_esp32s3_configgpio(pinset)
-#define px4_arch_unconfiggpio(pinset)			px4_esp32s3_unconfiggpio(pinset)
-#define px4_arch_gpioread(pinset)			esp32s3_gpioread(pinset & GPIO_NUM_MASK)
-#define px4_arch_gpiowrite(pinset, value)		esp32s3_gpiowrite(pinset & GPIO_NUM_MASK, value)
-#define px4_arch_gpiosetevent(pinset,r,f,e,fp,a)	esp32s3_gpiosetevent(pinset,r,f,e,fp,a)
+#define px4_arch_configgpio(pinset)			px4_esp32_configgpio(pinset)
+#define px4_arch_unconfiggpio(pinset)			px4_esp32_unconfiggpio(pinset)
+#define px4_arch_gpioread(pinset)			esp32_gpioread(pinset & GPIO_NUM_MASK)
+#define px4_arch_gpiowrite(pinset, value)		esp32_gpiowrite(pinset & GPIO_NUM_MASK, value)
+#define px4_arch_gpiosetevent(pinset,r,f,e,fp,a)	esp32_gpiosetevent(pinset,r,f,e,fp,a)
 
 
-#define px4_spibus_initialize(bus_num_1based)   esp32s3_spibus_initialize(bus_num_1based)
+#define px4_spibus_initialize(bus_num_1based)   esp32_spibus_initialize(bus_num_1based)
 
-#define px4_i2cbus_initialize(bus_num_1based)   esp32s3_i2cbus_initialize(bus_num_1based)
-#define px4_i2cbus_uninitialize(pdev)           esp32s3_i2cbus_uninitialize(pdev)
+#define px4_i2cbus_initialize(bus_num_1based)   esp32_i2cbus_initialize(bus_num_1based)
+#define px4_i2cbus_uninitialize(pdev)           esp32_i2cbus_uninitialize(pdev)
 
 
 #undef DISABLED

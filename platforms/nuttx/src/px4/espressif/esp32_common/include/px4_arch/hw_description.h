@@ -35,9 +35,9 @@
 
 #include <stdint.h>
 
-#include <esp32s3_gpio.h>
-#include <esp32s3_tim.h>
-#include <esp32s3_dma.h>
+#include <esp32_gpio.h>
+#include <esp32_tim.h>
+#include <esp32_dma.h>
 
 #include <px4_platform_common/constexpr_util.h>
 

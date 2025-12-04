@@ -39,7 +39,7 @@
 
 #if defined(CONFIG_SPI)
 
-#include <esp32s3_gpio.h>
+#include <esp32_gpio.h>
 
 static inline constexpr px4_spi_bus_device_t initSPIDevice(uint32_t devid, SPI::CS cs_gpio, SPI::DRDY drdy_gpio = {})
 {
