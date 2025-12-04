@@ -105,42 +105,6 @@ void hrt_usr_call(void *arg)
 
 #ifdef HRT_TIMER
 #define ESP32S3_HRT_TIMER HRT_TIMER
-#define ESP32S3_HRT_TIMER_PRESCALER (APB_CLK_FREQ / (1000 * 1000))
-/* HRT configuration */
-#if   HRT_TIMER == 0
-# define HRT_TIMER_BASE		0x6001F000
-# if CONFIG_ESP32S3_TIM1
-#  error must not set CONFIG_ESP32S3_TIM0=y and HRT_TIMER=0
-# endif
-#elif HRT_TIMER == 1
-# define HRT_TIMER_BASE		0x60020000
-# if CONFIG_ESP32S3_TIM2
-#  error must not set CONFIG_ESP32S3_TIM1=y and HRT_TIMER=1
-# endif
-#elif HRT_TIMER == 2
-# define HRT_TIMER_BASE		0x60020000
-# if CONFIG_ESP32S3_TIM2
-#  error must not set CONFIG_ESP32S3_TIM2=y and HRT_TIMER=2
-# endif
-#elif HRT_TIMER == 3
-# define HRT_TIMER_BASE		0x6001F000
-# if CONFIG_ESP32_TIM3
-#  error must not set CONFIG_ESP32_TIM3=y and HRT_TIMER=3
-# endif
-#else
-# error HRT_TIMER must be a value between 0 and 3
-#endif
-
-
-
-#define REG(_reg)	(*(volatile uint32_t *)(HRT_TIMER_BASE + _reg))
-
-
-#define rLO 		REG(TIM_LO_OFFSET)
-#define rHI 		REG(TIM_HI_OFFSET)
-#define rUPDATE 	REG(TIM_UPDATE_OFFSET)
-#define rALARMLO 	REG(TIMG_ALARM_LO_OFFSET)
-#define rALARMHI 	REG(TIMG_ALARM_HI_OFFSET)
 
 /**
  * Minimum/maximum deadlines.
@@ -155,7 +119,7 @@ void hrt_usr_call(void *arg)
  * result in missing the deadline.
  */
 #define HRT_INTERVAL_MIN	50
-#define HRT_INTERVAL_MAX	50000
+#define HRT_INTERVAL_MAX	4294951760LL
 
 /*
  * Period of the free-running counter, in microseconds.
@@ -167,14 +131,6 @@ void hrt_usr_call(void *arg)
  * in counts to a time in microseconds.
  */
 #define HRT_COUNTER_SCALE(_c)	(_c)
-
-/*
- * Timer register accessors
- */
-// #define REG(_reg)	(*(volatile uint32_t *)(HRT_TIMER_BASE + _reg))
-
-// #define rCNT     	((uint64_t)((REG(TIM_HI_OFFSET) << 32) | REG(TIM_LO_OFFSET)))
-
 
 /*
  * Queue of callout entries.
@@ -264,18 +220,9 @@ hrt_tim_isr(int irq, void *context, void *arg)
 	// /* and schedule the next interrupt */
 	hrt_call_reschedule();
 
-	// hrt_abstime set = hrt_absolute_time() + 100;
-
-	// rALARMLO = (uint32_t)(set & 0xffffffff);
-	// rALARMHI = (uint32_t)((set >> 32) & 0xffffffff);
-
 	ESP32S3_TIM_ACKINT(tim);
         ESP32S3_TIM_SETALRM(tim, true);			//enable alarm
 
-// (*(volatile uint32_t *)(0x3FF4400C) = (1<<14));//LOW
-// (*(volatile uint32_t *)(0x3FF44008) = (1<<14));//HIGH
-
-// (*(volatile uint32_t *)(0x3FF44008) = (1<<4));//HIGH
 	return OK;
 }
 
@@ -306,27 +253,6 @@ hrt_absolute_time(void)
 
 
 	abstime = (hrt_abstime)(count);
-
-	/* get the current counter value */
-	// rUPDATE = 1;
-	// count = rLO;
-
-	/*
-	 * Determine whether the counter has wrapped since the
-	 * last time we're called.
-	 *
-	 * This simple test is sufficient due to the guarantee that
-	 * we are always called at least once per counter period.
-	 */
-	// if (count < last_count) {
-	// 	base_time += HRT_COUNTER_PERIOD;
-	// }
-
-	// /* save the count for next time */
-	// last_count = count;
-
-	// /* compute the current time */
-	// abstime = HRT_COUNTER_SCALE(base_time + count);
 
 	px4_leave_critical_section(flags);
 
@@ -516,8 +442,6 @@ hrt_call_invoke(void)
 		if (call->callout) {
 			hrtinfo("call %p: %p(%p)\n", call, call->callout, call->arg);
 
-// (*(volatile uint32_t *)(0x3FF4400C) = (1<<2));//LOW
-// (*(volatile uint32_t *)(0x3FF44008) = (1<<2));//HIGH
 			call->callout(call->arg);
 		}
 
@@ -575,11 +499,6 @@ hrt_call_reschedule()
 
 	hrtinfo("schedule for %u at %u\n", (unsigned)(deadline & 0xffffffff), (unsigned)(now & 0xffffffff));
 
-	/* set the new compare value and remember it for latency tracking */
-	//rALARMLO = latency_baseline = deadline & 0xffff;
-	//rALARMLO = (uint32_t)(deadline & 0xffffffff);
-	//rALARMHI = (uint32_t)((deadline >> 32) & 0xffffffff);
-	//tim->ops->setalarmvalue(tim,deadline);
 	ESP32S3_TIM_SETALRVL(tim, (uint64_t)deadline);
 
 }
