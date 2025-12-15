@@ -95,6 +95,11 @@ void ActuatorEffectivenessRotors::updateParams()
 		return;
 	}
 
+	if (count == NULL){
+		PX4_ERR("count NULL!");
+		return;
+	}
+
 	_geometry.num_rotors = math::min(NUM_ROTORS_MAX, (int)count);
 
 	for (int i = 0; i < _geometry.num_rotors; ++i) {

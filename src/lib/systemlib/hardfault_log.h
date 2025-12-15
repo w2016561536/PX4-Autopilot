@@ -208,7 +208,7 @@ typedef struct {
 	_stack_s interrupt;
 #endif
 
-} stack_t;
+} px4_stack_t;
 
 /* Not Used for reference only */
 

@@ -1,0 +1,5 @@
+menuconfig DRIVERS_SMART_BATTERY_IP5109
+	bool "batmon"
+	default n
+	---help---
+		Enable support for battery chip IP5109

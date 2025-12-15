@@ -412,7 +412,12 @@ else
 	. ${R}etc/init.d/rc.serial
 
 	# Must be started after the serial config is read
-	rc_input start $RC_INPUT_ARGS
+	if param compare RC_CRSF_PRT_CFG 0
+	then
+		rc_input start $RC_INPUT_ARGS
+	else
+		crsf_rc start
+	fi
 
 	#
 	# Play the startup tune (if not disabled or there is an error)
@@ -492,7 +497,10 @@ else
 	#
 	# Start the logger.
 	#
-	. ${R}etc/init.d/rc.logging
+	if [ $STORAGE_AVAILABLE = yes ]
+	then
+		. ${R}etc/init.d/rc.logging
+	fi
 
 	#
 	# Set additional parameters and env variables for selected AUTOSTART.

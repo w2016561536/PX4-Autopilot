@@ -452,6 +452,17 @@ bool inv(const SquareMatrix<Type, M> &A, SquareMatrix<Type, M> &inv, size_t rank
 }
 
 template<typename Type>
+bool inv(const SquareMatrix<Type, 1> &A, SquareMatrix<Type, 1> &inv, size_t rank = 1)
+{
+	if (std::fabs(A(0, 0)) < Type(FLT_EPSILON)) {
+		return false;
+	}
+
+	inv(0, 0) = Type(1) / A(0, 0);
+	return true;
+}
+
+template<typename Type>
 bool inv(const SquareMatrix<Type, 2> &A, SquareMatrix<Type, 2> &inv)
 {
 	Type det = A(0, 0) * A(1, 1) - A(1, 0) * A(0, 1);

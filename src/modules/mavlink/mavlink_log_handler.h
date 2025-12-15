@@ -37,7 +37,7 @@
 /// @author px4dev, Gus Grubba <mavlink@grubba.com>
 
 #include <dirent.h>
-#include <queue.h>
+#include <nuttx/queue.h>
 #include <time.h>
 #include <stdio.h>
 #include <cstdbool>
