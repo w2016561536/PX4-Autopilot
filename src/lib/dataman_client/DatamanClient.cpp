@@ -37,6 +37,8 @@
 
 #include <dataman_client/DatamanClient.hpp>
 
+__EXPORT bool dataman_check_is_running();
+
 DatamanClient::DatamanClient()
 {
 	_sync_perf = perf_alloc(PC_ELAPSED, "DatamanClient: sync");
@@ -153,6 +155,10 @@ bool DatamanClient::readSync(dm_item_t item, uint32_t index, uint8_t *buffer, ui
 		return false;
 	}
 
+	if (!dataman_check_is_running()) {
+		return false;
+	}
+
 	bool success = false;
 	hrt_abstime timestamp = hrt_absolute_time();
 
@@ -187,6 +193,10 @@ bool DatamanClient::writeSync(dm_item_t item, uint32_t index, uint8_t *buffer, u
 {
 	if (length > g_per_item_size[item]) {
 		PX4_ERR("Length  %" PRIu32 " can't fit in data size for item  %" PRIi8, length, static_cast<uint8_t>(item));
+		return false;
+	}
+
+	if (!dataman_check_is_running()) {
 		return false;
 	}
 
@@ -253,6 +263,10 @@ bool DatamanClient::readAsync(dm_item_t item, uint32_t index, uint8_t *buffer, u
 		return false;
 	}
 
+	if (!dataman_check_is_running()) {
+		return false;
+	}
+
 	bool success = false;
 
 	if (_state == State::Idle) {
@@ -288,6 +302,10 @@ bool DatamanClient::writeAsync(dm_item_t item, uint32_t index, uint8_t *buffer, 
 {
 	if (length > g_per_item_size[item]) {
 		PX4_ERR("Length  %" PRIu32 " can't fit in data size for item  %" PRIi8, length, static_cast<uint8_t>(item));
+		return false;
+	}
+
+	if (!dataman_check_is_running()) {
 		return false;
 	}
 
