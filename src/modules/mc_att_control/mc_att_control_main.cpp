@@ -248,7 +248,7 @@ MulticopterAttitudeControl::Run()
 			vehicle_land_detected_s vehicle_land_detected;
 
 			if (_vehicle_land_detected_sub.copy(&vehicle_land_detected)) {
-				_landed = vehicle_land_detected.landed;
+				_landed = vehicle_land_detected.landed;   // 更新是否落地
 			}
 		}
 
@@ -256,16 +256,16 @@ MulticopterAttitudeControl::Run()
 			vehicle_local_position_s vehicle_local_position;
 
 			if (_vehicle_local_position_sub.copy(&vehicle_local_position)) {
-				_heading_good_for_control = vehicle_local_position.heading_good_for_control;
+				_heading_good_for_control = vehicle_local_position.heading_good_for_control;   // 决定是否把YAW加入控制
 			}
 		}
 
 		bool attitude_setpoint_generated = false;
 
-		const bool is_hovering = (_vehicle_type_rotary_wing && !_vtol_in_transition_mode);
+		const bool is_hovering = true ; // (_vehicle_type_rotary_wing && !_vtol_in_transition_mode);
 
 		// vehicle is a tailsitter in transition mode
-		const bool is_tailsitter_transition = (_vtol_tailsitter && _vtol_in_transition_mode);
+		const bool is_tailsitter_transition = false ; // (_vtol_tailsitter && _vtol_in_transition_mode);
 
 		const bool run_att_ctrl = _vehicle_control_mode.flag_control_attitude_enabled && (is_hovering
 					  || is_tailsitter_transition);
@@ -278,7 +278,7 @@ MulticopterAttitudeControl::Run()
 			    !_vehicle_control_mode.flag_control_velocity_enabled &&
 			    !_vehicle_control_mode.flag_control_position_enabled) {
 
-				generate_attitude_setpoint(q, dt, _reset_yaw_sp);
+				generate_attitude_setpoint(q, dt, _reset_yaw_sp);   // 手动模式
 				attitude_setpoint_generated = true;
 
 			} else {
@@ -288,7 +288,7 @@ MulticopterAttitudeControl::Run()
 
 			// Check for new attitude setpoint
 			if (_vehicle_attitude_setpoint_sub.updated()) {
-				vehicle_attitude_setpoint_s vehicle_attitude_setpoint;
+				vehicle_attitude_setpoint_s vehicle_attitude_setpoint;  // 来自POS CTRL
 
 				if (_vehicle_attitude_setpoint_sub.copy(&vehicle_attitude_setpoint)
 				    && (vehicle_attitude_setpoint.timestamp > _last_attitude_setpoint)) {
@@ -331,23 +331,23 @@ MulticopterAttitudeControl::Run()
 
 			// publish rate setpoint
 			vehicle_rates_setpoint_s rates_setpoint{};
-			rates_setpoint.roll = rates_sp(0);
-			rates_setpoint.pitch = rates_sp(1);
+			rates_setpoint.roll = 0; //rates_sp(0);
+			rates_setpoint.pitch = 0; //rates_sp(1);
 			rates_setpoint.yaw = rates_sp(2);
-			_thrust_setpoint_body.copyTo(rates_setpoint.thrust_body);
+			_thrust_setpoint_body.copyTo(rates_setpoint.thrust_body);  // 单纯从pos 输出的话题进行复制
 			rates_setpoint.timestamp = hrt_absolute_time();
 
 			_vehicle_rates_setpoint_pub.publish(rates_setpoint);
 		}
 
-		if (_landed) {
+		if (_landed && false) {
 			_manual_throttle_minimum.update(0.f, dt);
 
 		} else {
 			_manual_throttle_minimum.update(_param_mpc_manthr_min.get(), dt);
 		}
 
-		if (_spooled_up) {
+		if (_spooled_up ||  true ) {
 			_manual_throttle_maximum.update(1.f, dt);
 
 		} else {

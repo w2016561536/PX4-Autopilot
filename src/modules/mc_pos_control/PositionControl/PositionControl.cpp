@@ -139,86 +139,111 @@ void PositionControl::_positionControl()
 
 void PositionControl::_velocityControl(const float dt)
 {
-	// Constrain vertical velocity integral
-	_vel_int(2) = math::constrain(_vel_int(2), -CONSTANTS_ONE_G, CONSTANTS_ONE_G);
-
-	// PID velocity control
+	// =========================
+	// 1) Velocity PID -> _acc_sp (FRD)
+	// =========================
 	Vector3f vel_error = _vel_sp - _vel;
-	Vector3f acc_sp_velocity = vel_error.emult(_gain_vel_p) + _vel_int - _vel_dot.emult(_gain_vel_d);
 
-	// No control input from setpoints or corresponding states which are NAN
+	_lim_thr_max = 1;
+
+	Vector3f acc_sp_velocity =
+		vel_error.emult(_gain_vel_p)
+		+ _vel_int
+		- _vel_dot.emult(_gain_vel_d);
+
 	ControlMath::addIfNotNanVector3f(_acc_sp, acc_sp_velocity);
 
-	_accelerationControl();
+	// =========================
+	// 2) Adaptive mapping: _acc_sp -> _thr_sp (FRD)
+	//    a_meas uses _vel_dot (already FRD in your setup)
+	// =========================
+	const Vector3f a_meas = _vel_dot; // measured acceleration estimate
 
-	// Integrator anti-windup in vertical direction
-	if ((_thr_sp(2) >= -_lim_thr_min && vel_error(2) >= 0.f) ||
-	    (_thr_sp(2) <= -_lim_thr_max && vel_error(2) <= 0.f)) {
-		vel_error(2) = 0.f;
+	// You must add these as class members and initialize them:
+
+
+	const float k_min = 0.02f;   // prevent division blow-up
+	const float k_max = 200.f;   // prevent runaway
+
+	Vector3f u_cmd(0.f, 0.f, 0.f);
+
+	for (int i = 0; i < 3; i++) {
+		if (!PX4_ISFINITE(_acc_sp(i))) {
+			u_cmd(i) = 0.f;
+			continue;
+		}
+
+		const float k = math::constrain(_k_hat(i), k_min, k_max);
+
+		// inverse model: u = (a_sp - b)/k
+		u_cmd(i) = (_acc_sp(i) - _b_hat(i)) / k;
+
+		// saturate to allocator-expected command range
+		u_cmd(i) = math::constrain(u_cmd(i), -_lim_thr_max, _lim_thr_max);
 	}
 
-	// Prioritize vertical control while keeping a horizontal margin
-	const Vector2f thrust_sp_xy(_thr_sp);
-	const float thrust_sp_xy_norm = thrust_sp_xy.norm();
-	const float thrust_max_squared = math::sq(_lim_thr_max);
+	_thr_sp = u_cmd;
 
-	// Determine how much vertical thrust is left keeping horizontal margin
-	const float allocated_horizontal_thrust = math::min(thrust_sp_xy_norm, _lim_thr_xy_margin);
-	const float thrust_z_max_squared = thrust_max_squared - math::sq(allocated_horizontal_thrust);
+	// =========================
+	// 3) Online adaptation update (per axis)
+	//    update only when we have excitation and valid measurement
+	// =========================
+	for (int i = 0; i < 3; i++) {
+		if (!PX4_ISFINITE(a_meas(i)) || !PX4_ISFINITE(_thr_sp(i))) {
+			continue;
+		}
 
-	// Saturate maximal vertical thrust
-	_thr_sp(2) = math::max(_thr_sp(2), -sqrtf(thrust_z_max_squared));
+		// deadzone: don't learn from pure noise when command is tiny
+		if (fabsf(_thr_sp(i)) < 0.05f) {
+			continue;
+		}
 
-	// Determine how much horizontal thrust is left after prioritizing vertical control
-	const float thrust_max_xy_squared = thrust_max_squared - math::sq(_thr_sp(2));
-	float thrust_max_xy = 0.f;
+		// predicted acceleration from current estimates
+		const float a_pred = _k_hat(i) * _thr_sp(i) + _b_hat(i);
+		const float e = a_meas(i) - a_pred;
 
-	if (thrust_max_xy_squared > 0.f) {
-		thrust_max_xy = sqrtf(thrust_max_xy_squared);
+		_k_hat(i) += _gamma_k * e * _thr_sp(i) * dt;
+		_b_hat(i) += _gamma_b * e * dt;
+
+		_k_hat(i) = math::constrain(_k_hat(i), k_min, k_max);
 	}
 
-	// Saturate thrust in horizontal direction
-	if (thrust_sp_xy_norm > thrust_max_xy) {
-		_thr_sp.xy() = thrust_sp_xy / thrust_sp_xy_norm * thrust_max_xy;
+	// =========================
+	// 4) Anti-windup based on saturation (per axis)
+	// =========================
+	for (int i = 0; i < 3; i++) {
+		if ((_thr_sp(i) >= _lim_thr_max && vel_error(i) > 0.f) ||
+		    (_thr_sp(i) <= -_lim_thr_max && vel_error(i) < 0.f)) {
+			vel_error(i) = 0.f;
+		}
 	}
 
-	// Use tracking Anti-Windup for horizontal direction: during saturation, the integrator is used to unsaturate the output
-	// see Anti-Reset Windup for PID controllers, L.Rundqwist, 1990
-	const Vector2f acc_sp_xy_produced = Vector2f(_thr_sp) * (CONSTANTS_ONE_G / _hover_thrust);
-	const float arw_gain = 2.f / _gain_vel_p(0);
-
-	// The produced acceleration can be greater or smaller than the desired acceleration due to the saturations and the actual vertical thrust (computed independently).
-	// The ARW loop needs to run if the signal is saturated only.
-	const Vector2f acc_sp_xy = _acc_sp.xy();
-	const Vector2f acc_limited_xy = (acc_sp_xy.norm_squared() > acc_sp_xy_produced.norm_squared())
-					? acc_sp_xy_produced
-					: acc_sp_xy;
-	vel_error.xy() = Vector2f(vel_error) - arw_gain * (acc_sp_xy - acc_limited_xy);
-
-	// Make sure integral doesn't get NAN
 	ControlMath::setZeroIfNanVector3f(vel_error);
-	// Update integral part of velocity control
+
+	// =========================
+	// 5) Integrator update
+	// =========================
 	_vel_int += vel_error.emult(_gain_vel_i) * dt;
 }
 
 void PositionControl::_accelerationControl()
 {
 	// Assume standard acceleration due to gravity in vertical direction for attitude generation
-	float z_specific_force = -CONSTANTS_ONE_G;
+	// float z_specific_force = -CONSTANTS_ONE_G;
 
 	if (!_decouple_horizontal_and_vertical_acceleration) {
 		// Include vertical acceleration setpoint for better horizontal acceleration tracking
-		z_specific_force += _acc_sp(2);
+		// z_specific_force += _acc_sp(2);
 	}
 
-	Vector3f body_z = Vector3f(-_acc_sp(0), -_acc_sp(1), -z_specific_force).normalized();
-	ControlMath::limitTilt(body_z, Vector3f(0, 0, 1), _lim_tilt);
-	// Convert to thrust assuming hover thrust produces standard gravity
-	const float thrust_ned_z = _acc_sp(2) * (_hover_thrust / CONSTANTS_ONE_G) - _hover_thrust;
-	// Project thrust to planned body attitude
-	const float cos_ned_body = (Vector3f(0, 0, 1).dot(body_z));
-	const float collective_thrust = math::min(thrust_ned_z / cos_ned_body, -_lim_thr_min);
-	_thr_sp = body_z * collective_thrust;
+	// Vector3f body_z = Vector3f(-_acc_sp(0), -_acc_sp(1), -z_specific_force).normalized();
+	// ControlMath::limitTilt(body_z, Vector3f(0, 0, 1), _lim_tilt);
+	// // Convert to thrust assuming hover thrust produces standard gravity
+	// const float thrust_ned_z = _acc_sp(2) * (_hover_thrust / CONSTANTS_ONE_G) - _hover_thrust;
+	// // Project thrust to planned body attitude
+	// const float cos_ned_body = (Vector3f(0, 0, 1).dot(body_z));
+	// const float collective_thrust = math::min(thrust_ned_z / cos_ned_body, -_lim_thr_min);
+	// _thr_sp = body_z * collective_thrust;
 }
 
 bool PositionControl::_inputValid()

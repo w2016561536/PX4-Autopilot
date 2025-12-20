@@ -232,4 +232,12 @@ private:
 	matrix::Vector3f _thr_sp; /**< desired thrust */
 	float _yaw_sp{}; /**< desired heading */
 	float _yawspeed_sp{}; /** desired yaw-speed */
+
+	// control params
+
+	matrix::Vector3f _k_hat{1.f, 1.f, 1.f};   // command->acc gain (per axis)
+	matrix::Vector3f _b_hat{0.f, 0.f, 0.f};   // acc bias (per axis), bz will learn buoyancy/gravity residual
+	float _gamma_k{2.f};              // tune
+	float _gamma_b{1.f};              // tune
+
 };

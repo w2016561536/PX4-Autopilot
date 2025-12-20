@@ -346,7 +346,7 @@ void MulticopterPositionControl::Run()
 	perf_begin(_cycle_perf);
 	vehicle_local_position_s vehicle_local_position;
 
-	if (_local_pos_sub.update(&vehicle_local_position)) {
+	if (_local_pos_sub.update(&vehicle_local_position)) { // 更新位置
 		const float dt =
 			math::constrain(((vehicle_local_position.timestamp_sample - _time_stamp_last_loop) * 1e-6f), 0.002f, 0.04f);
 		_time_stamp_last_loop = vehicle_local_position.timestamp_sample;
@@ -354,25 +354,26 @@ void MulticopterPositionControl::Run()
 		// set _dt in controllib Block for BlockDerivative
 		setDt(dt);
 
-		if (_vehicle_control_mode_sub.updated()) {
+		if (_vehicle_control_mode_sub.updated()) { // 检查控制模式
 			const bool previous_position_control_enabled = _vehicle_control_mode.flag_multicopter_position_control_enabled;
 
 			if (_vehicle_control_mode_sub.update(&_vehicle_control_mode)) {
 				if (!previous_position_control_enabled && _vehicle_control_mode.flag_multicopter_position_control_enabled) {
-					_time_position_control_enabled = _vehicle_control_mode.timestamp;
+					_time_position_control_enabled = _vehicle_control_mode.timestamp;    // 开启位置控制
 
 				} else if (previous_position_control_enabled && !_vehicle_control_mode.flag_multicopter_position_control_enabled) {
 					// clear existing setpoint when controller is no longer active
-					_setpoint = PositionControl::empty_trajectory_setpoint;
+					_setpoint = PositionControl::empty_trajectory_setpoint;				// 清楚目标位置
 				}
 			}
 		}
 
-		_vehicle_land_detected_sub.update(&_vehicle_land_detected);
+		_vehicle_land_detected_sub.update(&_vehicle_land_detected);   // 是否着陆？
 
-		if (_param_mpc_use_hte.get()) {
+		if (_param_mpc_use_hte.get()) {   // 直接禁用_param_mpc_use_hte
 			hover_thrust_estimate_s hte;
 
+			// 这里更新了悬停油门估计
 			if (_hover_thrust_estimate_sub.update(&hte)) {
 				if (hte.valid) {
 					_control.updateHoverThrust(hte.hover_thrust);
@@ -443,76 +444,76 @@ void MulticopterPositionControl::Run()
 				_vehicle_constraints.speed_down = _param_mpc_z_vel_max_dn.get();
 			}
 
-			bool skip_takeoff = _param_com_throw_en.get();
+			// bool skip_takeoff = _param_com_throw_en.get();
 			// handle smooth takeoff
-			_takeoff.updateTakeoffState(_vehicle_control_mode.flag_armed, _vehicle_land_detected.landed,
-						    _vehicle_constraints.want_takeoff,
-						    _vehicle_constraints.speed_up, skip_takeoff, vehicle_local_position.timestamp_sample);
+			// _takeoff.updateTakeoffState(_vehicle_control_mode.flag_armed, _vehicle_land_detected.landed,
+			// 			    _vehicle_constraints.want_takeoff,
+			// 			    _vehicle_constraints.speed_up, skip_takeoff, vehicle_local_position.timestamp_sample);
 
-			const bool not_taken_off             = (_takeoff.getTakeoffState() < TakeoffState::rampup);
-			const bool flying                    = (_takeoff.getTakeoffState() >= TakeoffState::flight);
-			const bool flying_but_ground_contact = (flying && _vehicle_land_detected.ground_contact);
+			// const bool not_taken_off             = (_takeoff.getTakeoffState() < TakeoffState::rampup);
+			// const bool flying                    = (_takeoff.getTakeoffState() >= TakeoffState::flight);
+			// const bool flying_but_ground_contact = (flying && _vehicle_land_detected.ground_contact);
 
-			if (!flying) {
-				_control.setHoverThrust(_param_mpc_thr_hover.get());
-			}
+			// if (!flying) {
+			// 	_control.setHoverThrust(_param_mpc_thr_hover.get());
+			// }
 
 			// make sure takeoff ramp is not amended by acceleration feed-forward
-			if (_takeoff.getTakeoffState() == TakeoffState::rampup && PX4_ISFINITE(_setpoint.velocity[2])) {
-				_setpoint.acceleration[2] = NAN;
-			}
+			// if (_takeoff.getTakeoffState() == TakeoffState::rampup && PX4_ISFINITE(_setpoint.velocity[2])) {
+			// 	_setpoint.acceleration[2] = NAN;
+			// }
 
-			if (not_taken_off || flying_but_ground_contact) {
-				// we are not flying yet and need to avoid any corrections
-				_setpoint = PositionControl::empty_trajectory_setpoint;
-				_setpoint.timestamp = vehicle_local_position.timestamp_sample;
-				Vector3f(0.f, 0.f, 100.f).copyTo(_setpoint.acceleration); // High downwards acceleration to make sure there's no thrust
-
-				// prevent any integrator windup
-				_control.resetIntegral();
-			}
+			// if (not_taken_off || flying_but_ground_contact) {
+			// 	// we are not flying yet and need to avoid any corrections
+			// 	_setpoint = PositionControl::empty_trajectory_setpoint;
+			// 	_setpoint.timestamp = vehicle_local_position.timestamp_sample;
+			// 	Vector3f(0.f, 0.f, 100.f).copyTo(_setpoint.acceleration); // High downwards acceleration to make sure there's no thrust
+			//
+			// 	// prevent any integrator windup
+			// 	_control.resetIntegral();
+			// }
 
 			// limit tilt during takeoff ramupup
-			const float tilt_limit_deg = (_takeoff.getTakeoffState() < TakeoffState::flight)
-						     ? _param_mpc_tiltmax_lnd.get() : _param_mpc_tiltmax_air.get();
-			_control.setTiltLimit(_tilt_limit_slew_rate.update(math::radians(tilt_limit_deg), dt));
-
-			const float speed_up = _takeoff.updateRamp(dt,
-					       PX4_ISFINITE(_vehicle_constraints.speed_up) ? _vehicle_constraints.speed_up : _param_mpc_z_vel_max_up.get());
-			const float speed_down = PX4_ISFINITE(_vehicle_constraints.speed_down) ? _vehicle_constraints.speed_down :
-						 _param_mpc_z_vel_max_dn.get();
-
-			// Allow ramping from zero thrust on takeoff
-			const float minimum_thrust = flying ? _param_mpc_thr_min.get() : 0.f;
-			_control.setThrustLimits(minimum_thrust, _param_mpc_thr_max.get());
-
-			float max_speed_xy = _param_mpc_xy_vel_max.get();
-
-			if (PX4_ISFINITE(vehicle_local_position.vxy_max)) {
-				max_speed_xy = math::min(max_speed_xy, vehicle_local_position.vxy_max);
-			}
-
-			_control.setVelocityLimits(
-				max_speed_xy,
-				math::min(speed_up, _param_mpc_z_vel_max_up.get()), // takeoff ramp starts with negative velocity limit
-				math::max(speed_down, 0.f));
-
-			_control.setInputSetpoint(_setpoint);
-
-			// update states
-			if (!PX4_ISFINITE(_setpoint.position[2])
-			    && PX4_ISFINITE(_setpoint.velocity[2]) && (fabsf(_setpoint.velocity[2]) > FLT_EPSILON)
-			    && PX4_ISFINITE(vehicle_local_position.z_deriv) && vehicle_local_position.z_valid && vehicle_local_position.v_z_valid) {
-				// A change in velocity is demanded and the altitude is not controlled.
-				// Set velocity to the derivative of position
-				// because it has less bias but blend it in across the landing speed range
-				//  <  MPC_LAND_SPEED: ramp up using altitude derivative without a step
-				//  >= MPC_LAND_SPEED: use altitude derivative
-				float weighting = fminf(fabsf(_setpoint.velocity[2]) / _param_mpc_land_speed.get(), 1.f);
-				states.velocity(2) = vehicle_local_position.z_deriv * weighting + vehicle_local_position.vz * (1.f - weighting);
-			}
-
-			_control.setState(states);
+			// const float tilt_limit_deg = (_takeoff.getTakeoffState() < TakeoffState::flight)
+			// 			     ? _param_mpc_tiltmax_lnd.get() : _param_mpc_tiltmax_air.get();
+			// _control.setTiltLimit(_tilt_limit_slew_rate.update(math::radians(tilt_limit_deg), dt));
+			//
+			// const float speed_up = _takeoff.updateRamp(dt,
+			// 		       PX4_ISFINITE(_vehicle_constraints.speed_up) ? _vehicle_constraints.speed_up : _param_mpc_z_vel_max_up.get());
+			// const float speed_down = PX4_ISFINITE(_vehicle_constraints.speed_down) ? _vehicle_constraints.speed_down :
+			// 			 _param_mpc_z_vel_max_dn.get();
+			//
+			// // Allow ramping from zero thrust on takeoff
+			// const float minimum_thrust = flying ? _param_mpc_thr_min.get() : 0.f;
+			// _control.setThrustLimits(minimum_thrust, _param_mpc_thr_max.get());
+			//
+			// float max_speed_xy = _param_mpc_xy_vel_max.get();
+			//
+			// if (PX4_ISFINITE(vehicle_local_position.vxy_max)) {
+			// 	max_speed_xy = math::min(max_speed_xy, vehicle_local_position.vxy_max);
+			// }
+			//
+			// _control.setVelocityLimits(
+			// 	max_speed_xy,
+			// 	math::min(speed_up, _param_mpc_z_vel_max_up.get()), // takeoff ramp starts with negative velocity limit
+			// 	math::max(speed_down, 0.f));
+			//
+			// _control.setInputSetpoint(_setpoint);
+			//
+			// // update states
+			// if (!PX4_ISFINITE(_setpoint.position[2])
+			//     && PX4_ISFINITE(_setpoint.velocity[2]) && (fabsf(_setpoint.velocity[2]) > FLT_EPSILON)
+			//     && PX4_ISFINITE(vehicle_local_position.z_deriv) && vehicle_local_position.z_valid && vehicle_local_position.v_z_valid) {
+			// 	// A change in velocity is demanded and the altitude is not controlled.
+			// 	// Set velocity to the derivative of position
+			// 	// because it has less bias but blend it in across the landing speed range
+			// 	//  <  MPC_LAND_SPEED: ramp up using altitude derivative without a step
+			// 	//  >= MPC_LAND_SPEED: use altitude derivative
+			// 	float weighting = fminf(fabsf(_setpoint.velocity[2]) / _param_mpc_land_speed.get(), 1.f);
+			// 	states.velocity(2) = vehicle_local_position.z_deriv * weighting + vehicle_local_position.vz * (1.f - weighting);
+			// }
+			//
+			// _control.setState(states);
 
 			// Run position control
 			if (!_control.update(dt)) {
@@ -539,13 +540,14 @@ void MulticopterPositionControl::Run()
 			_vehicle_attitude_setpoint_pub.publish(attitude_setpoint);
 
 		} else {
+			// 非定点控制模式
 			// an update is necessary here because otherwise the takeoff state doesn't get skipped with non-altitude-controlled modes
-			_takeoff.updateTakeoffState(_vehicle_control_mode.flag_armed, _vehicle_land_detected.landed, false, 10.f, true,
-						    vehicle_local_position.timestamp_sample);
+			// _takeoff.updateTakeoffState(_vehicle_control_mode.flag_armed, _vehicle_land_detected.landed, false, 10.f, true,
+			// 			    vehicle_local_position.timestamp_sample);
 		}
 
 		// Publish takeoff status
-		const uint8_t takeoff_state = static_cast<uint8_t>(_takeoff.getTakeoffState());
+		const uint8_t takeoff_state = takeoff_status_s::TAKEOFF_STATE_FLIGHT ;//static_cast<uint8_t>(_takeoff.getTakeoffState());
 
 		if (takeoff_state != _takeoff_status_pub.get().takeoff_state
 		    || !isEqualF(_tilt_limit_slew_rate.getState(), _takeoff_status_pub.get().tilt_limit)) {
