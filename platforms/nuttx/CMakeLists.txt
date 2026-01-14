@@ -303,7 +303,11 @@ if (TARGET parameters_xml AND TARGET airframes_xml)
 	string(REPLACE ".elf" ".px4" fw_package ${PX4_BINARY_DIR}/${FW_NAME})
 
 	add_custom_command(
-		OUTPUT ${fw_package}
+#		OUTPUT ${fw_package}
+		TARGET px4
+		POST_BUILD
+			COMMAND ${CMAKE_OBJCOPY} -O binary ${PX4_BINARY_DIR}/${PX4_CONFIG}.elf ${PX4_BINARY_DIR}/${PX4_CONFIG}.bin
+
 		COMMAND
 			${PYTHON_EXECUTABLE} ${PX4_SOURCE_DIR}/Tools/px_mkfw.py
 				--prototype ${PX4_SOURCE_DIR}/boards/${PX4_BOARD_VENDOR}/${PX4_BOARD_MODEL}/firmware.prototype

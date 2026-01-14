@@ -157,13 +157,13 @@ void PositionControl::_velocityControl(const float dt)
 	// 2) Adaptive mapping: _acc_sp -> _thr_sp (FRD)
 	//    a_meas uses _vel_dot (already FRD in your setup)
 	// =========================
-	const Vector3f a_meas = _vel_dot; // measured acceleration estimate
+	// const Vector3f a_meas = _vel_dot; // measured acceleration estimate
 
 	// You must add these as class members and initialize them:
 
 
-	const float k_min = 0.02f;   // prevent division blow-up
-	const float k_max = 200.f;   // prevent runaway
+	// const float k_min = 0.02f;   // prevent division blow-up
+	// const float k_max = 200.f;   // prevent runaway
 
 	Vector3f u_cmd(0.f, 0.f, 0.f);
 
@@ -173,10 +173,10 @@ void PositionControl::_velocityControl(const float dt)
 			continue;
 		}
 
-		const float k = math::constrain(_k_hat(i), k_min, k_max);
+		// const float k = math::constrain(_k_hat(i), k_min, k_max);
 
 		// inverse model: u = (a_sp - b)/k
-		u_cmd(i) = (_acc_sp(i) - _b_hat(i)) / k;
+		u_cmd(i) = (_acc_sp(i) ) / (float)2.0;
 
 		// saturate to allocator-expected command range
 		u_cmd(i) = math::constrain(u_cmd(i), -_lim_thr_max, _lim_thr_max);
@@ -184,46 +184,6 @@ void PositionControl::_velocityControl(const float dt)
 
 	_thr_sp = u_cmd;
 
-	// =========================
-	// 3) Online adaptation update (per axis)
-	//    update only when we have excitation and valid measurement
-	// =========================
-	for (int i = 0; i < 3; i++) {
-		if (!PX4_ISFINITE(a_meas(i)) || !PX4_ISFINITE(_thr_sp(i))) {
-			continue;
-		}
-
-		// deadzone: don't learn from pure noise when command is tiny
-		if (fabsf(_thr_sp(i)) < 0.05f) {
-			continue;
-		}
-
-		// predicted acceleration from current estimates
-		const float a_pred = _k_hat(i) * _thr_sp(i) + _b_hat(i);
-		const float e = a_meas(i) - a_pred;
-
-		_k_hat(i) += _gamma_k * e * _thr_sp(i) * dt;
-		_b_hat(i) += _gamma_b * e * dt;
-
-		_k_hat(i) = math::constrain(_k_hat(i), k_min, k_max);
-	}
-
-	// =========================
-	// 4) Anti-windup based on saturation (per axis)
-	// =========================
-	for (int i = 0; i < 3; i++) {
-		if ((_thr_sp(i) >= _lim_thr_max && vel_error(i) > 0.f) ||
-		    (_thr_sp(i) <= -_lim_thr_max && vel_error(i) < 0.f)) {
-			vel_error(i) = 0.f;
-		}
-	}
-
-	ControlMath::setZeroIfNanVector3f(vel_error);
-
-	// =========================
-	// 5) Integrator update
-	// =========================
-	_vel_int += vel_error.emult(_gain_vel_i) * dt;
 }
 
 void PositionControl::_accelerationControl()
