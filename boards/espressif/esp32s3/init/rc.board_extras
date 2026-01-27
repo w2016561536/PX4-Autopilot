@@ -15,3 +15,4 @@
 mavlink start -u 14556 -p -r 100000 -n wlan0 -x
 esp_inv_ctrl
 #mavlink start -d /dev/ttyACM0 -b 2000000 -m onboard
+edit_ssid wlan0 PX4

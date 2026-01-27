@@ -1,6 +1,6 @@
 ############################################################################
 #
-#   Copyright (c) 2015 PX4 Development Team. All rights reserved.
+#   Copyright (c) 2023 ModalAI, Inc. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -31,39 +31,17 @@
 #
 ############################################################################
 
-add_library(drivers_board
-	init.c
-	led.c
-	i2c.cpp
-	spi.cpp
-	timer_config.cpp
-	esp32s3_board_usb.c
-	# esp32s3_ledc.c
-	#esp32s3_board_tim.c
-	esp32s3_board_wlan.c
-	esp32s3_board_sdmmc.c
-	esp32s3_adc.c
-	mtd.cpp
-)
+px4_add_module(
+	MODULE drivers__edit_ssid
+	MAIN edit_ssid
+	SRCS
+		edit_ssid.cpp
+	INCLUDES
+		${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/soc/esp32s3/include/
+		${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/esp_common/include/
+		${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/nuttx/esp32s3/include/
+		${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/esp_wifi/include/
+		${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/esp_hw_support/include/
+		${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/esp_event/include/
+	)
 
-target_link_libraries(drivers_board
-	PRIVATE
-		arch_io_pins
-		arch_spi
-		drivers__led # drv_led_start
-		nuttx_arch # sdio
-		nuttx_drivers # sdio
-		px4_layer
-)
-
-target_include_directories(drivers_board PRIVATE
-
-../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/soc/esp32s3/include/
-../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/esp_common/include/
-../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/nuttx/esp32s3/include/
-../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/esp_wifi/include/
-../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/esp_hw_support/include/
-../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/esp_event/include/
-)
-
-add_subdirectory(${PX4_BOARD_DIR}/src/drivers/edit_ssid)

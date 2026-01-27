@@ -38,6 +38,12 @@
 #include "netutils/netlib.h"
 #include "netutils/dhcpd.h"
 #include "esp32s3_board_wlan.h"
+#include "esp_wifi_types.h"
+#include "esp_mac.h"
+
+extern int wapi_main(int argc, char *argv[]);
+extern esp_err_t esp_read_mac(uint8_t *mac, esp_mac_type_t type);
+extern esp_err_t esp_wifi_set_protocol(wifi_interface_t ifx, uint8_t protocol_bitmap);
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -83,6 +89,8 @@ int board_wlan_init(void)
       return ret;
     }
 
+  // force to use 802.11b
+  esp_wifi_set_protocol(WIFI_IF_AP, WIFI_PROTOCOL_11B );
 
   netlib_ifup("wlan0");
 
