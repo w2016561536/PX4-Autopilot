@@ -63,6 +63,10 @@
 #include <nuttx/analog/adc.h>
 #include <nuttx/mm/gran.h>
 
+
+#include <nuttx/spi/spi_transfer.h>
+
+
 #include "board_config.h"
 //#include "esp32_rtc.h"
 
@@ -252,12 +256,12 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 
 	syslog(LOG_INFO, "\n[boot] CPU SPEED %d\n", esp_rtc_clk_get_cpu_freq());
 
-	led_init();
+	// led_init();
 
-	led_on(LED_RED);
-	led_on(LED_GREEN);
+	// led_on(LED_RED);
+	// led_on(LED_GREEN);
 
-	drv_led_start();
+	// drv_led_start();
 
 	esp32_wifi_init();
 
@@ -289,6 +293,15 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 	SPI_EXCHANGE(spi2,send_spi,recv_spi,2);
 	usleep(100);
 
+
+	int ret = spi_register(spi2, 2);
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "Failed to register /dev/spi%d: %d\n", 2, ret);
+      esp32_spibus_uninitialize(spi2);
+    }
+
+
 #endif
 
 #ifdef CONFIG_ESP32_SPI3
@@ -307,7 +320,7 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 	usleep(100);
 
 #endif
-	int ret =0;
+	// int ret =0;
 
 
 
@@ -337,8 +350,8 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 	syslog(LOG_INFO, "PX4 PLATFORM INIT OK");
 	px4_platform_configure();
 
-	led_off(LED_RED);
-	led_off(LED_GREEN);
+	// led_off(LED_RED);
+	// led_off(LED_GREEN);
 
 	return OK;
 }

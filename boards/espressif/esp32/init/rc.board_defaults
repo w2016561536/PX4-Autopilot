@@ -33,7 +33,7 @@ param set-default PWM_MAIN_MIN2 0
 param set-default PWM_MAIN_DIS1 0
 param set-default PWM_MAIN_DIS2 0
 
-param set-default IMU_GYRO_RATEMAX 200
+param set-default IMU_GYRO_RATEMAX 250
 param set-default IMU_INTEG_RATE 100
 param set-default COM_CPU_MAX -1
 param set-default BAT1_SOURCE 0

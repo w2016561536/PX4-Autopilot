@@ -40,6 +40,7 @@ target_include_directories(arch_hrt PRIVATE
 ../../../../../NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/components/esp_common/include/
 ../../../../../NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/nuttx/esp32/include/
 ../../../../../NuttX/nuttx/arch/xtensa/src/chip/esp-hal-3rdparty/components/esp_hw_support/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/components/soc/esp32/register/
 
 )
 target_compile_options(arch_hrt

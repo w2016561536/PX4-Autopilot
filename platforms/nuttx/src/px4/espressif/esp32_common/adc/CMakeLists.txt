@@ -51,7 +51,7 @@ ${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdp
 ${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/components/soc/include/
 ${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/components/soc/esp32/include/
 ${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/components/hal/platform_port/include/
-
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/components/soc/esp32/register/
 )
 
 target_link_libraries(arch_adc

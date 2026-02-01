@@ -37,12 +37,12 @@ add_library(drivers_board
 	i2c.cpp
 	spi.cpp
 	timer_config.cpp
-	#esp32s3_board_usb.c
-	# esp32s3_ledc.c
-	#esp32s3_board_tim.c
+	#esp32_board_usb.c
+	# esp32_ledc.c
+	#esp32_board_tim.c
 	esp32_board_wlan.c
-	#esp32s3_board_sdmmc.c
-	#esp32s3_adc.c
+	#esp32_board_sdmmc.c
+	#esp32_adc.c
 	mtd.cpp
 )
 
@@ -58,8 +58,8 @@ target_link_libraries(drivers_board
 
 target_include_directories(drivers_board PRIVATE
 
-../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/soc/esp32s3/include/
-../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/esp_common/include/
-../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/nuttx/esp32s3/include/
+../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/components/soc/esp32/include/
+../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/components/esp_common/include/
+../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/nuttx/esp32/include/
 
 )

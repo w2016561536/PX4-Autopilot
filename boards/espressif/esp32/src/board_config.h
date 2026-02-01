@@ -52,7 +52,7 @@
 
 // #define GPIO_LED_RED                 (GPIO_OUTPUT|34)
 //#define GPIO_LED_GREEN               (GPIO_OUTPUT|12)
-#define GPIO_LED_BLUE                (GPIO_OUTPUT|12)
+#define GPIO_LED_BLUE                (GPIO_OUTPUT|9)
 // #define GPIO_LED_SAFETY              GPIO_LED_BLUE
 
 #define BOARD_HAS_CONTROL_STATUS_LEDS 1

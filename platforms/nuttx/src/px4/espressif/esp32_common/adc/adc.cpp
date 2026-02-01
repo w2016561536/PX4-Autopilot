@@ -56,6 +56,7 @@
 
 struct adc_dev_s *adcdev;
 
+#define CONFIG_ESPRESSIF_ADC_1
 
 #ifdef CONFIG_ESPRESSIF_ADC_1
 #define ADC_1_MAX_CHANNELS 8

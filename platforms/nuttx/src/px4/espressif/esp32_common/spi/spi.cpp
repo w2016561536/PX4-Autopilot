@@ -98,10 +98,11 @@ __EXPORT void esp32_spiinitialize()
  *
  ************************************************************************************/
 #if defined(CONFIG_ESP32_SPI2)
-__EXPORT void esp32_spi2_select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
-{
-	// esp32_spixselect(_spi_bus2, dev, devid, selected);
-}
+// __EXPORT void esp32_spi2_select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
+// {
+// 	// esp32_spixselect(_spi_bus2, dev, devid, selected);
+
+// }
 
 __EXPORT uint8_t esp32_spi2_status(FAR struct spi_dev_s *dev, uint32_t devid)
 {
@@ -117,10 +118,10 @@ __EXPORT uint8_t esp32_spi2_status(FAR struct spi_dev_s *dev, uint32_t devid)
  *
  ************************************************************************************/
 #if defined(CONFIG_ESP32_SPI3)
-__EXPORT void esp32_spi3_select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
-{
-	// esp32_spixselect(_spi_bus3, dev, devid, selected);
-}
+// __EXPORT void esp32_spi3_select(FAR struct spi_dev_s *dev, uint32_t devid, bool selected)
+// {
+// 	// esp32_spixselect(_spi_bus3, dev, devid, selected);
+// }
 
 __EXPORT uint8_t esp32_spi3_status(FAR struct spi_dev_s *dev, uint32_t devid)
 {

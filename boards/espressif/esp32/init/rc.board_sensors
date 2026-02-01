@@ -4,22 +4,27 @@
 #------------------------------------------------------------------------------
 
 
-if ! icm42688p -s -R 2 start
-then
-	if ! icm42605 -s -R 2 start
-	then
-		if ! icm20602 -s -R 2 start
-		then
-			if ! icm42670p -s -R 2 start
-			then
-				if ! mpu6500 -s -R 2 start
+# if ! icm42688p -s -R 2 start
+# then
+# 	if ! icm42605 -s -R 2 start
+# 	then
+# 		if ! icm20602 -s -R 2 start
+# 		then
+# 			if ! icm42670p -s -R 2 start
+# 			then
+# 				if ! mpu6500 -s -R 2 start
+# 				then
+# 				        echo "No IMU detected"
+# 				fi
+# 			fi
+# 		fi
+# 	fi
+# fi
+
+if ! mpu6500 -s -R 2 start
 				then
 				        echo "No IMU detected"
 				fi
-			fi
-		fi
-	fi
-fi
 
 if param compare -s SYS_HAS_MAG 1
 then
