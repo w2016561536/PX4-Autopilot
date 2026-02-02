@@ -33,11 +33,19 @@ param set-default PWM_MAIN_MIN2 0
 param set-default PWM_MAIN_DIS1 0
 param set-default PWM_MAIN_DIS2 0
 
-param set-default IMU_GYRO_RATEMAX 250
-param set-default IMU_INTEG_RATE 100
+param set-default IMU_GYRO_RATEMAX 100
+param set-default IMU_INTEG_RATE 50
 param set-default COM_CPU_MAX -1
+param set-default COM_RAM_MAX -1
 param set-default BAT1_SOURCE 0
 param set-default BAT1_N_CELLS 1
+param set-default BAT1_N_CELLS 1
+
+param set-default SYS_HAS_MAG 0
+param set-default SYS_HAS_GPS 0
+param set-default SYS_HAS_BARO 0
+param set-default SYS_HAS_NUM_ASPD 0
+param set-default NAV_RCL_ACT 6
 #param set IMU_GYRO_RATEMAX 250
 #param set PWM_MAIN_RATE 400
 #param set SYS_DM_BACKEND 2
