@@ -12,6 +12,13 @@
 # dhcpd_start wlan0
 # ifdown wlan0
 # ifconfig
+airspeed_selector stop
+fw_pos_control stop
+land_detector stop
+rc_update stop
+fw_autotune_attitude_control stop
+mag_bias_estimator stop
+
 ifup wlan1
 wapi psk wlan1 12345678 3
 wapi essid wlan1 MY_PX6 1

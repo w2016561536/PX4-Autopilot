@@ -294,12 +294,12 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 	usleep(100);
 
 
-	int ret = spi_register(spi2, 2);
-  if (ret < 0)
-    {
-      syslog(LOG_ERR, "Failed to register /dev/spi%d: %d\n", 2, ret);
-      esp32_spibus_uninitialize(spi2);
-    }
+// 	int ret = spi_register(spi2, 2);
+//   if (ret < 0)
+//     {
+//       syslog(LOG_ERR, "Failed to register /dev/spi%d: %d\n", 2, ret);
+//       esp32_spibus_uninitialize(spi2);
+//     }
 
 
 #endif
@@ -320,7 +320,7 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 	usleep(100);
 
 #endif
-	// int ret =0;
+	int ret =0;
 
 
 
