@@ -72,16 +72,21 @@ struct pwm_lowerhalf_s *pwm1;
 struct pwm_info_s pwm_info1;
 #endif
 
+#if defined(CONFIG_ESP32S3_LEDC_TIM2)
+struct pwm_lowerhalf_s *pwm2;
+struct pwm_info_s pwm_info2;
+#endif
+
 int up_pwm_servo_set(unsigned channel, servo_position_t value)
 {
 	//syslog(LOG_INFO, "[ESP PWM] PWM set ch: %d value:%d\n", channel,value);
 	if (channel < CONFIG_ESP32S3_LEDC_TIM0_CHANNELS) {
-		if (pwm_info0.frequency == 15000 || pwm_info0.frequency > 400) {
-			pwm_info0.channels[channel].duty = (value * 400) / (1000000 / 65535);
+		if (pwm_info0.frequency > 400) {
+			pwm_info0.channels[channel].duty = (value * 400 * UINT16_MAX) / 1000000;
 			return OK;
 		}
 
-		pwm_info0.channels[channel].duty = (value * pwm_info0.frequency) / (1000000 / 65535);
+		pwm_info0.channels[channel].duty = (value * pwm_info0.frequency * UINT16_MAX) / 1000000;
 		return OK;
 
 	}
@@ -91,12 +96,30 @@ int up_pwm_servo_set(unsigned channel, servo_position_t value)
 	else if (channel < (CONFIG_ESP32S3_LEDC_TIM0_CHANNELS + CONFIG_ESP32S3_LEDC_TIM1_CHANNELS)) {
 		channel -= CONFIG_ESP32S3_LEDC_TIM0_CHANNELS; // adjust channel number for second timer
 
-		if (pwm_info1.frequency == 15000 || pwm_info1.frequency > 400) {
-			pwm_info1.channels[channel].duty = (value * 400) / (1000000 / 65535);
+		if (pwm_info1.frequency > 400) {
+			pwm_info1.channels[channel].duty = (value * 400 * UINT16_MAX) / 1000000;
 			return OK;
 		}
 
-		pwm_info1.channels[channel].duty = (value * pwm_info1.frequency) / (1000000 / 65535);
+		pwm_info1.channels[channel].duty = (value * pwm_info1.frequency * UINT16_MAX) / 1000000;
+		return OK;
+	}
+
+#endif
+
+#if defined(CONFIG_ESP32S3_LEDC_TIM2)
+
+	else if (channel < (CONFIG_ESP32S3_LEDC_TIM0_CHANNELS + CONFIG_ESP32S3_LEDC_TIM1_CHANNELS +
+			    CONFIG_ESP32S3_LEDC_TIM2_CHANNELS)) {
+		channel -= (CONFIG_ESP32S3_LEDC_TIM0_CHANNELS +
+			    CONFIG_ESP32S3_LEDC_TIM1_CHANNELS); // adjust channel number for third timer
+
+		if (pwm_info2.frequency > 400) {
+			pwm_info2.channels[channel].duty = (value * 400 * UINT16_MAX) / 1000000;
+			return OK;
+		}
+
+		pwm_info2.channels[channel].duty = (value * pwm_info2.frequency * UINT16_MAX) / 1000000;
 		return OK;
 	}
 
@@ -118,6 +141,17 @@ servo_position_t up_pwm_servo_get(unsigned channel)
 	else if (channel < (CONFIG_ESP32S3_LEDC_TIM0_CHANNELS + CONFIG_ESP32S3_LEDC_TIM1_CHANNELS)) {
 		channel -= CONFIG_ESP32S3_LEDC_TIM0_CHANNELS; // adjust channel number for second timer
 		return pwm_info1.channels[channel].duty;
+	}
+
+#endif
+
+#if defined(CONFIG_ESP32S3_LEDC_TIM2)
+
+	else if (channel < (CONFIG_ESP32S3_LEDC_TIM0_CHANNELS + CONFIG_ESP32S3_LEDC_TIM1_CHANNELS +
+			    CONFIG_ESP32S3_LEDC_TIM2_CHANNELS)) {
+		channel -= (CONFIG_ESP32S3_LEDC_TIM0_CHANNELS +
+			    CONFIG_ESP32S3_LEDC_TIM1_CHANNELS); // adjust channel number for third timer
+		return pwm_info2.channels[channel].duty;
 	}
 
 #endif
@@ -180,6 +214,31 @@ int up_pwm_servo_init(uint32_t channel_mask)
 
 #endif
 
+#if defined(CONFIG_ESP32S3_LEDC_TIM2)
+
+	if (channel_mask & io_timer_get_group(2)) {
+		pwm2 = esp32s3_ledc_init(2);
+
+		if (!pwm2) {
+			syslog(LOG_ERR, "[ESP PWM] Failed to get the LEDC PWM 2 lower half\n");
+			return -ENODEV;
+		}
+
+		pwm2->ops->setup(pwm2);
+
+		pwm_info2.frequency = 400;
+
+		for (int i = 0; i < CONFIG_ESP32S3_LEDC_TIM2_CHANNELS; i++) {
+			pwm_info2.channels[i].duty = 0;
+		}
+
+		pwm2->ops->start(pwm2, &pwm_info2);
+
+		syslog(LOG_INFO, "[ESP PWM] SYSPWM INIT OK, group 2 , channel mask: %02lX\n", channel_mask);
+	}
+
+#endif
+
 	return channel_mask;
 }
 
@@ -217,6 +276,19 @@ int up_pwm_servo_set_rate_group_update(unsigned group, unsigned rate)
 	}
 
 #endif
+#if defined(CONFIG_ESP32S3_LEDC_TIM2)
+
+	else if (group == 2) {
+		if (rate == 0) {
+			pwm_info2.frequency = 15000;
+			return OK;
+		}
+
+		pwm_info2.frequency = rate;
+		return OK;
+	}
+
+#endif
 	return ERROR;
 }
 
@@ -236,6 +308,14 @@ void up_pwm_update(unsigned channels_mask)
 
 #endif
 
+#if defined(CONFIG_ESP32S3_LEDC_TIM2)
+
+	if (channels_mask & io_timer_get_group(2)) {
+		pwm2->ops->start(pwm2, &pwm_info2);
+	}
+
+#endif
+
 }
 
 uint32_t up_pwm_servo_get_rate_group(unsigned group)
@@ -248,6 +328,10 @@ uint32_t up_pwm_servo_get_rate_group(unsigned group)
 
 	if (group == 1) {
 		return io_timer_get_group(1);
+	}
+
+	if (group == 2) {
+		return io_timer_get_group(2);
 	}
 
 	return 0;
@@ -275,6 +359,19 @@ up_pwm_servo_arm(bool armed, uint32_t channel_mask)
 
 		} else {
 			pwm1->ops->stop(pwm1);
+		}
+	}
+
+#endif
+
+#if defined(CONFIG_ESP32S3_LEDC_TIM2)
+
+	if (channel_mask & io_timer_get_group(2)) {
+		if (armed) {
+			pwm2->ops->start(pwm2, &pwm_info2);
+
+		} else {
+			pwm2->ops->stop(pwm2);
 		}
 	}
 

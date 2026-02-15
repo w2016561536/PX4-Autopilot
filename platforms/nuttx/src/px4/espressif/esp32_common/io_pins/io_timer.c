@@ -82,6 +82,19 @@ uint32_t io_timer_get_group(unsigned timer)
 	}
 
 #endif
+
+#if defined(CONFIG_ESP32S3_LEDC_TIM2) && defined(CONFIG_ESP32S3_LEDC_TIM2_CHANNELS)
+
+	else if (timer == 2) {
+		for (int i = 0; i < CONFIG_ESP32S3_LEDC_TIM2_CHANNELS; i++) {
+			channel_mask |= (1 << (i + CONFIG_ESP32S3_LEDC_TIM0_CHANNELS + CONFIG_ESP32S3_LEDC_TIM1_CHANNELS));
+		}
+
+		return channel_mask;
+	}
+
+#endif
+
 	return 0;
 
 }

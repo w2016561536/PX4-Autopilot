@@ -27,10 +27,10 @@ param set-default MAV_TYPE 1
 #param set-default COM_ARM_SDCARD 0
 #disable CPU check. default is 90%
 param set-default PWM_MAIN_MIN1 0
-param set-default PWM_MAIN_MIN2 0
+# param set-default PWM_MAIN_MIN2 0
 
 param set-default PWM_MAIN_DIS1 0
-param set-default PWM_MAIN_DIS2 0
+#param set-default PWM_MAIN_DIS2 0
 
 param set-default IMU_GYRO_RATEMAX 200
 

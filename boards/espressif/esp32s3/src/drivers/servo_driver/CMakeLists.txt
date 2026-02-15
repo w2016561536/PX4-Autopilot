@@ -1,6 +1,6 @@
 ############################################################################
 #
-#   Copyright (c) 2015 PX4 Development Team. All rights reserved.
+#   Copyright (c) 2021 PX4 Development Team. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -31,40 +31,18 @@
 #
 ############################################################################
 
-add_library(drivers_board
-	init.c
-	led.c
-	i2c.cpp
-	spi.cpp
-	timer_config.cpp
-	esp32s3_board_usb.c
-	# esp32s3_ledc.c
-	#esp32s3_board_tim.c
-	esp32s3_board_wlan.c
-	esp32s3_board_sdmmc.c
-	esp32s3_adc.c
-	mtd.cpp
-)
-
-target_link_libraries(drivers_board
-	PRIVATE
+px4_add_module(
+	MODULE drivers__brushed_servo
+	MAIN brushed_servo
+	COMPILE_FLAGS
+		#-DDEBUG_BUILD   # uncomment for PX4_DEBUG output
+		#-O0             # uncomment when debugging
+	SRCS
+		BrushedServo.cpp
+		motor.cpp
+	MODULE_CONFIG
+		module.yaml
+	DEPENDS
+		px4_work_queue
 		arch_io_pins
-		arch_spi
-		drivers__led # drv_led_start
-		nuttx_arch # sdio
-		nuttx_drivers # sdio
-		px4_layer
-)
-
-target_include_directories(drivers_board PRIVATE
-
-../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/soc/esp32s3/include/
-../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/esp_common/include/
-../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/nuttx/esp32s3/include/
-../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/esp_wifi/include/
-../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/esp_hw_support/include/
-../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/esp_event/include/
-)
-
-add_subdirectory(${PX4_BOARD_DIR}/src/drivers/edit_ssid)
-add_subdirectory(${PX4_BOARD_DIR}/src/drivers/servo_driver)
+	)

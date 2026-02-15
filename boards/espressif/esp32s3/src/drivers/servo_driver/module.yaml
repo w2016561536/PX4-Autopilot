@@ -1,0 +1,231 @@
+module_name: Brushed Servo
+
+parameters:
+    - group: Brushed Servo
+      definitions:
+        SERVO_DRV_EN:
+            description:
+                short: Brushed servo driver enable
+                long: |
+                  Enable the brushed servo driver. This will disable the normal servo output and use the configured pins for the brushed servo output instead.
+            type: boolean
+            default: 1
+            reboot_required: true
+
+        SERVO1_INV:
+            description:
+                short: Servo 1 inversion
+                long: |
+                  Defines if the servo output is inverted.
+                  If servo 1 is running continuously in the wrong direction, setting this to true can be a quick fix.
+                  0: Normal output
+                  1: Inverted output
+            type: boolean
+            default: 0
+
+        SERVO2_INV:
+            description:
+                short: Servo 2 inversion
+                long: |
+                  Defines if the servo output is inverted.
+                  If servo 2 is running continuously in the wrong direction, setting this to true can be a quick fix.
+                  0: Normal output
+                  1: Inverted output
+            type: boolean
+            default: 0
+
+        SERVO1_OFFSET:
+            description:
+                short: Servo 1 offset
+                long: |
+                  Defines an offset for the servo output.
+                  This can be used to adjust the neutral position of the servo.
+            type: float
+            decimal: 2
+            increment: 0.01
+            unit: '%'
+            min: -100
+            max: 100
+            default: 0.0
+
+        SERVO2_OFFSET:
+            description:
+                short: Servo 2 offset
+                long: |
+                  Defines an offset for the servo output.
+                  This can be used to adjust the neutral position of the servo.
+            type: float
+            decimal: 2
+            increment: 0.01
+            unit: '%'
+            min: -100
+            max: 100
+            default: 0.0
+
+        SERVO1_BIND:
+            description:
+                short: Servo 1 binding
+                long: |
+                    Determine servo 1 bind to which main output
+            type: enum
+            values:
+                0: MAIN1
+                1: MAIN2
+                2: MAIN3
+                3: MAIN4
+                4: MAIN5
+                5: MAIN6
+                6: MAIN7
+                7: MAIN8
+            default: 2
+
+        SERVO2_BIND:
+            description:
+                short: Servo 2 binding
+                long: |
+                    Determine servo 2 bind to which main output
+            type: enum
+            values:
+                0: MAIN1
+                1: MAIN2
+                2: MAIN3
+                3: MAIN4
+                4: MAIN5
+                5: MAIN6
+                6: MAIN7
+                7: MAIN8
+            default: 3
+
+        # S1_PHY_ANGLE_MIN:
+        #     description:
+        #         short: Servo 1 physical angle minimum
+        #         long: |
+        #           Defines the minimum physical angle of the servo. This is used to limit the servo output to a certain range.
+        #     type: int32
+        #     unit: °
+        #     min: -360
+        #     max: 360
+        #     default: -90
+
+        # S1_PHY_ANGLE_MAX:
+        #     description:
+        #         short: Servo 1 physical angle maximum
+        #         long: |
+        #             Defines the maximum physical angle of the servo. This is used to limit the servo output to
+        #             a certain range.
+        #     type: int32
+        #     unit: °
+        #     min: -360
+        #     max: 360
+        #     default: 90
+
+        # S2_PHY_ANGLE_MIN:
+        #     description:
+        #         short: Servo 2 physical angle minimum
+        #         long: |
+        #             Defines the minimum physical angle of the servo. This is used to limit the servo output to a certain range.
+        #     type: int32
+        #     unit: °
+        #     min: -360
+        #     max: 360
+        #     default: -90
+
+        # S2_PHY_ANGLE_MAX:
+        #     description:
+        #         short: Servo 2 physical angle maximum
+        #         long: |
+        #             Defines the maximum physical angle of the servo. This is used to limit the servo output to a certain range.
+        #     type: int32
+        #     unit: °
+        #     min: -360
+        #     max: 360
+        #     default: 90
+
+        S1_VOLTAGE_MIN:
+            description:
+                short: Servo 1 voltage minimum
+                long: |
+                    Defines the minimum voltage of the servo. When pwm output at 500us, the voltage will be S1_VOLTAGE_MIN. This is used to limit the servo output to a certain range.
+            type: int32
+            min: 0
+            max: 3100
+            default: 1000
+
+        S1_VOLTAGE_MAX:
+            description:
+                short: Servo 1 voltage maximum
+                long: |
+                    Defines the maximum voltage of the servo. When pwm output at 2500us, the voltage will be S1_VOLTAGE_MAX. This is used to limit the servo output to a certain range.
+            type: int32
+            min: 0
+            max: 3100
+            default: 2000
+
+        S2_VOLTAGE_MIN:
+            description:
+                short: Servo 2 voltage minimum
+                long: |
+                    Defines the minimum voltage of the servo. When pwm output at 500us, the voltage will be S2_VOLTAGE_MIN. This is used to limit the servo output to a certain range.
+            type: int32
+            min: 0
+            max: 3100
+            default: 1000
+
+        S2_VOLTAGE_MAX:
+            description:
+                short: Servo 2 voltage maximum
+                long: |
+                    Defines the maximum voltage of the servo. When pwm output at 2500us, the voltage will be S2_VOLTAGE_MAX. This is used to limit the servo output to a certain range.
+            type: int32
+            min: 0
+            max: 3100
+            default: 2000
+
+        SERVO_KP:
+            description:
+                short: Servo proportional gain
+                long: |
+                    Defines the proportional gain of the servo controller. This is used to adjust the response of the servo to the input signal.
+            type: float
+            decimal: 2
+            increment: 0.01
+            min: 0
+            max: 100
+            default: 1
+
+        SERVO_KI:
+            description:
+                short: Servo integral gain
+                long: |
+                    Defines the integral gain of the servo controller. This is used to adjust the response of the
+                    servo to the input signal. A higher integral gain will result in a faster response, but can also cause overshoot and instability.
+            type: float
+            decimal: 2
+            increment: 0.01
+            min: 0
+            max: 100
+            default: 0
+
+        SERVO_KD:
+            description:
+                short: Servo derivative gain
+                long: |
+                    Defines the derivative gain of the servo controller. This is used to adjust the response of the
+                    servo to the input signal. A higher derivative gain will result in a faster response, but can also cause overshoot and instability.
+            type: float
+            decimal: 2
+            increment: 0.01
+            min: 0
+            max: 100
+            default: 5
+
+        SERVO_MAX_OUTPUT:
+            description:
+                short: Servo maximum output
+                long: |
+                    Defines the maximum output of the servo controller. This is used to limit the servo output to a certain range.
+            type: int32
+            unit: '%'
+            min: 0
+            max: 100
+            default: 100
