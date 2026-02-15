@@ -56,7 +56,7 @@
 #include "hardware/regi2c_ctrl.h"
 #include "hardware/regi2c_saradc.h"
 #include "hardware/esp32s3_rtc_io.h"
-
+#include "esp_adc/adc_cali_scheme.h"
 
 
 /* ADC calibration max count */
@@ -84,12 +84,12 @@
 
 #define ADC_CAL_VOL_LEN         (8)
 
-/* ADC input voltage attenuation, this affects measuring range */
-
-#define ADC_ATTEN_DB_0          (0)     /* Vmax = 950 mV  */
-#define ADC_ATTEN_DB_2_5        (1)     /* Vmax = 1250 mV */
-#define ADC_ATTEN_DB_6          (2)     /* Vmax = 1750 mV */
-#define ADC_ATTEN_DB_12         (3)     /* Vmax = 3100 mV */
+// /* ADC input voltage attenuation, this affects measuring range */
+// defined in adc_types.h
+// #define ADC_ATTEN_DB_0          (0)     /* Vmax = 950 mV  */
+// #define ADC_ATTEN_DB_2_5        (1)     /* Vmax = 1250 mV */
+// #define ADC_ATTEN_DB_6          (2)     /* Vmax = 1750 mV */
+// #define ADC_ATTEN_DB_12         (3)     /* Vmax = 3100 mV */
 
 /* ADC attenuation */
 
@@ -130,6 +130,12 @@
 #define setbits(bs, a)     modifyreg32(a, 0, bs)
 #define resetbits(bs, a)   modifyreg32(a, bs, 0)
 
+adc_cali_handle_t adc_cali_handle;
+adc_cali_curve_fitting_config_t cali_config = {
+    .unit_id = ADC_UNIT_1,
+    .atten = ADC_ATTEN_DB_12,
+    .bitwidth = ADC_BITWIDTH_DEFAULT,
+};
 
 struct adc_chan_s
 {
@@ -232,41 +238,87 @@ static uint32_t adc_read_work(struct adc_dev_s *dev)
   return regval;
 }
 
+/****************************************************************************
+ * Name: adc_read_channel
+ *
+ * Description:
+ *   Read ADC value for a specific channel.
+ *
+ * Input Parameters:
+ *   channel - ADC channel number
+ *
+ * Returned Value:
+ *   uint32_t ADC value for the specified channel, or UINT32_MAX on timeout.
+ *
+ ****************************************************************************/
+static uint32_t adc_read_channel(uint8_t channel)
+{
+  irqstate_t flags = px4_enter_critical_section();
+
+  adc_samplecfg(channel);
+  uint32_t regval;
+
+  /* Trigger ADC1 sampling */
+
+  setbits(SENS_MEAS1_START_SAR, SENS_SAR_MEAS1_CTRL2_REG);
+
+  /* Wait until ADC1 sampling is done */
+	const hrt_abstime now = hrt_absolute_time();
+  do
+    {
+      regval = getreg32(SENS_SAR_MEAS1_CTRL2_REG);
+	if ((hrt_absolute_time() - now) > 10) {
+			px4_leave_critical_section(flags);
+			return UINT32_MAX;
+		}
+    }
+  while (!(regval & SENS_MEAS1_DONE_SAR_M));
+
+  regval = getreg32(SENS_SAR_MEAS1_CTRL2_REG) & ADC_VAL_MASK;
+  /* Disable ADC sampling */
+
+  resetbits(SENS_MEAS1_START_SAR, SENS_SAR_MEAS1_CTRL2_REG);
+
+  px4_leave_critical_section(flags);
+
+  return regval;
+}
+
 
 int px4_arch_adc_init(uint32_t base_address) {
 
 	adcdev = (adc_dev_s *)kmm_malloc(sizeof(struct adc_dev_s));
   	if (adcdev == NULL)
-  	  {
+  	{
   	    syslog(LOG_ERR, "ERROR: Failed to allocate adc_dev_s instance\n");
   	    return PX4_ERROR;
-  	  }
+  	}
+    // Initialize all required Channels
+    // get channel count from config
+      uint32_t channel_mask = (ADC_CHANNELS) & 0x000003FF; // esp32 series have max 10 channels
 
-	esp32s3_adc_init(ADC_BATTERY_VOLTAGE_CHANNEL,adcdev);
-
-	syslog(LOG_INFO, "INFO: ESP32S3 ADC drvier ready\n");
+   // initialize all channels in the mask
+    for (int i = 0; i < ADC_1_MAX_CHANNELS; i++)
+    {
+        if (channel_mask & (1 << i)) {
+            esp32s3_adc_init(i, adcdev);
+            if (adcdev->ad_ops->ao_setup(adcdev) != OK) {
+	          	syslog(LOG_ERR, "ERROR: Failed to setup ADC %d, channel: %d\n", 1, i);
+	          	return PX4_ERROR;
+	        }
+        }
+    }
 
 	if (adcdev == NULL)
-    	{
-    	  syslog(LOG_ERR, "ERROR: Failed to initialize ADC %d\n", 1);
-    	  return PX4_ERROR;
-    	}
+    {
+      syslog(LOG_ERR, "ERROR: Failed to initialize ADC %d\n", 1);
+      return PX4_ERROR;
+    }
 
-
-
-	/* 提供给驱动注册的回调表 */
-	// static const struct adc_callback_s g_adc_cb = {
-	//   .au_receive = esp_adc_receive,
-	// };
-	// if (adcdev->ad_ops->ao_bind(adcdev, &g_adc_cb) != OK) {
-	// 	syslog(LOG_ERR, "ERROR: Failed to bind ADC callbacks\n");
-	// 	return PX4_ERROR;
-	// }
-
-	if (adcdev->ad_ops->ao_setup(adcdev) != OK) {
-		syslog(LOG_ERR, "ERROR: Failed to setup ADC %d\n", 1);
-		return PX4_ERROR;
-	}
+    if (adc_cali_create_scheme_curve_fitting(&cali_config, &adc_cali_handle) != ESP_OK) {
+        syslog(LOG_ERR, "ERROR: Failed to initialize ADC calibration\n");
+        return PX4_ERROR;
+    }
 
 	syslog(LOG_INFO, "INFO: ESP32S3 ADC INIT, BOARD ADC START\n");
 	return PX4_OK ;
@@ -283,14 +335,26 @@ uint32_t px4_arch_adc_sample(uint32_t base_address, unsigned channel) {
 	if (adcdev == NULL) {
 		return UINT32_MAX;
 	}
-	if( channel == ADC_BATTERY_CURRENT_CHANNEL){
-		return 3000; // not supported
-	}
-        if (channel != ADC_BATTERY_VOLTAGE_CHANNEL) {
-		return UINT32_MAX;
-	}
-	return adc_read_work(adcdev);
+    // check is channel is valid
+    uint32_t channel_mask = (ADC_CHANNELS) & 0x000003FF; // esp32 series have max 10 channels
+    if ((channel_mask & (1 << channel)) == 0) {
+        return 0;
+    }
 
+    uint32_t raw_value = adc_read_channel(channel);
+    if (raw_value == UINT32_MAX) {
+        return UINT32_MAX;
+    }
+
+    if (adc_cali_handle) {
+        int voltage;
+        if (adc_cali_raw_to_voltage(adc_cali_handle, raw_value, &voltage) == ESP_OK) {
+            // Convert voltage back to raw value based on the default calibration voltage
+            raw_value = voltage * 4096 / 3100;
+        }
+    }
+
+	return raw_value;
 }
 
 float px4_arch_adc_reference_v() {

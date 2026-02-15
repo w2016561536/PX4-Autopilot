@@ -703,14 +703,6 @@ static int adc_setup(struct adc_dev_s *dev)
 
   ainfo("channel: %" PRIu8 "\n", priv->channel);
 
-  /* Do nothing when the ADC device is already set up */
-
-  if (priv->ref > 0)
-    {
-      priv->ref++;
-      return OK;
-    }
-
   /* Enable ADC clock */
 
   adc_enable_clk();
@@ -741,7 +733,7 @@ static int adc_setup(struct adc_dev_s *dev)
 
   /* The ADC device is ready */
 
-  priv->ref++;
+  // priv->ref++;
 
   return OK;
 }

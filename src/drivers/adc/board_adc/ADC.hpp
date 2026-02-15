@@ -100,7 +100,7 @@ private:
 	void close_gpio_devices();
 	uint8_t read_gpio_value(int fd);
 
-	static const hrt_abstime	kINTERVAL{10_ms};	/**< 100Hz base rate */
+	static const hrt_abstime	kINTERVAL{5_ms};	/**< 100Hz base rate */
 
 	const bool 			_publish_adc_report;
 
