@@ -102,7 +102,7 @@ __BEGIN_DECLS
 
 int px4_esp32s3_configgpio(uint32_t pinset);
 int px4_esp32s3_unconfiggpio(uint32_t pinset);
-int esp32s3_gpiosetevent(uint32_t pinset, bool risingedge, bool fallingedge,bool event, xcpt_t func, void *arg);
+int esp32s3_gpiosetevent(uint32_t pinset, bool risingedge, bool fallingedge, bool event, xcpt_t func, void *arg);
 
 #define px4_i2cbus_initialize(bus_num_1based)   	esp32s3_i2cbus_initialize(bus_num_1based)
 #define px4_i2cbus_uninitialize(pdev)           	esp32s3_i2cbus_uninitialize(pdev)

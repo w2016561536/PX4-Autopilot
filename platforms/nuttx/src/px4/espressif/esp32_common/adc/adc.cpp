@@ -132,34 +132,33 @@
 
 adc_cali_handle_t adc_cali_handle;
 adc_cali_curve_fitting_config_t cali_config = {
-    .unit_id = ADC_UNIT_1,
-    .atten = ADC_ATTEN_DB_12,
-    .bitwidth = ADC_BITWIDTH_DEFAULT,
+	.unit_id = ADC_UNIT_1,
+	.atten = ADC_ATTEN_DB_12,
+	.bitwidth = ADC_BITWIDTH_DEFAULT,
 };
 
-struct adc_chan_s
-{
-  uint32_t ref;           /* Reference count */
+struct adc_chan_s {
+	uint32_t ref;           /* Reference count */
 
-  const uint8_t channel;  /* Channel number */
-  const uint8_t pin;      /* GPIO pin number */
+	const uint8_t channel;  /* Channel number */
+	const uint8_t pin;      /* GPIO pin number */
 
-  const struct adc_callback_s *cb;  /* Upper driver callback */
+	const struct adc_callback_s *cb;  /* Upper driver callback */
 };
 
 
 static spinlock_t g_modifyreg_lock = SP_UNLOCKED;
 void modifyreg32(unsigned int addr, uint32_t clearbits, uint32_t setbits)
 {
-  irqstate_t flags;
-  uint32_t   regval;
+	irqstate_t flags;
+	uint32_t   regval;
 
-  flags   = spin_lock_irqsave(&g_modifyreg_lock);
-  regval  = getreg32(addr);
-  regval &= ~clearbits;
-  regval |= setbits;
-  putreg32(regval, addr);
-  spin_unlock_irqrestore(&g_modifyreg_lock, flags);
+	flags   = spin_lock_irqsave(&g_modifyreg_lock);
+	regval  = getreg32(addr);
+	regval &= ~clearbits;
+	regval |= setbits;
+	putreg32(regval, addr);
+	spin_unlock_irqrestore(&g_modifyreg_lock, flags);
 }
 
 #include "esp32s3_adc.h"
@@ -169,64 +168,64 @@ struct adc_dev_s *adcdev;
 
 static inline void adc_samplecfg(int channel)
 {
-  uint32_t regval;
+	uint32_t regval;
 
-  /* set (Frequency division) (inversion adc) */
+	/* set (Frequency division) (inversion adc) */
 
-  regval = getreg32(SENS_SAR_READER1_CTRL_REG);
-  regval &= ~(SENS_SAR1_CLK_DIV_M);
-  regval |= (1 << SENS_SAR1_CLK_DIV_S);
-  putreg32(regval, SENS_SAR_READER1_CTRL_REG);
+	regval = getreg32(SENS_SAR_READER1_CTRL_REG);
+	regval &= ~(SENS_SAR1_CLK_DIV_M);
+	regval |= (1 << SENS_SAR1_CLK_DIV_S);
+	putreg32(regval, SENS_SAR_READER1_CTRL_REG);
 
-  /* Enable ADC1, its sampling attenuation */
+	/* Enable ADC1, its sampling attenuation */
 
-  regval = getreg32(SENS_SAR_ATTEN1_REG);
-  regval &= ~(ADC_ATTEN_DEF << (channel * 2));
-  regval |= ADC_ATTEN_DEF << (channel * 2);
-  putreg32(regval, SENS_SAR_ATTEN1_REG);
+	regval = getreg32(SENS_SAR_ATTEN1_REG);
+	regval &= ~(ADC_ATTEN_DEF << (channel * 2));
+	regval |= ADC_ATTEN_DEF << (channel * 2);
+	putreg32(regval, SENS_SAR_ATTEN1_REG);
 
-  /* Enable ADC1, its sampling channel and attenuation */
+	/* Enable ADC1, its sampling channel and attenuation */
 
-  regval  = getreg32(SENS_SAR_MEAS1_CTRL2_REG);
-  regval &= ~(SENS_SAR1_EN_PAD_M | SENS_SAR1_EN_PAD_FORCE_M |
-              SENS_MEAS1_START_FORCE_M);
-  regval |= ((1 << channel) << SENS_SAR1_EN_PAD_S) |
-              SENS_SAR1_EN_PAD_FORCE | SENS_MEAS1_START_FORCE;
-  putreg32(regval, SENS_SAR_MEAS1_CTRL2_REG);
+	regval  = getreg32(SENS_SAR_MEAS1_CTRL2_REG);
+	regval &= ~(SENS_SAR1_EN_PAD_M | SENS_SAR1_EN_PAD_FORCE_M |
+		    SENS_MEAS1_START_FORCE_M);
+	regval |= ((1 << channel) << SENS_SAR1_EN_PAD_S) |
+		  SENS_SAR1_EN_PAD_FORCE | SENS_MEAS1_START_FORCE;
+	putreg32(regval, SENS_SAR_MEAS1_CTRL2_REG);
 }
 
 
 static uint32_t adc_read_work(struct adc_dev_s *dev)
 {
-  // int ret;
-  //int32_t adc;
-  struct adc_chan_s *priv = (struct adc_chan_s *)dev->ad_priv;
+	// int ret;
+	//int32_t adc;
+	struct adc_chan_s *priv = (struct adc_chan_s *)dev->ad_priv;
 
-  irqstate_t flags = px4_enter_critical_section();
+	irqstate_t flags = px4_enter_critical_section();
 
-  adc_samplecfg(priv->channel);
-  uint32_t regval;
+	adc_samplecfg(priv->channel);
+	uint32_t regval;
 
-  /* Trigger ADC1 sampling */
+	/* Trigger ADC1 sampling */
 
-  setbits(SENS_MEAS1_START_SAR, SENS_SAR_MEAS1_CTRL2_REG);
+	setbits(SENS_MEAS1_START_SAR, SENS_SAR_MEAS1_CTRL2_REG);
 
-  /* Wait until ADC1 sampling is done */
+	/* Wait until ADC1 sampling is done */
 	const hrt_abstime now = hrt_absolute_time();
-  do
-    {
-      regval = getreg32(SENS_SAR_MEAS1_CTRL2_REG);
-	if ((hrt_absolute_time() - now) > 50) {
+
+	do {
+		regval = getreg32(SENS_SAR_MEAS1_CTRL2_REG);
+
+		if ((hrt_absolute_time() - now) > 50) {
 			px4_leave_critical_section(flags);
 			return UINT32_MAX;
 		}
-    }
-  while (!(regval & SENS_MEAS1_DONE_SAR_M));
+	} while (!(regval & SENS_MEAS1_DONE_SAR_M));
 
-  regval = getreg32(SENS_SAR_MEAS1_CTRL2_REG) & ADC_VAL_MASK;
-  /* Disable ADC sampling */
+	regval = getreg32(SENS_SAR_MEAS1_CTRL2_REG) & ADC_VAL_MASK;
+	/* Disable ADC sampling */
 
-  resetbits(SENS_MEAS1_START_SAR, SENS_SAR_MEAS1_CTRL2_REG);
+	resetbits(SENS_MEAS1_START_SAR, SENS_SAR_MEAS1_CTRL2_REG);
 
 //   adc = (int32_t)(regval * (UINT16_MAX * ADC_CAL_VOL_DEF / 2098) /
 //                   UINT16_MAX);
@@ -234,8 +233,8 @@ static uint32_t adc_read_work(struct adc_dev_s *dev)
 //    PX4_INFO("channel: %" PRIu8 ", voltage: %" PRIu32 " mV\n", priv->channel,
 // 	   (uint32_t)adc);
 
-  px4_leave_critical_section(flags);
-  return regval;
+	px4_leave_critical_section(flags);
+	return regval;
 }
 
 /****************************************************************************
@@ -253,72 +252,73 @@ static uint32_t adc_read_work(struct adc_dev_s *dev)
  ****************************************************************************/
 static uint32_t adc_read_channel(uint8_t channel)
 {
-  irqstate_t flags = px4_enter_critical_section();
+	irqstate_t flags = px4_enter_critical_section();
 
-  adc_samplecfg(channel);
-  uint32_t regval;
+	adc_samplecfg(channel);
+	uint32_t regval;
 
-  /* Trigger ADC1 sampling */
+	/* Trigger ADC1 sampling */
 
-  setbits(SENS_MEAS1_START_SAR, SENS_SAR_MEAS1_CTRL2_REG);
+	setbits(SENS_MEAS1_START_SAR, SENS_SAR_MEAS1_CTRL2_REG);
 
-  /* Wait until ADC1 sampling is done */
+	/* Wait until ADC1 sampling is done */
 	const hrt_abstime now = hrt_absolute_time();
-  do
-    {
-      regval = getreg32(SENS_SAR_MEAS1_CTRL2_REG);
-	if ((hrt_absolute_time() - now) > 10) {
+
+	do {
+		regval = getreg32(SENS_SAR_MEAS1_CTRL2_REG);
+
+		if ((hrt_absolute_time() - now) > 10) {
 			px4_leave_critical_section(flags);
 			return UINT32_MAX;
 		}
-    }
-  while (!(regval & SENS_MEAS1_DONE_SAR_M));
+	} while (!(regval & SENS_MEAS1_DONE_SAR_M));
 
-  regval = getreg32(SENS_SAR_MEAS1_CTRL2_REG) & ADC_VAL_MASK;
-  /* Disable ADC sampling */
+	regval = getreg32(SENS_SAR_MEAS1_CTRL2_REG) & ADC_VAL_MASK;
+	/* Disable ADC sampling */
 
-  resetbits(SENS_MEAS1_START_SAR, SENS_SAR_MEAS1_CTRL2_REG);
+	resetbits(SENS_MEAS1_START_SAR, SENS_SAR_MEAS1_CTRL2_REG);
 
-  px4_leave_critical_section(flags);
+	px4_leave_critical_section(flags);
 
-  return regval;
+	return regval;
 }
 
 
-int px4_arch_adc_init(uint32_t base_address) {
+int px4_arch_adc_init(uint32_t base_address)
+{
 
 	adcdev = (adc_dev_s *)kmm_malloc(sizeof(struct adc_dev_s));
-  	if (adcdev == NULL)
-  	{
-  	    syslog(LOG_ERR, "ERROR: Failed to allocate adc_dev_s instance\n");
-  	    return PX4_ERROR;
-  	}
-    // Initialize all required Channels
-    // get channel count from config
-      uint32_t channel_mask = (ADC_CHANNELS) & 0x000003FF; // esp32 series have max 10 channels
 
-   // initialize all channels in the mask
-    for (int i = 0; i < ADC_1_MAX_CHANNELS; i++)
-    {
-        if (channel_mask & (1 << i)) {
-            esp32s3_adc_init(i, adcdev);
-            if (adcdev->ad_ops->ao_setup(adcdev) != OK) {
-	          	syslog(LOG_ERR, "ERROR: Failed to setup ADC %d, channel: %d\n", 1, i);
-	          	return PX4_ERROR;
-	        }
-        }
-    }
+	if (adcdev == NULL) {
+		syslog(LOG_ERR, "ERROR: Failed to allocate adc_dev_s instance\n");
+		return PX4_ERROR;
+	}
 
-	if (adcdev == NULL)
-    {
-      syslog(LOG_ERR, "ERROR: Failed to initialize ADC %d\n", 1);
-      return PX4_ERROR;
-    }
+	// Initialize all required Channels
+	// get channel count from config
+	uint32_t channel_mask = (ADC_CHANNELS) & 0x000003FF; // esp32 series have max 10 channels
 
-    if (adc_cali_create_scheme_curve_fitting(&cali_config, &adc_cali_handle) != ESP_OK) {
-        syslog(LOG_ERR, "ERROR: Failed to initialize ADC calibration\n");
-        return PX4_ERROR;
-    }
+	// initialize all channels in the mask
+	for (int i = 0; i < ADC_1_MAX_CHANNELS; i++) {
+		if (channel_mask & (1 << i)) {
+			esp32s3_adc_init(i, adcdev);
+
+			if (adcdev->ad_ops->ao_setup(adcdev) != OK) {
+				syslog(LOG_ERR, "ERROR: Failed to setup ADC %d, channel: %d\n", 1, i);
+				return PX4_ERROR;
+			}
+		}
+	}
+
+	if (adcdev == NULL) {
+		syslog(LOG_ERR, "ERROR: Failed to initialize ADC %d\n", 1);
+		return PX4_ERROR;
+	}
+
+	if (adc_cali_create_scheme_curve_fitting(&cali_config, &adc_cali_handle) != ESP_OK) {
+		syslog(LOG_ERR, "ERROR: Failed to initialize ADC calibration\n");
+		return PX4_ERROR;
+	}
 
 	syslog(LOG_INFO, "INFO: ESP32S3 ADC INIT, BOARD ADC START\n");
 	return PX4_OK ;
@@ -326,46 +326,55 @@ int px4_arch_adc_init(uint32_t base_address) {
 }
 
 
-void px4_arch_adc_uninit(uint32_t base_address) {
+void px4_arch_adc_uninit(uint32_t base_address)
+{
 	// nothing to do
 }
 
-uint32_t px4_arch_adc_sample(uint32_t base_address, unsigned channel) {
+uint32_t px4_arch_adc_sample(uint32_t base_address, unsigned channel)
+{
 
 	if (adcdev == NULL) {
 		return UINT32_MAX;
 	}
-    // check is channel is valid
-    uint32_t channel_mask = (ADC_CHANNELS) & 0x000003FF; // esp32 series have max 10 channels
-    if ((channel_mask & (1 << channel)) == 0) {
-        return 0;
-    }
 
-    uint32_t raw_value = adc_read_channel(channel);
-    if (raw_value == UINT32_MAX) {
-        return UINT32_MAX;
-    }
+	// check is channel is valid
+	uint32_t channel_mask = (ADC_CHANNELS) & 0x000003FF; // esp32 series have max 10 channels
 
-    if (adc_cali_handle) {
-        int voltage;
-        if (adc_cali_raw_to_voltage(adc_cali_handle, raw_value, &voltage) == ESP_OK) {
-            // Convert voltage back to raw value based on the default calibration voltage
-            raw_value = voltage * 4096 / 3100;
-        }
-    }
+	if ((channel_mask & (1 << channel)) == 0) {
+		return 0;
+	}
+
+	uint32_t raw_value = adc_read_channel(channel);
+
+	if (raw_value == UINT32_MAX) {
+		return UINT32_MAX;
+	}
+
+	if (adc_cali_handle) {
+		int voltage;
+
+		if (adc_cali_raw_to_voltage(adc_cali_handle, raw_value, &voltage) == ESP_OK) {
+			// Convert voltage back to raw value based on the default calibration voltage
+			raw_value = voltage * 4096 / 3100;
+		}
+	}
 
 	return raw_value;
 }
 
-float px4_arch_adc_reference_v() {
+float px4_arch_adc_reference_v()
+{
 	return 3.1f; // TODO: provide true vref
 }
 
-uint32_t px4_arch_adc_temp_sensor_mask() {
+uint32_t px4_arch_adc_temp_sensor_mask()
+{
 	return 0;
 }
 
-uint32_t px4_arch_adc_dn_fullcount() {
+uint32_t px4_arch_adc_dn_fullcount()
+{
 	return 1 << 12; // 12 bit ADC
 }
 

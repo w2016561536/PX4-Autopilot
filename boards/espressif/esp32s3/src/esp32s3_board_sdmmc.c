@@ -54,22 +54,22 @@ extern struct sdio_dev_s *sdio_initialize(int slotno);
 
 int board_sdmmc_initialize(void)
 {
-  struct sdio_dev_s *sdio;
-  int rv;
+	struct sdio_dev_s *sdio;
+	int rv;
 
-  sdio = sdio_initialize(1);
-  if (!sdio)
-    {
-      syslog(LOG_ERR, "Failed to initialize SDIO slot\n");
-      return -ENODEV;
-    }
+	sdio = sdio_initialize(1);
 
-  rv = mmcsd_slotinitialize(0, sdio);
-  if (rv < 0)
-    {
-      syslog(LOG_ERR, "Failed to bind SPI port to SD slot\n");
-      return rv;
-    }
+	if (!sdio) {
+		syslog(LOG_ERR, "Failed to initialize SDIO slot\n");
+		return -ENODEV;
+	}
 
-  return OK;
+	rv = mmcsd_slotinitialize(0, sdio);
+
+	if (rv < 0) {
+		syslog(LOG_ERR, "Failed to bind SPI port to SD slot\n");
+		return rv;
+	}
+
+	return OK;
 }

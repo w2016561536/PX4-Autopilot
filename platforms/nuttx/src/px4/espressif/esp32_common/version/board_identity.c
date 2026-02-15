@@ -154,10 +154,10 @@ int board_get_px4_guid_formated(char *format_buffer, int size)
 	px4_guid_t px4_guid;
 	//board_get_px4_guid(px4_guid);
 
-	for(int i=0;i<PX4_GUID_BYTE_LENGTH;i++)
-	{
+	for (int i = 0; i < PX4_GUID_BYTE_LENGTH; i++) {
 		px4_guid[i] = i;
 	}
+
 	int offset  = 0;
 
 	/* size should be 2 per byte + 1 for termination

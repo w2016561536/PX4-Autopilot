@@ -176,18 +176,18 @@ hrt_tim_init(void)
 
 	tim = esp32s3_tim_init(ESP32S3_HRT_TIMER);
 
-	if (!tim)
-	{
+	if (!tim) {
 		PX4_ERR("ERROR: Failed to initialize ESP32S3 timer\n");
 	}
+
 	ESP32S3_TIM_CLK_SRC(tim, ESP32S3_TIM_APB_CLK);
 
-  	/* Calculate the suitable prescaler according to the current APB
-  	 * frequency to generate a period of 1 us.
-  	 */
+	/* Calculate the suitable prescaler according to the current APB
+	 * frequency to generate a period of 1 us.
+	 */
 	uint16_t pre;
 
-  	pre = esp_clk_apb_freq() / 1000000;
+	pre = esp_clk_apb_freq() / 1000000;
 
 	ESP32S3_TIM_SETPRE(tim, pre);
 	ESP32S3_TIM_SETMODE(tim, ESP32S3_TIM_MODE_UP);
@@ -197,7 +197,7 @@ hrt_tim_init(void)
 	ESP32S3_TIM_RLD_NOW(tim);   //reload value now
 
 	ESP32S3_TIM_SETALRVL(tim, 1000);		//alarm value
-        ESP32S3_TIM_SETALRM(tim, true);		//enable alarm
+	ESP32S3_TIM_SETALRM(tim, true);		//enable alarm
 	ESP32S3_TIM_SETARLD(tim, false);		//auto reload
 
 	ESP32S3_TIM_SETISR(tim, hrt_tim_isr, NULL);
@@ -210,7 +210,7 @@ hrt_tim_init(void)
  * Handle the compare interrupt by calling the callout dispatcher
  * and then re-scheduling the next deadline.
  */
-static int __attribute__ ((section(".iram1")))
+static int __attribute__((section(".iram1")))
 hrt_tim_isr(int irq, void *context, void *arg)
 {
 
@@ -221,7 +221,7 @@ hrt_tim_isr(int irq, void *context, void *arg)
 	hrt_call_reschedule();
 
 	ESP32S3_TIM_ACKINT(tim);
-        ESP32S3_TIM_SETALRM(tim, true);			//enable alarm
+	ESP32S3_TIM_SETALRM(tim, true);			//enable alarm
 
 	return OK;
 }
@@ -230,7 +230,7 @@ hrt_tim_isr(int irq, void *context, void *arg)
  * Fetch a never-wrapping absolute time value in microseconds from
  * some arbitrary epoch shortly after system start.
  */
-hrt_abstime __attribute__ ((section(".iram1")))
+hrt_abstime __attribute__((section(".iram1")))
 hrt_absolute_time(void)
 {
 	hrt_abstime	abstime;
@@ -262,7 +262,7 @@ hrt_absolute_time(void)
 /**
  * Store the absolute time in an interrupt-safe fashion
  */
-void __attribute__ ((section(".iram1")))
+void __attribute__((section(".iram1")))
 hrt_store_absolute_time(volatile hrt_abstime *t)
 {
 	irqstate_t flags = px4_enter_critical_section();
@@ -293,7 +293,7 @@ hrt_init(void)
 /**
  * Call callout(arg) after interval has elapsed.
  */
-void __attribute__ ((section(".iram1")))
+void __attribute__((section(".iram1")))
 hrt_call_after(struct hrt_call *entry, hrt_abstime delay, hrt_callout callout, void *arg)
 {
 	hrt_call_internal(entry,
@@ -306,7 +306,7 @@ hrt_call_after(struct hrt_call *entry, hrt_abstime delay, hrt_callout callout, v
 /**
  * Call callout(arg) at calltime.
  */
-void __attribute__ ((section(".iram1")))
+void __attribute__((section(".iram1")))
 hrt_call_at(struct hrt_call *entry, hrt_abstime calltime, hrt_callout callout, void *arg)
 {
 	hrt_call_internal(entry, calltime, 0, callout, arg);
@@ -315,7 +315,7 @@ hrt_call_at(struct hrt_call *entry, hrt_abstime calltime, hrt_callout callout, v
 /**
  * Call callout(arg) every period.
  */
-void __attribute__ ((section(".iram1")))
+void __attribute__((section(".iram1")))
 hrt_call_every(struct hrt_call *entry, hrt_abstime delay, hrt_abstime interval, hrt_callout callout, void *arg)
 {
 	hrt_call_internal(entry,
@@ -325,7 +325,7 @@ hrt_call_every(struct hrt_call *entry, hrt_abstime delay, hrt_abstime interval, 
 			  arg);
 }
 
-static void __attribute__ ((section(".iram1")))
+static void __attribute__((section(".iram1")))
 hrt_call_internal(struct hrt_call *entry, hrt_abstime deadline, hrt_abstime interval, hrt_callout callout, void *arg)
 {
 	irqstate_t flags = px4_enter_critical_section();
@@ -356,7 +356,7 @@ hrt_call_internal(struct hrt_call *entry, hrt_abstime deadline, hrt_abstime inte
  *
  * Always returns false for repeating callouts.
  */
-bool __attribute__ ((section(".iram1")))
+bool __attribute__((section(".iram1")))
 hrt_called(struct hrt_call *entry)
 {
 	return (entry->deadline == 0);
@@ -365,7 +365,7 @@ hrt_called(struct hrt_call *entry)
 /**
  * Remove the entry from the callout list.
  */
-void __attribute__ ((section(".iram1")))
+void __attribute__((section(".iram1")))
 hrt_cancel(struct hrt_call *entry)
 {
 	irqstate_t flags = px4_enter_critical_section();
@@ -381,7 +381,7 @@ hrt_cancel(struct hrt_call *entry)
 	px4_leave_critical_section(flags);
 }
 
-static void __attribute__ ((section(".iram1")))
+static void __attribute__((section(".iram1")))
 hrt_call_enter(struct hrt_call *entry)
 {
 	struct hrt_call	*call, *next;
@@ -409,7 +409,7 @@ hrt_call_enter(struct hrt_call *entry)
 	hrtinfo("scheduled\n");
 }
 
-static void __attribute__ ((section(".iram1")))
+static void __attribute__((section(".iram1")))
 hrt_call_invoke(void)
 {
 	struct hrt_call	*call;
@@ -464,7 +464,7 @@ hrt_call_invoke(void)
  *
  * This routine must be called with interrupts disabled.
  */
-static void __attribute__ ((section(".iram1")))
+static void __attribute__((section(".iram1")))
 hrt_call_reschedule()
 {
 	hrt_abstime	now = hrt_absolute_time();
@@ -521,13 +521,13 @@ hrt_latency_update(void)
 	latency_counters[index]++;
 }
 
-void __attribute__ ((section(".iram1")))
+void __attribute__((section(".iram1")))
 hrt_call_init(struct hrt_call *entry)
 {
 	memset(entry, 0, sizeof(*entry));
 }
 
-void __attribute__ ((section(".iram1")))
+void __attribute__((section(".iram1")))
 hrt_call_delay(struct hrt_call *entry, hrt_abstime delay)
 {
 	entry->deadline = hrt_absolute_time() + delay;

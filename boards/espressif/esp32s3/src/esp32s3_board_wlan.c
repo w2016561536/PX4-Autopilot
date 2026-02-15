@@ -70,31 +70,31 @@ extern esp_err_t esp_wifi_set_protocol(wifi_interface_t ifx, uint8_t protocol_bi
 
 int board_wlan_init(void)
 {
-  int ret = OK;
-/*
+	int ret = OK;
+	/*
 
-#ifdef ESP32S3_WLAN_HAS_STA
-  ret = esp32s3_wlan_sta_initialize();
-  if (ret)
-    {
-      printf("ERROR: Failed to initialize Wi-Fi station\n");
-      return ret;
-    }
-#endif*/
+	#ifdef ESP32S3_WLAN_HAS_STA
+	  ret = esp32s3_wlan_sta_initialize();
+	  if (ret)
+	    {
+	      printf("ERROR: Failed to initialize Wi-Fi station\n");
+	      return ret;
+	    }
+	#endif*/
 
-  ret = esp_wlan_softap_initialize();
-  if (ret)
-    {
-      wlerr("ERROR: Failed to initialize Wi-Fi softAP\n");
-      return ret;
-    }
+	ret = esp_wlan_softap_initialize();
 
-  // force to use 802.11b
-  esp_wifi_set_protocol(WIFI_IF_AP, WIFI_PROTOCOL_11B );
+	if (ret) {
+		wlerr("ERROR: Failed to initialize Wi-Fi softAP\n");
+		return ret;
+	}
 
-  netlib_ifup("wlan0");
+	// force to use 802.11b
+	esp_wifi_set_protocol(WIFI_IF_AP, WIFI_PROTOCOL_11B);
 
-  //dhcpd_start("wlan0");
+	netlib_ifup("wlan0");
 
-  return ret;
+	//dhcpd_start("wlan0");
+
+	return ret;
 }

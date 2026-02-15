@@ -129,14 +129,13 @@
 
 /* ADC Private Data */
 
-struct adc_chan_s
-{
-  uint32_t ref;           /* Reference count */
+struct adc_chan_s {
+	uint32_t ref;           /* Reference count */
 
-  const uint8_t channel;  /* Channel number */
-  const uint8_t pin;      /* GPIO pin number */
+	const uint8_t channel;  /* Channel number */
+	const uint8_t pin;      /* GPIO pin number */
 
-  const struct adc_callback_s *cb;  /* Upper driver callback */
+	const struct adc_callback_s *cb;  /* Upper driver callback */
 };
 
 /****************************************************************************
@@ -144,7 +143,7 @@ struct adc_chan_s
  ****************************************************************************/
 
 static int  adc_bind(struct adc_dev_s *dev,
-                     const struct adc_callback_s *callback);
+		     const struct adc_callback_s *callback);
 static void adc_reset(struct adc_dev_s *dev);
 static int  adc_setup(struct adc_dev_s *dev);
 static void adc_shutdown(struct adc_dev_s *dev);
@@ -157,93 +156,82 @@ static int  adc_ioctl(struct adc_dev_s *dev, int cmd, unsigned long arg);
 
 /* ADC interface operations */
 
-static const struct adc_ops_s g_adcops =
-{
-  .ao_bind        = adc_bind,
-  .ao_reset       = adc_reset,
-  .ao_setup       = adc_setup,
-  .ao_shutdown    = adc_shutdown,
-  .ao_rxint       = adc_rxint,
-  .ao_ioctl       = adc_ioctl,
+static const struct adc_ops_s g_adcops = {
+	.ao_bind        = adc_bind,
+	.ao_reset       = adc_reset,
+	.ao_setup       = adc_setup,
+	.ao_shutdown    = adc_shutdown,
+	.ao_rxint       = adc_rxint,
+	.ao_ioctl       = adc_ioctl,
 };
 
 #ifdef CONFIG_ESP32S3_ADC1_CHANNEL0
-static struct adc_chan_s g_adc1_chan0 =
-{
-  .channel = 0,
-  .pin = 1
+static struct adc_chan_s g_adc1_chan0 = {
+	.channel = 0,
+	.pin = 1
 };
 #endif
 
 #ifdef CONFIG_ESP32S3_ADC1_CHANNEL1
-static struct adc_chan_s g_adc1_chan1 =
-{
-  .channel = 1,
-  .pin = 2
+static struct adc_chan_s g_adc1_chan1 = {
+	.channel = 1,
+	.pin = 2
 };
 #endif
 
 #ifdef CONFIG_ESP32S3_ADC1_CHANNEL2
-static struct adc_chan_s g_adc1_chan2 =
-{
-  .channel = 2,
-  .pin = 3
+static struct adc_chan_s g_adc1_chan2 = {
+	.channel = 2,
+	.pin = 3
 };
 #endif
 
 #ifdef CONFIG_ESP32S3_ADC1_CHANNEL3
-static struct adc_chan_s g_adc1_chan3 =
-{
-  .channel = 3,
-  .pin = 4
+static struct adc_chan_s g_adc1_chan3 = {
+	.channel = 3,
+	.pin = 4
 };
 #endif
 
 #ifdef CONFIG_ESP32S3_ADC1_CHANNEL4
-static struct adc_chan_s g_adc1_chan4 =
-{
-  .channel = 4,
-  .pin = 5
+static struct adc_chan_s g_adc1_chan4 = {
+	.channel = 4,
+	.pin = 5
 };
 #endif
 
 #ifdef CONFIG_ESP32S3_ADC1_CHANNEL5
-static struct adc_chan_s g_adc1_chan5 =
-{
-  .channel = 5,
-  .pin = 6
+static struct adc_chan_s g_adc1_chan5 = {
+	.channel = 5,
+	.pin = 6
 };
 #endif
 
 #ifdef CONFIG_ESP32S3_ADC1_CHANNEL6
-static struct adc_chan_s g_adc1_chan6 =
-{
-  .channel = 6,
-  .pin = 7
+static struct adc_chan_s g_adc1_chan6 = {
+	.channel = 6,
+	.pin = 7
 };
 #endif
 
 #ifdef CONFIG_ESP32S3_ADC1_CHANNEL7
-static struct adc_chan_s g_adc1_chan7 =
-{
-  .channel = 7,
-  .pin = 8
+static struct adc_chan_s g_adc1_chan7 = {
+	.channel = 7,
+	.pin = 8
 };
 #endif
 
 #ifdef CONFIG_ESP32S3_ADC1_CHANNEL8
-static struct adc_chan_s g_adc1_chan8 =
-{
-  .channel = 8,
-  .pin = 9
+static struct adc_chan_s g_adc1_chan8 = {
+	.channel = 8,
+	.pin = 9
 };
 #endif
 
 #ifdef CONFIG_ESP32S3_ADC1_CHANNEL9
-static struct adc_chan_s g_adc1_chan9 =
-{
-  .channel = 9,
-  .pin = 10
+static struct adc_chan_s g_adc1_chan9 = {
+	.channel = 9,
+	.pin = 10
 };
 #endif
 
@@ -287,28 +275,27 @@ static mutex_t g_lock = NXMUTEX_INITIALIZER;
 
 static uint32_t read_efuse(uint32_t addr, uint32_t b_off, uint32_t b_size)
 {
-  uint32_t data;
-  uint32_t regval;
-  uint32_t shift = 32 - b_size;
-  uint32_t mask = UINT32_MAX >> shift;
-  uint32_t res = b_off % 32;
-  uint32_t regaddr = addr + (b_off / 32 * 4);
+	uint32_t data;
+	uint32_t regval;
+	uint32_t shift = 32 - b_size;
+	uint32_t mask = UINT32_MAX >> shift;
+	uint32_t res = b_off % 32;
+	uint32_t regaddr = addr + (b_off / 32 * 4);
 
-  regval = getreg32(regaddr);
-  data = regval >> res;
-  if (res <= shift)
-    {
-      data &= mask;
-    }
-  else
-    {
-      shift = 32 - res;
+	regval = getreg32(regaddr);
+	data = regval >> res;
 
-      regval = getreg32(regaddr + 4);
-      data |= (regval & (mask >> shift)) << shift;
-    }
+	if (res <= shift) {
+		data &= mask;
 
-  return data;
+	} else {
+		shift = 32 - res;
+
+		regval = getreg32(regaddr + 4);
+		data |= (regval & (mask >> shift)) << shift;
+	}
+
+	return data;
 }
 
 /****************************************************************************
@@ -327,18 +314,17 @@ static uint32_t read_efuse(uint32_t addr, uint32_t b_off, uint32_t b_size)
 
 static void adc_enable_clk(void)
 {
-  irqstate_t flags;
+	irqstate_t flags;
 
-  flags = enter_critical_section();
+	flags = enter_critical_section();
 
-  if (!g_clk_ref)
-    {
-      setbits(SENS_SARADC_CLK_EN, SENS_SAR_PERI_CLK_GATE_CONF_REG);
-    }
+	if (!g_clk_ref) {
+		setbits(SENS_SARADC_CLK_EN, SENS_SAR_PERI_CLK_GATE_CONF_REG);
+	}
 
-  g_clk_ref++;
+	g_clk_ref++;
 
-  leave_critical_section(flags);
+	leave_critical_section(flags);
 }
 
 /****************************************************************************
@@ -357,18 +343,17 @@ static void adc_enable_clk(void)
 
 static void adc_disable_clk(void)
 {
-  irqstate_t flags;
+	irqstate_t flags;
 
-  flags = enter_critical_section();
+	flags = enter_critical_section();
 
-  g_clk_ref--;
+	g_clk_ref--;
 
-  if (!g_clk_ref)
-    {
-      resetbits(SENS_SARADC_CLK_EN, SENS_SAR_PERI_CLK_GATE_CONF_REG);
-    }
+	if (!g_clk_ref) {
+		resetbits(SENS_SARADC_CLK_EN, SENS_SAR_PERI_CLK_GATE_CONF_REG);
+	}
 
-  leave_critical_section(flags);
+	leave_critical_section(flags);
 }
 
 /****************************************************************************
@@ -387,18 +372,18 @@ static void adc_disable_clk(void)
 
 static void adc_set_calibration(uint16_t data)
 {
-  uint8_t h_data = data >> 8;
-  uint8_t l_data = data & 0xff;
+	uint8_t h_data = data >> 8;
+	uint8_t l_data = data & 0xff;
 
-  esp_rom_regi2c_write_mask(I2C_ADC, I2C_ADC_HOSTID,
-                        I2C_ADC1_INITVAL_H,
-                        I2C_ADC1_INITVAL_H_MSB,
-                        I2C_ADC1_INITVAL_H_LSB, h_data);
+	esp_rom_regi2c_write_mask(I2C_ADC, I2C_ADC_HOSTID,
+				  I2C_ADC1_INITVAL_H,
+				  I2C_ADC1_INITVAL_H_MSB,
+				  I2C_ADC1_INITVAL_H_LSB, h_data);
 
-  esp_rom_regi2c_write_mask(I2C_ADC, I2C_ADC_HOSTID,
-                        I2C_ADC1_INITVAL_L,
-                        I2C_ADC1_INITVAL_L_MSB,
-                        I2C_ADC1_INITVAL_L_LSB, l_data);
+	esp_rom_regi2c_write_mask(I2C_ADC, I2C_ADC_HOSTID,
+				  I2C_ADC1_INITVAL_L,
+				  I2C_ADC1_INITVAL_L_MSB,
+				  I2C_ADC1_INITVAL_L_LSB, l_data);
 }
 
 /****************************************************************************
@@ -417,30 +402,30 @@ static void adc_set_calibration(uint16_t data)
 
 static inline void adc_samplecfg(int channel)
 {
-  uint32_t regval;
+	uint32_t regval;
 
-  /* set (Frequency division) (inversion adc) */
+	/* set (Frequency division) (inversion adc) */
 
-  regval = getreg32(SENS_SAR_READER1_CTRL_REG);
-  regval &= ~(SENS_SAR1_CLK_DIV_M);
-  regval |= (1 << SENS_SAR1_CLK_DIV_S);
-  putreg32(regval, SENS_SAR_READER1_CTRL_REG);
+	regval = getreg32(SENS_SAR_READER1_CTRL_REG);
+	regval &= ~(SENS_SAR1_CLK_DIV_M);
+	regval |= (1 << SENS_SAR1_CLK_DIV_S);
+	putreg32(regval, SENS_SAR_READER1_CTRL_REG);
 
-  /* Enable ADC1, its sampling attenuation */
+	/* Enable ADC1, its sampling attenuation */
 
-  regval = getreg32(SENS_SAR_ATTEN1_REG);
-  regval &= ~(ADC_ATTEN_DEF << (channel * 2));
-  regval |= ADC_ATTEN_DEF << (channel * 2);
-  putreg32(regval, SENS_SAR_ATTEN1_REG);
+	regval = getreg32(SENS_SAR_ATTEN1_REG);
+	regval &= ~(ADC_ATTEN_DEF << (channel * 2));
+	regval |= ADC_ATTEN_DEF << (channel * 2);
+	putreg32(regval, SENS_SAR_ATTEN1_REG);
 
-  /* Enable ADC1, its sampling channel and attenuation */
+	/* Enable ADC1, its sampling channel and attenuation */
 
-  regval  = getreg32(SENS_SAR_MEAS1_CTRL2_REG);
-  regval &= ~(SENS_SAR1_EN_PAD_M | SENS_SAR1_EN_PAD_FORCE_M |
-              SENS_MEAS1_START_FORCE_M);
-  regval |= ((1 << channel) << SENS_SAR1_EN_PAD_S) |
-              SENS_SAR1_EN_PAD_FORCE | SENS_MEAS1_START_FORCE;
-  putreg32(regval, SENS_SAR_MEAS1_CTRL2_REG);
+	regval  = getreg32(SENS_SAR_MEAS1_CTRL2_REG);
+	regval &= ~(SENS_SAR1_EN_PAD_M | SENS_SAR1_EN_PAD_FORCE_M |
+		    SENS_MEAS1_START_FORCE_M);
+	regval |= ((1 << channel) << SENS_SAR1_EN_PAD_S) |
+		  SENS_SAR1_EN_PAD_FORCE | SENS_MEAS1_START_FORCE;
+	putreg32(regval, SENS_SAR_MEAS1_CTRL2_REG);
 }
 
 /****************************************************************************
@@ -459,29 +444,27 @@ static inline void adc_samplecfg(int channel)
 
 static uint16_t adc_read(void)
 {
-  // uint16_t adc;
-  uint32_t regval;
+	// uint16_t adc;
+	uint32_t regval;
 
-  /* Trigger ADC1 sampling */
+	/* Trigger ADC1 sampling */
 
-  setbits(SENS_MEAS1_START_SAR, SENS_SAR_MEAS1_CTRL2_REG);
+	setbits(SENS_MEAS1_START_SAR, SENS_SAR_MEAS1_CTRL2_REG);
 
-  /* Wait until ADC1 sampling is done */
+	/* Wait until ADC1 sampling is done */
 
-  do
-    {
-      regval = getreg32(SENS_SAR_MEAS1_CTRL2_REG);
-    }
-  while (!(regval & SENS_MEAS1_DONE_SAR_M));
+	do {
+		regval = getreg32(SENS_SAR_MEAS1_CTRL2_REG);
+	} while (!(regval & SENS_MEAS1_DONE_SAR_M));
 
-  regval = getreg32(SENS_SAR_MEAS1_CTRL2_REG) & ADC_VAL_MASK;
-  ainfo("SENS_MEAS1_DATA_SAR adc_read: %lu\n", regval);
+	regval = getreg32(SENS_SAR_MEAS1_CTRL2_REG) & ADC_VAL_MASK;
+	ainfo("SENS_MEAS1_DATA_SAR adc_read: %lu\n", regval);
 
-  /* Disable ADC sampling */
+	/* Disable ADC sampling */
 
-  resetbits(SENS_MEAS1_START_SAR, SENS_SAR_MEAS1_CTRL2_REG);
+	resetbits(SENS_MEAS1_START_SAR, SENS_SAR_MEAS1_CTRL2_REG);
 
-  return regval;
+	return regval;
 }
 
 /****************************************************************************
@@ -500,81 +483,78 @@ static uint16_t adc_read(void)
 
 static void adc_calibrate(void)
 {
-  uint16_t cali_val;
-  uint16_t adc;
-  uint16_t adc_max = 0;
-  uint16_t adc_min = UINT16_MAX;
-  uint32_t adc_sum = 0;
-  uint32_t regval;
+	uint16_t cali_val;
+	uint16_t adc;
+	uint16_t adc_max = 0;
+	uint16_t adc_min = UINT16_MAX;
+	uint32_t adc_sum = 0;
+	uint32_t regval;
 
-  regval = read_efuse(ADC_CAL_BASE_REG, ADC_CAL_VER_OFF, ADC_CAL_VER_LEN);
-  if (regval == 1)
-    {
-      ainfo("Calibrate based on efuse data\n");
+	regval = read_efuse(ADC_CAL_BASE_REG, ADC_CAL_VER_OFF, ADC_CAL_VER_LEN);
 
-      regval = read_efuse(ADC_CAL_BASE_REG, ADC_CAL_DATA_OFF,
-                          ADC_CAL_DATA_LEN);
-      cali_val = regval + ADC_CAL_DATA_COMP;
-    }
-  else
-    {
-      ainfo("Calibrate based on GND voltage\n");
+	if (regval == 1) {
+		ainfo("Calibrate based on efuse data\n");
 
-      /* Enable Vdef */
+		regval = read_efuse(ADC_CAL_BASE_REG, ADC_CAL_DATA_OFF,
+				    ADC_CAL_DATA_LEN);
+		cali_val = regval + ADC_CAL_DATA_COMP;
 
-      esp_rom_regi2c_write_mask(I2C_ADC, I2C_ADC_HOSTID,
-                            I2C_ADC1_DEF, I2C_ADC1_DEF_MSB,
-                            I2C_ADC1_DEF_LSB, 1);
+	} else {
+		ainfo("Calibrate based on GND voltage\n");
 
-      /* Start sampling */
+		/* Enable Vdef */
 
-      adc_samplecfg(ADC_CAL_CHANNEL);
+		esp_rom_regi2c_write_mask(I2C_ADC, I2C_ADC_HOSTID,
+					  I2C_ADC1_DEF, I2C_ADC1_DEF_MSB,
+					  I2C_ADC1_DEF_LSB, 1);
 
-      /* Enable internal connect GND (for calibration). */
+		/* Start sampling */
 
-      esp_rom_regi2c_write_mask(I2C_ADC, I2C_ADC_HOSTID,
-                            I2C_ADC1_ENCAL_GND, I2C_ADC1_ENCAL_GND_MSB,
-                            I2C_ADC1_ENCAL_GND_LSB, 1);
+		adc_samplecfg(ADC_CAL_CHANNEL);
 
-      for (int i = 1; i < ADC_CAL_CNT_MAX ; i++)
-        {
-          adc_set_calibration(0);
-          adc = adc_read();
+		/* Enable internal connect GND (for calibration). */
 
-          adc_sum += adc;
-          adc_max  = MAX(adc, adc_max);
-          adc_min  = MIN(adc, adc_min);
-        }
+		esp_rom_regi2c_write_mask(I2C_ADC, I2C_ADC_HOSTID,
+					  I2C_ADC1_ENCAL_GND, I2C_ADC1_ENCAL_GND_MSB,
+					  I2C_ADC1_ENCAL_GND_LSB, 1);
 
-      cali_val = (adc_sum - adc_max - adc_min) / (ADC_CAL_CNT_MAX - 2);
+		for (int i = 1; i < ADC_CAL_CNT_MAX ; i++) {
+			adc_set_calibration(0);
+			adc = adc_read();
 
-      /* Disable internal connect GND (for calibration). */
+			adc_sum += adc;
+			adc_max  = MAX(adc, adc_max);
+			adc_min  = MIN(adc, adc_min);
+		}
 
-      esp_rom_regi2c_write_mask(I2C_ADC, I2C_ADC_HOSTID,
-                            I2C_ADC1_ENCAL_GND,
-                            I2C_ADC1_ENCAL_GND_MSB,
-                            I2C_ADC1_ENCAL_GND_LSB, 0);
-    }
+		cali_val = (adc_sum - adc_max - adc_min) / (ADC_CAL_CNT_MAX - 2);
 
-  ainfo("calibration value: %" PRIu16 "\n", cali_val);
+		/* Disable internal connect GND (for calibration). */
 
-  /* Set final calibration parameters */
+		esp_rom_regi2c_write_mask(I2C_ADC, I2C_ADC_HOSTID,
+					  I2C_ADC1_ENCAL_GND,
+					  I2C_ADC1_ENCAL_GND_MSB,
+					  I2C_ADC1_ENCAL_GND_LSB, 0);
+	}
 
-  adc_set_calibration(cali_val);
+	ainfo("calibration value: %" PRIu16 "\n", cali_val);
 
-  /* Set calibration digital parameters */
+	/* Set final calibration parameters */
 
-  regval = read_efuse(ADC_CAL_BASE_REG, ADC_CAL_VOL_OFF, ADC_CAL_VOL_LEN);
-  if (regval & BIT(ADC_CAL_VOL_LEN - 1))
-    {
-      g_cal_digit = 2000 - (regval & ~(BIT(ADC_CAL_VOL_LEN - 1)));
-    }
-  else
-    {
-      g_cal_digit = 2000 + regval;
-    }
+	adc_set_calibration(cali_val);
 
-  ainfo("calibration read_efuse g_cal_digit: %" PRIu16 "\n", g_cal_digit);
+	/* Set calibration digital parameters */
+
+	regval = read_efuse(ADC_CAL_BASE_REG, ADC_CAL_VOL_OFF, ADC_CAL_VOL_LEN);
+
+	if (regval & BIT(ADC_CAL_VOL_LEN - 1)) {
+		g_cal_digit = 2000 - (regval & ~(BIT(ADC_CAL_VOL_LEN - 1)));
+
+	} else {
+		g_cal_digit = 2000 + regval;
+	}
+
+	ainfo("calibration read_efuse g_cal_digit: %" PRIu16 "\n", g_cal_digit);
 }
 
 /****************************************************************************
@@ -593,30 +573,30 @@ static void adc_calibrate(void)
 
 static void adc_read_work(struct adc_dev_s *dev)
 {
-  int ret;
-  uint32_t value;
-  int32_t adc;
-  struct adc_chan_s *priv = (struct adc_chan_s *)dev->ad_priv;
+	int ret;
+	uint32_t value;
+	int32_t adc;
+	struct adc_chan_s *priv = (struct adc_chan_s *)dev->ad_priv;
 
-  ret = nxmutex_lock(&g_lock);
-  if (ret < 0)
-    {
-      aerr("Failed to lock ret=%d\n", ret);
-      return;
-    }
+	ret = nxmutex_lock(&g_lock);
 
-  adc_samplecfg(priv->channel);
-  value = adc_read();
+	if (ret < 0) {
+		aerr("Failed to lock ret=%d\n", ret);
+		return;
+	}
 
-  adc = (int32_t)(value * (UINT16_MAX * ADC_CAL_VOL_DEF / g_cal_digit) /
-                  UINT16_MAX);
+	adc_samplecfg(priv->channel);
+	value = adc_read();
 
-  priv->cb->au_receive(dev, priv->channel, adc);
+	adc = (int32_t)(value * (UINT16_MAX * ADC_CAL_VOL_DEF / g_cal_digit) /
+			UINT16_MAX);
 
-  ainfo("channel: %" PRIu8 ", voltage: %" PRIu32 " mV\n", priv->channel,
-        adc);
+	priv->cb->au_receive(dev, priv->channel, adc);
 
-  nxmutex_unlock(&g_lock);
+	ainfo("channel: %" PRIu8 ", voltage: %" PRIu32 " mV\n", priv->channel,
+	      adc);
+
+	nxmutex_unlock(&g_lock);
 }
 
 /****************************************************************************
@@ -629,17 +609,17 @@ static void adc_read_work(struct adc_dev_s *dev)
  ****************************************************************************/
 
 static int adc_bind(struct adc_dev_s *dev,
-                    const struct adc_callback_s *callback)
+		    const struct adc_callback_s *callback)
 {
-  struct adc_chan_s *priv = (struct adc_chan_s *)dev->ad_priv;
+	struct adc_chan_s *priv = (struct adc_chan_s *)dev->ad_priv;
 
-  DEBUGASSERT(priv != NULL);
+	DEBUGASSERT(priv != NULL);
 
-  ainfo("channel: %" PRIu8 "\n", priv->channel);
+	ainfo("channel: %" PRIu8 "\n", priv->channel);
 
-  priv->cb = callback;
+	priv->cb = callback;
 
-  return OK;
+	return OK;
 }
 
 /****************************************************************************
@@ -657,28 +637,27 @@ static int adc_bind(struct adc_dev_s *dev,
 
 static void adc_reset(struct adc_dev_s *dev)
 {
-  irqstate_t flags;
-  struct adc_chan_s *priv = (struct adc_chan_s *)dev->ad_priv;
+	irqstate_t flags;
+	struct adc_chan_s *priv = (struct adc_chan_s *)dev->ad_priv;
 
-  ainfo("channel: %" PRIu8 "\n", priv->channel);
+	ainfo("channel: %" PRIu8 "\n", priv->channel);
 
-  flags = enter_critical_section();
+	flags = enter_critical_section();
 
-  /* Do nothing if ADC instance is currently in use */
+	/* Do nothing if ADC instance is currently in use */
 
-  if (priv->ref > 0)
-    {
-      goto out;
-    }
+	if (priv->ref > 0) {
+		goto out;
+	}
 
-  /* Reset ADC hardware */
+	/* Reset ADC hardware */
 
-  adc_enable_clk();
+	adc_enable_clk();
 
-  adc_disable_clk();
+	adc_disable_clk();
 
 out:
-  leave_critical_section(flags);
+	leave_critical_section(flags);
 }
 
 /****************************************************************************
@@ -697,45 +676,44 @@ out:
 
 static int adc_setup(struct adc_dev_s *dev)
 {
-  int ret;
-  // uint32_t regval;
-  struct adc_chan_s *priv = (struct adc_chan_s *)dev->ad_priv;
+	int ret;
+	// uint32_t regval;
+	struct adc_chan_s *priv = (struct adc_chan_s *)dev->ad_priv;
 
-  ainfo("channel: %" PRIu8 "\n", priv->channel);
+	ainfo("channel: %" PRIu8 "\n", priv->channel);
 
-  /* Enable ADC clock */
+	/* Enable ADC clock */
 
-  adc_enable_clk();
+	adc_enable_clk();
 
-  /* Disable GPIO input and output */
+	/* Disable GPIO input and output */
 
-  ainfo("pin: %" PRIu8 "\n", priv->pin);
+	ainfo("pin: %" PRIu8 "\n", priv->pin);
 
-  esp32s3_configgpio(priv->pin, INPUT | FUNCTION_1);
+	esp32s3_configgpio(priv->pin, INPUT | FUNCTION_1);
 
-  /* Start calibration only once  */
+	/* Start calibration only once  */
 
-  ret = nxmutex_lock(&g_lock);
-  if (ret < 0)
-    {
-      adc_disable_clk();
-      aerr("Failed to lock ret=%d\n", ret);
-      return ret;
-    }
+	ret = nxmutex_lock(&g_lock);
 
-  if (!g_calibrated)
-    {
-      adc_calibrate();
-      g_calibrated = true;
-    }
+	if (ret < 0) {
+		adc_disable_clk();
+		aerr("Failed to lock ret=%d\n", ret);
+		return ret;
+	}
 
-  nxmutex_unlock(&g_lock);
+	if (!g_calibrated) {
+		adc_calibrate();
+		g_calibrated = true;
+	}
 
-  /* The ADC device is ready */
+	nxmutex_unlock(&g_lock);
 
-  // priv->ref++;
+	/* The ADC device is ready */
 
-  return OK;
+	// priv->ref++;
+
+	return OK;
 }
 
 /****************************************************************************
@@ -771,39 +749,35 @@ static void adc_rxint(struct adc_dev_s *dev, bool enable)
 
 static int adc_ioctl(struct adc_dev_s *dev, int cmd, unsigned long arg)
 {
-  int ret;
-  struct adc_chan_s *priv = (struct adc_chan_s *)dev->ad_priv;
+	int ret;
+	struct adc_chan_s *priv = (struct adc_chan_s *)dev->ad_priv;
 
-  ainfo("channel: %" PRIu8 " cmd=%d\n", priv->channel, cmd);
+	ainfo("channel: %" PRIu8 " cmd=%d\n", priv->channel, cmd);
 
-  switch (cmd)
-    {
-      case ANIOC_TRIGGER:
-        {
-          /* Start sampling and read ADC value here */
+	switch (cmd) {
+	case ANIOC_TRIGGER: {
+			/* Start sampling and read ADC value here */
 
-          adc_read_work(dev);
-          ret = OK;
-        }
-      break;
+			adc_read_work(dev);
+			ret = OK;
+		}
+		break;
 
-      case ANIOC_GET_NCHANNELS:
-        {
-          /* Return the number of configured channels */
+	case ANIOC_GET_NCHANNELS: {
+			/* Return the number of configured channels */
 
-          ret = priv->channel;
-        }
-        break;
+			ret = priv->channel;
+		}
+		break;
 
-      default:
-        {
-          aerr("ERROR: Unknown cmd: %d\n", cmd);
-          ret = -ENOTTY;
-        }
-        break;
-    }
+	default: {
+			aerr("ERROR: Unknown cmd: %d\n", cmd);
+			ret = -ENOTTY;
+		}
+		break;
+	}
 
-  return ret;
+	return ret;
 }
 
 /****************************************************************************
@@ -821,27 +795,25 @@ static int adc_ioctl(struct adc_dev_s *dev, int cmd, unsigned long arg)
 
 static void adc_shutdown(struct adc_dev_s *dev)
 {
-  struct adc_chan_s *priv = (struct adc_chan_s *)dev->ad_priv;
+	struct adc_chan_s *priv = (struct adc_chan_s *)dev->ad_priv;
 
-  ainfo("channel: %" PRIu8 "\n", priv->channel);
+	ainfo("channel: %" PRIu8 "\n", priv->channel);
 
-  /* Decrement count only when ADC device is in use */
+	/* Decrement count only when ADC device is in use */
 
-  if (priv->ref > 0)
-    {
-      priv->ref--;
+	if (priv->ref > 0) {
+		priv->ref--;
 
-  /* Shutdown the ADC device only when not in use */
+		/* Shutdown the ADC device only when not in use */
 
-      if (!priv->ref)
-        {
-          adc_rxint(dev, false);
+		if (!priv->ref) {
+			adc_rxint(dev, false);
 
-          /* Disable ADC clock */
+			/* Disable ADC clock */
 
-          adc_disable_clk();
-        }
-    }
+			adc_disable_clk();
+		}
+	}
 }
 
 /****************************************************************************
@@ -864,75 +836,83 @@ static void adc_shutdown(struct adc_dev_s *dev)
 
 void esp32s3_adc_init(int adc_index, struct adc_dev_s *dev)
 {
-  ainfo("ADC index: %" PRIu8 "\n",  adc_index);
+	ainfo("ADC index: %" PRIu8 "\n",  adc_index);
 
-  dev->ad_ops = &g_adcops;
+	dev->ad_ops = &g_adcops;
 
-  switch (adc_index)
-    {
+	switch (adc_index) {
 #if defined(CONFIG_ESP32S3_ADC1_CHANNEL0)
-      case 0:
-          dev->ad_priv = &g_adc1_chan0;
-        break;
+
+	case 0:
+		dev->ad_priv = &g_adc1_chan0;
+		break;
 #endif
 
 #if defined(CONFIG_ESP32S3_ADC1_CHANNEL1)
-      case 1:
-          dev->ad_priv = &g_adc1_chan1;
-        break;
+
+	case 1:
+		dev->ad_priv = &g_adc1_chan1;
+		break;
 #endif
 
 #if defined(CONFIG_ESP32S3_ADC1_CHANNEL2)
-      case 2:
-          dev->ad_priv = &g_adc1_chan2;
-        break;
+
+	case 2:
+		dev->ad_priv = &g_adc1_chan2;
+		break;
 #endif
 
 #if defined(CONFIG_ESP32S3_ADC1_CHANNEL3)
-      case 3:
-          dev->ad_priv = &g_adc1_chan3;
-        break;
+
+	case 3:
+		dev->ad_priv = &g_adc1_chan3;
+		break;
 #endif
 
 #if defined(CONFIG_ESP32S3_ADC1_CHANNEL4)
-      case 4:
-          dev->ad_priv = &g_adc1_chan4;
-        break;
+
+	case 4:
+		dev->ad_priv = &g_adc1_chan4;
+		break;
 #endif
 
 #if defined(CONFIG_ESP32S3_ADC1_CHANNEL5)
-      case 5:
-          dev->ad_priv = &g_adc1_chan5;
-        break;
+
+	case 5:
+		dev->ad_priv = &g_adc1_chan5;
+		break;
 #endif
 
 #if defined(CONFIG_ESP32S3_ADC1_CHANNEL6)
-      case 6:
-          dev->ad_priv = &g_adc1_chan6;
-        break;
+
+	case 6:
+		dev->ad_priv = &g_adc1_chan6;
+		break;
 #endif
 
 #if defined(CONFIG_ESP32S3_ADC1_CHANNEL7)
-      case 7:
-          dev->ad_priv = &g_adc1_chan7;
-        break;
+
+	case 7:
+		dev->ad_priv = &g_adc1_chan7;
+		break;
 #endif
 
 #if defined(CONFIG_ESP32S3_ADC1_CHANNEL8)
-      case 8:
-          dev->ad_priv = &g_adc1_chan8;
-        break;
+
+	case 8:
+		dev->ad_priv = &g_adc1_chan8;
+		break;
 #endif
 
 #if defined(CONFIG_ESP32S3_ADC1_CHANNEL9)
-      case 9:
-          dev->ad_priv = &g_adc1_chan9;
-        break;
+
+	case 9:
+		dev->ad_priv = &g_adc1_chan9;
+		break;
 #endif
 
-      default:
-        {
-          aerr("ERROR: No ADC interface defined\n");
-        }
-    }
+	default: {
+			aerr("ERROR: No ADC interface defined\n");
+		}
+	}
 }

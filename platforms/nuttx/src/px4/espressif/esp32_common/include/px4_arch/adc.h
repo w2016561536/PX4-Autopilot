@@ -58,17 +58,17 @@
 #define GPIO_PIN_COUNT                  40
 
 typedef enum {
-    ADC_0db,
-    ADC_2_5db,
-    ADC_6db,
-    ADC_11db
+	ADC_0db,
+	ADC_2_5db,
+	ADC_6db,
+	ADC_11db
 } adc_attenuation_t;
 
 typedef struct {
-    uint8_t reg;      /*!< GPIO register offset from DR_REG_IO_MUX_BASE */
-    int8_t rtc;       /*!< RTC GPIO number (-1 if not RTC GPIO pin) */
-    int8_t adc;       /*!< ADC Channel number (-1 if not ADC pin) */
-    int8_t touch;     /*!< Touch Channel number (-1 if not Touch pin) */
+	uint8_t reg;      /*!< GPIO register offset from DR_REG_IO_MUX_BASE */
+	int8_t rtc;       /*!< RTC GPIO number (-1 if not RTC GPIO pin) */
+	int8_t adc;       /*!< ADC Channel number (-1 if not ADC pin) */
+	int8_t touch;     /*!< Touch Channel number (-1 if not Touch pin) */
 } esp32_gpioMux_t;
 
 extern const esp32_gpioMux_t esp32_gpioMux[GPIO_PIN_COUNT];

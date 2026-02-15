@@ -52,8 +52,8 @@ constexpr timer_io_channels_t timer_io_channels[MAX_TIMER_IO_CHANNELS] = {
 // constexpr io_timers_channel_mapping_t io_timers_channel_mapping = initIOTimerChannelMapping(io_timers,
 // 		timer_io_channels);
 
-	/*
-	initIOTimerChannel(io_timers, {Timer::Timer0, 4}, {37}),
-	initIOTimerChannel(io_timers, {Timer::Timer0, 5}, {35}),
-	initIOTimerChannel(io_timers, {Timer::Timer0, 6}, {45}),
-	initIOTimerChannel(io_timers, {Timer::Timer0, 7}, {48}),*/
+/*
+initIOTimerChannel(io_timers, {Timer::Timer0, 4}, {37}),
+initIOTimerChannel(io_timers, {Timer::Timer0, 5}, {35}),
+initIOTimerChannel(io_timers, {Timer::Timer0, 6}, {45}),
+initIOTimerChannel(io_timers, {Timer::Timer0, 7}, {48}),*/

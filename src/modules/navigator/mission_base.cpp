@@ -73,7 +73,8 @@ MissionBase::updateDatamanCache()
 {
 	if ((_mission.count > 0) && (_mission.current_seq != _load_mission_index)) {
 
-		const int32_t start_index = math::constrain((int32_t)_mission.current_seq, (int32_t)INT32_C(0), (int32_t)int32_t(_mission.count) - 1);
+		const int32_t start_index = math::constrain((int32_t)_mission.current_seq, (int32_t)INT32_C(0),
+					    (int32_t)int32_t(_mission.count) - 1);
 		const int32_t end_index = math::constrain((int32_t)start_index + _dataman_cache_size_signed, (int32_t)INT32_C(0),
 					  (int32_t)int32_t(_mission.count) - 1);
 

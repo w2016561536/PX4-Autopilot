@@ -58,6 +58,6 @@
 #ifdef CONFIG_USBDEV
 void esp32s3_usbsuspend(struct usbdev_s *dev, bool resume)
 {
-  uinfo("resume: %d\n", resume);
+	uinfo("resume: %d\n", resume);
 }
 #endif

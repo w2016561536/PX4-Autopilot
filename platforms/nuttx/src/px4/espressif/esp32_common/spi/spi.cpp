@@ -64,6 +64,7 @@ __EXPORT void esp32s3_spiinitialize()
 	for (int i = 0; i < SPI_BUS_MAX_BUS_ITEMS; i++) {
 		switch (px4_spi_buses[i].bus) {
 		case 2: _spi_bus2 = &px4_spi_buses[i]; break;
+
 		case 3: _spi_bus3 = &px4_spi_buses[i]; break;
 		}
 	}

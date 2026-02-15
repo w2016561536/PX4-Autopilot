@@ -127,23 +127,24 @@ __END_DECLS
 
 static void esp32_wifi_init(void)
 {
-    int ret =0;
+	int ret = 0;
 
 #ifdef CONFIG_ESP32S3_RT_TIMER
-  ret = esp32s3_rt_timer_init();
-  if (ret < 0)
-    {
-      syslog(LOG_ERR, "Failed to initialize RT timer: %d\n", ret);
-    }
+	ret = esp32s3_rt_timer_init();
+
+	if (ret < 0) {
+		syslog(LOG_ERR, "Failed to initialize RT timer: %d\n", ret);
+	}
+
 #endif
 
 
-  ret = board_wlan_init();
-  if (ret < 0)
-    {
-      syslog(LOG_ERR, "ERROR: Failed to initialize wireless subsystem=%d\n",
-             ret);
-    }
+	ret = board_wlan_init();
+
+	if (ret < 0) {
+		syslog(LOG_ERR, "ERROR: Failed to initialize wireless subsystem=%d\n",
+		       ret);
+	}
 }
 
 
@@ -296,7 +297,7 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 	SPI_SETBITS(spi2, 8);
 	SPI_SETMODE(spi2, SPIDEV_MODE3);
 	usleep(100);
-	SPI_EXCHANGE(spi2,send_spi,recv_spi,2);
+	SPI_EXCHANGE(spi2, send_spi, recv_spi, 2);
 	usleep(100);
 
 #endif
@@ -313,20 +314,22 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 	SPI_SETBITS(spi3, 8);
 	SPI_SETMODE(spi3, SPIDEV_MODE3);
 	usleep(10);
-	SPI_EXCHANGE(spi3,send_spi,recv_spi,2);
+	SPI_EXCHANGE(spi3, send_spi, recv_spi, 2);
 	usleep(100);
 
 #endif
-	int ret =0;
+	int ret = 0;
 
 #ifdef CONFIG_ESP32S3_SDMMC
 	ret = board_sdmmc_initialize();
-  	if (ret < 0)
-  	{
-  	  	syslog(LOG_ERR, "ERROR: Failed to initialize SDMMC: %d\n", ret);
-  	}else{
-		syslog (LOG_INFO, "SDMMC init OK");
+
+	if (ret < 0) {
+		syslog(LOG_ERR, "ERROR: Failed to initialize SDMMC: %d\n", ret);
+
+	} else {
+		syslog(LOG_INFO, "SDMMC init OK");
 	}
+
 #endif
 
 
@@ -336,17 +339,21 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 	FAR struct mtd_dev_s *mtd;
 	ret = esp32s3_spiflash_init();
 	mtd = esp32s3_spiflash_alloc_mtdpart(0x310000,
-					   0x10000,
-					   false);
+					     0x10000,
+					     false);
+
 	if (!mtd) {
 		ferr("ERROR: Failed to alloc MTD partition of SPI Flash\n");
 		return -ENOMEM;
 	}
+
 	ret = register_mtddriver("/fs/mtd_params", mtd, 0777, NULL);
+
 	if (ret < 0) {
 		ferr("ERROR: Failed to register MTD: %d\n", ret);
 		return ret;
 	}
+
 #endif
 
 	usleep(100000);

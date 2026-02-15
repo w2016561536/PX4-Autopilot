@@ -292,7 +292,7 @@ CDev::poll(file_t *filep, px4_pollfd_struct_t *fds, bool setup)
 			/* yes? post the notification */
 			if (fds->revents != 0) {
 				// px4_sem_post(fds->sem);
-				::poll_notify(&fds,1,fds->revents);
+				::poll_notify(&fds, 1, fds->revents);
 			}
 
 		}
@@ -340,7 +340,7 @@ CDev::poll_notify_one(px4_pollfd_struct_t *fds, px4_pollevent_t events)
 
 	if (fds->revents != 0) {
 		// px4_sem_post(fds->sem);
-		::poll_notify(&fds,1,fds->revents);
+		::poll_notify(&fds, 1, fds->revents);
 	}
 }
 
