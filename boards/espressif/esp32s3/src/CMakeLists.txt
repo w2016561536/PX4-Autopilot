@@ -58,12 +58,18 @@ target_link_libraries(drivers_board
 
 target_include_directories(drivers_board PRIVATE
 
-../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/soc/esp32s3/include/
-../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/esp_common/include/
-../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/nuttx/esp32s3/include/
-../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/esp_wifi/include/
-../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/esp_hw_support/include/
-../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/esp_event/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/soc/esp32s3/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/esp_common/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/nuttx/esp32s3/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/esp_wifi/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/esp_hw_support/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/esp_event/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/hal/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/hal/esp32s3/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/soc/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/hal/platform_port/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/esp_rom/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/efuse/esp32s3/include/
 )
 
 add_subdirectory(${PX4_BOARD_DIR}/src/drivers/edit_ssid)

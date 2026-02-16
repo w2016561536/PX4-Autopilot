@@ -42,11 +42,16 @@
 #include "hardware/esp32s3_efuse.h"
 #include "hardware/esp32s3_sens.h"
 #include "hardware/esp32s3_gpio_sigmap.h"
-#include "hardware/regi2c_ctrl.h"
 #include "hardware/regi2c_saradc.h"
 #include "hardware/esp32s3_rtc_io.h"
 
+#include "hal/adc_hal.h"
+#include "esp_private/adc_share_hw_ctrl.h"
+
 #include "board_config.h"
+
+spinlock_t rtc_spinlock;
+
 
 /****************************************************************************
  * Pre-processor Definitions
@@ -703,7 +708,10 @@ static int adc_setup(struct adc_dev_s *dev)
 	}
 
 	if (!g_calibrated) {
-		adc_calibrate();
+		adc_hal_calibration_init(ADC_UNIT_1);
+		adc_calc_hw_calibration_code(ADC_UNIT_1, ADC_ATTEN_DB_12);
+		adc_set_hw_calibration_code(ADC_UNIT_1, ADC_ATTEN_DB_12);
+
 		g_calibrated = true;
 	}
 
