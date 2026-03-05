@@ -70,7 +70,7 @@ bool BrushedServo::init()
 	}
 
 	// update channels
-	up_pwm_update(0xF0);
+	// up_pwm_update(0xF0);
 
 	// initialize motor object
 	motor1.SetTorqueLimit((float)_param_servo_max_output.get() / 100.0f);
@@ -190,23 +190,31 @@ void BrushedServo::Run()
 			// Calculate PID
 			motor2.CalcDceOutput(motor2.angle, 0);
 
-			// set pwm output with pid output
-			if ((motor1.dce.output >= 0) ^ (_param_servo1_inv.get() == false)) {
-				up_pwm_servo_set(4, motor1.dce.output > 2500 ? 2500 : motor1.dce.output); // motor 1_A forward
-				up_pwm_servo_set(5, 0); // motor 1_B
-
-			} else {
-				up_pwm_servo_set(4, 0); // motor 1_A
-				up_pwm_servo_set(5, -motor1.dce.output > 2500 ? 2500 : -motor1.dce.output); // motor 1_B reverse
+			if (_param_servo1_inv.get()) {
+				motor1.dce.output = -motor1.dce.output;
 			}
 
-			if ((motor2.dce.output >= 0) ^ (_param_servo2_inv.get() == false)) {
-				up_pwm_servo_set(6, motor2.dce.output > 2500 ? 2500 : motor2.dce.output); // motor 2_A forward
-				up_pwm_servo_set(7, 0); // motor 2_B
+			if (_param_servo2_inv.get()) {
+				motor2.dce.output = -motor2.dce.output;
+			}
+
+			// set pwm output with pid output
+			if (motor1.dce.output >= 0) {
+				up_pwm_servo_set(4, 0); // motor 1_A
+				up_pwm_servo_set(5, -motor1.dce.output > 2500 ? 2500 : -motor1.dce.output); // motor 1_B reverse
 
 			} else {
+				up_pwm_servo_set(4, motor1.dce.output > 2500 ? 2500 : motor1.dce.output); // motor 1_A forward
+				up_pwm_servo_set(5, 0); // motor 1_B
+			}
+
+			if (motor2.dce.output >= 0) {
 				up_pwm_servo_set(6, 0); // motor 2_A
 				up_pwm_servo_set(7, -motor2.dce.output > 2500 ? 2500 : -motor2.dce.output); // motor 2_B reverse
+
+			} else {
+				up_pwm_servo_set(6, motor2.dce.output > 2500 ? 2500 : motor2.dce.output); // motor 2_A forward
+				up_pwm_servo_set(7, 0); // motor 2_B
 			}
 
 			// update pwm output
@@ -245,6 +253,9 @@ int BrushedServo::print_status()
 {
 	perf_print_counter(_loop_perf);
 	perf_print_counter(_loop_interval_perf);
+	PX4_INFO_RAW("Servo 1: angle: %.2f, output: %.2f", (double)motor1.angle, (double)motor1.dce.output);
+	PX4_INFO_RAW("Servo 2: angle: %.2f, output: %.2f", (double)motor2.angle, (double)motor2.dce.output);
+
 	return 0;
 }
 

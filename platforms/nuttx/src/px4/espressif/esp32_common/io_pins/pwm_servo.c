@@ -86,7 +86,8 @@ int up_pwm_servo_set(unsigned channel, servo_position_t value)
 			return OK;
 		}
 
-		pwm_info0.channels[channel].duty = (uint16_t)(((uint64_t)value * (uint64_t)pwm_info0.frequency * 65535ull) / 1000000ull);
+		pwm_info0.channels[channel].duty = (uint16_t)(((uint64_t)value * (uint64_t)pwm_info0.frequency * 65535ull) /
+						   1000000ull);
 		return OK;
 
 	}
@@ -101,7 +102,8 @@ int up_pwm_servo_set(unsigned channel, servo_position_t value)
 			return OK;
 		}
 
-		pwm_info1.channels[channel].duty = (uint16_t)(((uint64_t)value * (uint64_t)pwm_info1.frequency * 65535ull) / 1000000ull);
+		pwm_info1.channels[channel].duty = (uint16_t)(((uint64_t)value * (uint64_t)pwm_info1.frequency * 65535ull) /
+						   1000000ull);
 		return OK;
 	}
 
@@ -119,7 +121,8 @@ int up_pwm_servo_set(unsigned channel, servo_position_t value)
 			return OK;
 		}
 
-		pwm_info2.channels[channel].duty = (uint16_t)(((uint64_t)value * (uint64_t)pwm_info2.frequency * 65535ull) / 1000000ull);
+		pwm_info2.channels[channel].duty = (uint16_t)(((uint64_t)value * (uint64_t)pwm_info2.frequency * 65535ull) /
+						   1000000ull);
 		return OK;
 	}
 

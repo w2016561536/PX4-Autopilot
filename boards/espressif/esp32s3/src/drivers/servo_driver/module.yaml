@@ -143,43 +143,43 @@ parameters:
 
         S1_VOLTAGE_MIN:
             description:
-                short: Servo 1 voltage minimum
+                short: Servo 1 voltage minimum (adc raw value)
                 long: |
                     Defines the minimum voltage of the servo. When pwm output at 500us, the voltage will be S1_VOLTAGE_MIN. This is used to limit the servo output to a certain range.
             type: int32
             min: 0
-            max: 3100
-            default: 1000
+            max: 5000
+            default: 0
 
         S1_VOLTAGE_MAX:
             description:
-                short: Servo 1 voltage maximum
+                short: Servo 1 voltage maximum (adc raw value)
                 long: |
                     Defines the maximum voltage of the servo. When pwm output at 2500us, the voltage will be S1_VOLTAGE_MAX. This is used to limit the servo output to a certain range.
             type: int32
             min: 0
-            max: 3100
-            default: 2000
+            max: 5000
+            default: 4000
 
         S2_VOLTAGE_MIN:
             description:
-                short: Servo 2 voltage minimum
+                short: Servo 2 voltage minimum (adc raw value)
                 long: |
                     Defines the minimum voltage of the servo. When pwm output at 500us, the voltage will be S2_VOLTAGE_MIN. This is used to limit the servo output to a certain range.
             type: int32
             min: 0
-            max: 3100
-            default: 1000
+            max: 5000
+            default: 0
 
         S2_VOLTAGE_MAX:
             description:
-                short: Servo 2 voltage maximum
+                short: Servo 2 voltage maximum (adc raw value)
                 long: |
                     Defines the maximum voltage of the servo. When pwm output at 2500us, the voltage will be S2_VOLTAGE_MAX. This is used to limit the servo output to a certain range.
             type: int32
             min: 0
-            max: 3100
-            default: 2000
+            max: 5000
+            default: 4000
 
         SERVO_KP:
             description:
@@ -191,7 +191,7 @@ parameters:
             increment: 0.01
             min: 0
             max: 100
-            default: 1
+            default: 1.6
 
         SERVO_KI:
             description:
@@ -204,7 +204,7 @@ parameters:
             increment: 0.01
             min: 0
             max: 100
-            default: 0
+            default: 0.3
 
         SERVO_KD:
             description:
@@ -217,7 +217,7 @@ parameters:
             increment: 0.01
             min: 0
             max: 100
-            default: 5
+            default: 4
 
         SERVO_MAX_OUTPUT:
             description:
