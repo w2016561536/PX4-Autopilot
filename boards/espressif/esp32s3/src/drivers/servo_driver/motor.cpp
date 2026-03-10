@@ -57,7 +57,7 @@ void Motor::SetTorqueLimit(float _percent)
 
 	else if (_percent < 0) { _percent = 0; }
 
-	limitTorque = _percent * 2500;
+	limitTorque = _percent * 2000;
 }
 
 

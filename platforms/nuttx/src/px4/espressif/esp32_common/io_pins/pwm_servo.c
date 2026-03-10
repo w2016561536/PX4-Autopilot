@@ -82,7 +82,11 @@ int up_pwm_servo_set(unsigned channel, servo_position_t value)
 	//syslog(LOG_INFO, "[ESP PWM] PWM set ch: %d value:%d\n", channel,value);
 	if (channel < CONFIG_ESP32S3_LEDC_TIM0_CHANNELS) {
 		if (pwm_info0.frequency > 400) {
-			pwm_info0.channels[channel].duty = (uint16_t)(((uint64_t)value * 400ull * 65535ull) / 1000000ull);
+			if (value > 2000) {
+				value = 2000;
+			}
+
+			pwm_info0.channels[channel].duty = (uint16_t)(((uint64_t)value * 500ull * 65535ull) / 1000000ull);
 			return OK;
 		}
 
@@ -98,7 +102,11 @@ int up_pwm_servo_set(unsigned channel, servo_position_t value)
 		channel -= CONFIG_ESP32S3_LEDC_TIM0_CHANNELS; // adjust channel number for second timer
 
 		if (pwm_info1.frequency > 400) {
-			pwm_info1.channels[channel].duty = (uint16_t)(((uint64_t)value * 400ull * 65535ull) / 1000000ull);
+			if (value > 2000) {
+				value = 2000;
+			}
+
+			pwm_info1.channels[channel].duty = (uint16_t)(((uint64_t)value * 500ull * 65535ull) / 1000000ull);
 			return OK;
 		}
 
@@ -117,7 +125,11 @@ int up_pwm_servo_set(unsigned channel, servo_position_t value)
 			    CONFIG_ESP32S3_LEDC_TIM1_CHANNELS); // adjust channel number for third timer
 
 		if (pwm_info2.frequency > 400) {
-			pwm_info2.channels[channel].duty = (uint16_t)(((uint64_t)value * 400ull * 65535ull) / 1000000ull);
+			if (value > 2000) {
+				value = 2000;
+			}
+
+			pwm_info2.channels[channel].duty = (uint16_t)(((uint64_t)value * 500ull * 65535ull) / 1000000ull);
 			return OK;
 		}
 

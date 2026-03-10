@@ -74,36 +74,35 @@ bool BrushedServo::init()
 
 	// initialize motor object
 	motor1.SetTorqueLimit((float)_param_servo_max_output.get() / 100.0f);
-	motor1.mechanicalAngleMin = 500;
-	motor1.mechanicalAngleMax = 2500;
+	motor1.mechanicalAngleMin = 1000;
+	motor1.mechanicalAngleMax = 2000;
 	motor1.adcValAtAngleMin = _param_s1_voltage_min.get();
 	motor1.adcValAtAngleMax = _param_s1_voltage_max.get();
 	motor1.dce.kp = _param_servo_kp.get();
 	motor1.dce.ki = _param_servo_ki.get();
 	motor1.dce.kv = 0;
 	motor1.dce.kd = _param_servo_kd.get();
-	motor1.dce.setPointPos = 1500 + (float)_param_servo1_offset.get() / 100.0f * 2000.0f; // neutral position
+	motor1.dce.setPointPos = 1500 + (float)_param_servo1_offset.get() / 100.0f * (motor1.mechanicalAngleMax -
+				 motor1.mechanicalAngleMin); // neutral position
 
 	// initialize motor object
 	motor2.SetTorqueLimit((float)_param_servo_max_output.get() / 100.0f);
-	motor2.mechanicalAngleMin = 500;
-	motor2.mechanicalAngleMax = 2500;
+	motor2.mechanicalAngleMin = 1000;
+	motor2.mechanicalAngleMax = 2000;
 	motor2.adcValAtAngleMin = _param_s2_voltage_min.get();
 	motor2.adcValAtAngleMax = _param_s2_voltage_max.get();
 	motor2.dce.kp = _param_servo_kp.get();
 	motor2.dce.ki = _param_servo_ki.get();
 	motor2.dce.kv = 0;
 	motor2.dce.kd = _param_servo_kd.get();
-	motor2.dce.setPointPos = 1500 + (float)_param_servo2_offset.get() / 100.0f * 2000.0f; // neutral position
+	motor2.dce.setPointPos = 1500 + (float)_param_servo2_offset.get() / 100.0f * (motor2.mechanicalAngleMax -
+				 motor2.mechanicalAngleMin); // neutral position
 
 	// execute Run() on every adc_report publication
 	if (!_adc_report_sub.registerCallback()) {
 		PX4_ERR("callback registration failed");
 		return false;
 	}
-
-	// alternatively, Run on fixed interval
-	// ScheduleOnInterval(5000_us); // 2000 us interval, 200 Hz rate
 
 	return true;
 }
@@ -169,8 +168,13 @@ void BrushedServo::Run()
 			if (_actuator_outputs_sub.copy(&actuator_outputs)) {
 				float servo_1_output = actuator_outputs.output[_param_servo1_bind.get()];
 				float servo_2_output = actuator_outputs.output[_param_servo2_bind.get()];
-				motor1.dce.setPointPos = servo_1_output + (float)_param_servo1_offset.get() / 100.0f * 2000.0f;
-				motor2.dce.setPointPos = servo_2_output + (float)_param_servo2_offset.get() / 100.0f * 2000.0f;
+				motor1.dce.setPointPos = servo_1_output + (float)_param_servo1_offset.get() / 100.0f *
+							 (motor1.mechanicalAngleMax - motor1.mechanicalAngleMin);
+				motor2.dce.setPointPos = servo_2_output + (float)_param_servo2_offset.get() / 100.0f *
+							 (motor2.mechanicalAngleMax - motor2.mechanicalAngleMin);
+				// limit setpoint to mechanical angle range
+				motor1.dce.setPointPos = math::constrain(motor1.dce.setPointPos, motor1.mechanicalAngleMin, motor1.mechanicalAngleMax);
+				motor2.dce.setPointPos = math::constrain(motor2.dce.setPointPos, motor2.mechanicalAngleMin, motor2.mechanicalAngleMax);
 			}
 
 			// update motor state with adc feedback
@@ -201,19 +205,19 @@ void BrushedServo::Run()
 			// set pwm output with pid output
 			if (motor1.dce.output >= 0) {
 				up_pwm_servo_set(4, 0); // motor 1_A
-				up_pwm_servo_set(5, -motor1.dce.output > 2500 ? 2500 : -motor1.dce.output); // motor 1_B reverse
+				up_pwm_servo_set(5, -motor1.dce.output > 2000 ? 2000 : -motor1.dce.output); // motor 1_B reverse
 
 			} else {
-				up_pwm_servo_set(4, motor1.dce.output > 2500 ? 2500 : motor1.dce.output); // motor 1_A forward
+				up_pwm_servo_set(4, motor1.dce.output > 2000 ? 2000 : motor1.dce.output); // motor 1_A forward
 				up_pwm_servo_set(5, 0); // motor 1_B
 			}
 
 			if (motor2.dce.output >= 0) {
 				up_pwm_servo_set(6, 0); // motor 2_A
-				up_pwm_servo_set(7, -motor2.dce.output > 2500 ? 2500 : -motor2.dce.output); // motor 2_B reverse
+				up_pwm_servo_set(7, -motor2.dce.output > 2000 ? 2000 : -motor2.dce.output); // motor 2_B reverse
 
 			} else {
-				up_pwm_servo_set(6, motor2.dce.output > 2500 ? 2500 : motor2.dce.output); // motor 2_A forward
+				up_pwm_servo_set(6, motor2.dce.output > 2000 ? 2000 : motor2.dce.output); // motor 2_A forward
 				up_pwm_servo_set(7, 0); // motor 2_B
 			}
 
