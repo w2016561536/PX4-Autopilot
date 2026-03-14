@@ -191,7 +191,7 @@ parameters:
             increment: 0.01
             min: 0
             max: 100
-            default: 1.6
+            default: 0.02
 
         SERVO_KI:
             description:
@@ -204,7 +204,7 @@ parameters:
             increment: 0.01
             min: 0
             max: 100
-            default: 0.3
+            default: 0.0
 
         SERVO_KD:
             description:
@@ -217,7 +217,7 @@ parameters:
             increment: 0.01
             min: 0
             max: 100
-            default: 4
+            default: 0.05
 
         SERVO_MAX_OUTPUT:
             description:
