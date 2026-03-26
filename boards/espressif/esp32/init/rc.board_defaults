@@ -15,8 +15,8 @@ param set-default COM_ARM_HFLT_CHK 0
 param set-default PWM_MAIN_TIM0 5000
 param set-default CBRK_AIRSPD_CHK 162128
 param set-default COM_ARM_SDCARD 0
-
-
+param set-default EKF2_EN 0
+param set-default ATT_EN 1
 
 param set-default SYS_AUTOSTART 2100
 param set-default MAV_TYPE 1

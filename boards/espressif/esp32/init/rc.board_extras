@@ -13,12 +13,6 @@
 # ifdown wlan0
 # ifconfig
 # airspeed_selector stop
-fw_pos_control stop
-# land_detector stop
-fw_autotune_attitude_control stop
-mag_bias_estimator stop
-rc_update stop
-navigator stop
 
 ifup wlan1
 wapi psk wlan1 12345678 3
