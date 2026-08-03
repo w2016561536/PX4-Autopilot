@@ -12,7 +12,8 @@
 # dhcpd_start wlan0
 # ifdown wlan0
 # ifconfig
-edit_ssid wlan0 PX4
-mavlink start -u 14556 -p -r 100000 -n wlan0 -x
+# edit_ssid wlan0 PX4
+# mavlink start -u 14556 -p -r 20000 -n wlan0 -x
+mavlink start -d /dev/mavlink0
 #mavlink start -d /dev/ttyACM0 -b 2000000 -m onboard
 brushed_servo start

@@ -129,4 +129,11 @@
         "yaml.schemas": {
                 "${workspaceFolder}/validation/module_schema.yaml": "${workspaceFolder}/src/modules/*/module.yaml"
         },
+
+         "cmake.configureEnvironment": {
+        "PATH": "/home/w2016/xtensa-esp-elf/bin:${env:PATH}"
+        },
+        "cmake.buildEnvironment": {
+        "PATH": "/home/w2016/xtensa-esp-elf/bin:${env:PATH}"
+    }
 }

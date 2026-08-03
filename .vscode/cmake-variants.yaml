@@ -431,3 +431,8 @@ CONFIG:
       buildType: MinSizeRel
       settings:
         CONFIG: x-mav_ap-h743v2_default
+    espressif_esp32s3_default:
+      short: espressif_esp32s3
+      buildType: MinSizeRel
+      settings:
+        CONFIG: espressif_esp32s3_default

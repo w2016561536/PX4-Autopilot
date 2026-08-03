@@ -44,6 +44,8 @@
 extern int wapi_main(int argc, char *argv[]);
 extern esp_err_t esp_read_mac(uint8_t *mac, esp_mac_type_t type);
 extern esp_err_t esp_wifi_set_protocol(wifi_interface_t ifx, uint8_t protocol_bitmap);
+extern esp_err_t esp_wifi_set_max_tx_power(int8_t power);
+extern esp_err_t esp_wifi_get_max_tx_power(int8_t *power);
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -82,17 +84,36 @@ int board_wlan_init(void)
 	    }
 	#endif*/
 
-	ret = esp_wlan_softap_initialize();
+	// ret = esp_wlan_softap_initialize();
 
-	if (ret) {
-		wlerr("ERROR: Failed to initialize Wi-Fi softAP\n");
-		return ret;
-	}
+	// if (ret) {
+	// 	wlerr("ERROR: Failed to initialize Wi-Fi softAP\n");
+	// 	return ret;
+	// }
 
 	// force to use 802.11b
-	esp_wifi_set_protocol(WIFI_IF_AP, WIFI_PROTOCOL_11B);
+	// esp_wifi_set_protocol(WIFI_IF_AP, WIFI_PROTOCOL_11B);
 
-	netlib_ifup("wlan0");
+	// netlib_ifup("wlan0");
+
+	// ret = esp_wifi_set_max_tx_power(80);
+
+	// if (ret != 0) {
+	// 	wlerr("ERROR: Fail to set Max tx power\n");
+	// 	return ret;
+	// }
+
+	// int8_t power = 0;
+
+	// ret = esp_wifi_get_max_tx_power(&power);
+
+	// if (ret == 0){
+	// 	wlinfo("GET TX POWER : %d", power);
+	// }else{
+	// 	wlerr("ERROR: Fail to get Max tx power\n");
+	// }
+
+
 
 	//dhcpd_start("wlan0");
 

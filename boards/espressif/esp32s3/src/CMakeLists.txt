@@ -42,9 +42,12 @@ add_library(drivers_board
 	#esp32s3_board_tim.c
 	esp32s3_board_wlan.c
 	esp32s3_board_sdmmc.c
+	esp_now_mavlink.c
 	esp32s3_adc.c
 	mtd.cpp
 )
+
+target_compile_definitions(drivers_board PRIVATE __NuttX__)
 
 target_link_libraries(drivers_board
 	PRIVATE
@@ -70,6 +73,7 @@ ${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3r
 ${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/hal/platform_port/include/
 ${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/esp_rom/include/
 ${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/efuse/esp32s3/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/boards/xtensa/esp32s3/common/include/
 )
 
 add_subdirectory(${PX4_BOARD_DIR}/src/drivers/edit_ssid)

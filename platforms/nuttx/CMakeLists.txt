@@ -278,7 +278,8 @@ else()
 			${PX4_STARTUP_DIR}/esp32s3/esp-hal-3rdparty/components/esp_wifi/lib/esp32s3/libcore.a
 			${PX4_STARTUP_DIR}/esp32s3/esp-hal-3rdparty/components/esp_wifi/lib/esp32s3/libpp.a
 			${PX4_STARTUP_DIR}/esp32s3/esp-hal-3rdparty/components/esp_wifi/lib/esp32s3/libwapi.a
-			${PX4_STARTUP_DIR}/chip/esp-hal-3rdparty/components/esp_phy/lib/esp32s3/libphy.a
+			${PX4_STARTUP_DIR}/esp32s3/esp-hal-3rdparty/components/esp_phy/lib/esp32s3/libphy.a
+			${PX4_STARTUP_DIR}/esp32s3/esp-hal-3rdparty/components/esp_wifi/lib/esp32s3/libespnow.a
 
 	)
 

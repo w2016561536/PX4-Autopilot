@@ -100,6 +100,17 @@
 #endif
 
 #include "esp32s3_board_sdmmc.h"
+
+
+// #ifdef CONFIG_ESPRESSIF_WLAN
+// #  include "esp32_board_wlan.h"
+// #endif
+
+#include "esp_now_mavlink.h"
+
+#ifdef CONFIG_ESP32_RT_TIMER
+#  include "esp32_rt_timer.h"
+#endif
 /****************************************************************************
  * Pre-Processor Definitions
  ****************************************************************************/
@@ -258,6 +269,34 @@ int board_read_VBUS_state(void)
 	return 1;
 }
 
+
+static const uint8_t g_peer_mac[6] =
+{
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff
+};
+
+
+static const uint8_t g_pmk[16] =
+{
+  'm', 'a', 'v', 'l', 'i', 'n', 'k', '-',
+  'p', 'm', 'k', '-', 'd', 'e', 'm', 'o'
+};
+
+int board_mavlink_espnow_initialize(void)
+{
+  struct mavlink_espnow_config_s config;
+
+  memset(&config, 0, sizeof(config));
+  memcpy(config.peer_addr, g_peer_mac, sizeof(config.peer_addr));
+  memcpy(config.pmk, g_pmk, sizeof(config.pmk));
+  config.channel = 0;
+
+  /* This call initializes the minimal Wi-Fi STA radio and ESP-NOW. */
+
+  return mavlink_espnow_register("/dev/mavlink0", &config);
+}
+
+
 __EXPORT int board_app_initialize(uintptr_t arg)
 {
 
@@ -270,7 +309,23 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 
 	drv_led_start();
 
-	esp32_wifi_init();
+	// esp32_wifi_init();
+
+	int ret = 0;
+
+
+#ifdef CONFIG_ESP32S3_RT_TIMER
+  ret = esp32s3_rt_timer_init();
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "Failed to initialize RT timer: %d\n", ret);
+    }
+#endif
+
+    ret = board_mavlink_espnow_initialize();
+    if (ret < 0 ){
+	syslog(LOG_ERR, "Failed to initialize esp now: %d\n", ret);
+    }
 
 	usleep(1000);
 
@@ -318,7 +373,7 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 	usleep(100);
 
 #endif
-	int ret = 0;
+
 
 #ifdef CONFIG_ESP32S3_SDMMC
 	ret = board_sdmmc_initialize();
