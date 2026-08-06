@@ -41,7 +41,10 @@
 #define MAVESPNOW_WIFI_RXBUFS     4
 #define MAVESPNOW_WIFI_TXBUFS     4
 #define MAVESPNOW_WIFI_MGMTBUFS   2
-#define MAVESPNOW_TX_POWER        80  /* 80 * 0.25 dBm = 20 dBm */
+#define MAVESPNOW_TX_POWER        84  /* 80 * 0.25 dBm = 20 dBm */
+#define MAVESPNOW_WIFI_PROTOCOL   WIFI_PROTOCOL_LR
+#define MAVESPNOW_PHY_MODE        WIFI_PHY_MODE_LR
+#define MAVESPNOW_PHY_RATE        WIFI_PHY_RATE_LORA_500K
 
 /* Use the frame limit exported by the same ESP-NOW HAL as the pktradio
  * driver.  The API currently defines ESP_NOW_MAX_DATA_LEN as 250 bytes.
@@ -178,9 +181,15 @@ static int mavespnow_wifi_start(void)
       err = esp_wifi_set_max_tx_power(MAVESPNOW_TX_POWER);
     }
 
+  if (err == ESP_OK)
+    {
+      err = esp_wifi_set_protocol(WIFI_IF_STA,
+                                  MAVESPNOW_WIFI_PROTOCOL);
+    }
+
   if (err != ESP_OK)
     {
-      wlerr("ERROR: Wi-Fi power configuration failed: %d\n", err);
+      wlerr("ERROR: Wi-Fi power/LR configuration failed: %d\n", err);
       esp_wifi_stop();
       esp_wifi_deinit();
       return mavespnow_err(err);
@@ -659,6 +668,7 @@ int mavlink_espnow_register(
 {
   FAR struct mavlink_espnow_dev_s *priv;
   esp_now_peer_info_t peer;
+  esp_now_rate_config_t rate;
   int ret;
 
   if (devpath == NULL || config == NULL)
@@ -756,6 +766,20 @@ int mavlink_espnow_register(
     {
       wlerr("ERROR: esp_now_add_peer failed: %d\n", ret);
       goto err_deinit;
+    }
+
+  memset(&rate, 0, sizeof(rate));
+  rate.phymode = MAVESPNOW_PHY_MODE;
+  rate.rate = MAVESPNOW_PHY_RATE;
+  rate.ersu = false;
+  rate.dcm = false;
+
+  ret = mavespnow_err(
+          esp_now_set_peer_rate_config(priv->config.peer_addr, &rate));
+  if (ret < 0)
+    {
+      wlerr("ERROR: ESP-NOW LR 250K rate configuration failed: %d\n", ret);
+      goto err_peer;
     }
 
   g_mavespnow = priv;
