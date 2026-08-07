@@ -39,11 +39,13 @@ constexpr io_timers_t io_timers[MAX_IO_TIMERS] = {
 };
 
 constexpr timer_io_channels_t timer_io_channels[MAX_TIMER_IO_CHANNELS] = {
-	initIOTimerChannel(io_timers, {Timer::Timer0, 0}, {37}),
-	initIOTimerChannel(io_timers, {Timer::Timer1, 0}, {38}),
+	initIOTimerChannel(io_timers, {Timer::Timer0, 0}, {1}),
+	initIOTimerChannel(io_timers, {Timer::Timer0, 1}, {2}),
 	// initIOTimerChannel(io_timers, {Timer::Timer1, 2}, {4}),
-	initIOTimerChannel(io_timers, {Timer::Timer1, 1}, {1}),
-	initIOTimerChannel(io_timers, {Timer::Timer1, 2}, {2}),
+	initIOTimerChannel(io_timers, {Timer::Timer1, 0}, {3}),
+	initIOTimerChannel(io_timers, {Timer::Timer1, 1}, {4}),
+	initIOTimerChannel(io_timers, {Timer::Timer1, 2}, {5}),
+	initIOTimerChannel(io_timers, {Timer::Timer1, 3}, {6}),
 
 
 };

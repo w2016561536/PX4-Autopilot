@@ -40,7 +40,7 @@ add_library(drivers_board
 	esp32s3_board_usb.c
 	# esp32s3_ledc.c
 	#esp32s3_board_tim.c
-	esp32s3_board_wlan.c
+	# esp32s3_board_wlan.c
 	esp32s3_board_sdmmc.c
 	esp_now_mavlink.c
 	esp32s3_adc.c
@@ -76,5 +76,5 @@ ${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3r
 ${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/boards/xtensa/esp32s3/common/include/
 )
 
-add_subdirectory(${PX4_BOARD_DIR}/src/drivers/edit_ssid)
-add_subdirectory(${PX4_BOARD_DIR}/src/drivers/servo_driver)
+# add_subdirectory(${PX4_BOARD_DIR}/src/drivers/edit_ssid)
+# add_subdirectory(${PX4_BOARD_DIR}/src/drivers/servo_driver)
