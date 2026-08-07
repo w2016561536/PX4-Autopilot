@@ -5,6 +5,8 @@ PROVIDE( cache_read_disable = Cache_Read_Disable_rom );
 PROVIDE( cache_read_enable = Cache_Read_Enable_rom );
 MEMORY
 {
+  ROM (RX) : org = 0x20,
+                         len = 0x400000 - ORIGIN(ROM)
   iram0_0_seg (RX) : org = 0x40080000, len = 0x20000 + 0xa000
   irom0_0_seg (RX) : org = 0x400d0020, len = 0x330000 - 0x20
   dram0_0_seg (RW) : org = 0x3ffb0000 + 0,

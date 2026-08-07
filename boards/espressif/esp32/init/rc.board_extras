@@ -14,11 +14,13 @@
 # ifconfig
 # airspeed_selector stop
 
-ifup wlan1
-wapi psk wlan1 12345678 3
-wapi essid wlan1 MY_PX6 1
-ifconfig wlan1 10.0.0.2 netmask 255.255.255.0
+# ifup wlan1
+# wapi psk wlan1 12345678 3
+# wapi essid wlan1 MY_PX6 1
+# ifconfig wlan1 10.0.0.2 netmask 255.255.255.0
 
-mavlink start -u 14556 -p -r 100000 -n wlan1 -x
+# mavlink start -u 14556 -p -r 100000 -n wlan1 -x
 # esp_inv_ctrl
 #mavlink start -d /dev/ttyACM0 -b 2000000 -m onboard
+
+mavlink start -x -Z -d /dev/mavlink0

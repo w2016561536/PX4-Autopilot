@@ -99,6 +99,9 @@
 // #  include "esp32_board_tim.h"
 #endif
 
+
+#include "esp_now_mavlink.h"
+
 int esp_rtc_clk_get_cpu_freq(void);
 
 /****************************************************************************
@@ -125,6 +128,33 @@ __END_DECLS
  * Public Functions
  ****************************************************************************/
 
+static const uint8_t g_peer_mac[6] =
+{
+  0xff, 0xff, 0xff, 0xff, 0xff, 0xff
+};
+
+
+static const uint8_t g_pmk[16] =
+{
+  'm', 'a', 'v', 'l', 'i', 'n', 'k', '-',
+  'p', 'm', 'k', '-', 'd', 'e', 'm', 'o'
+};
+
+int board_mavlink_espnow_initialize(void)
+{
+  struct mavlink_espnow_config_s config;
+
+  memset(&config, 0, sizeof(config));
+  memcpy(config.peer_addr, g_peer_mac, sizeof(config.peer_addr));
+  memcpy(config.pmk, g_pmk, sizeof(config.pmk));
+  config.channel = 0;
+
+  /* This call initializes the minimal Wi-Fi STA radio and ESP-NOW. */
+
+  return mavlink_espnow_register("/dev/mavlink0", &config);
+}
+
+
 
 static void esp32_wifi_init(void)
 {
@@ -139,12 +169,18 @@ static void esp32_wifi_init(void)
 #endif
 
 
-  ret = board_wlan_init();
-  if (ret < 0)
-    {
-      syslog(LOG_ERR, "ERROR: Failed to initialize wireless subsystem=%d\n",
-             ret);
+    ret = board_mavlink_espnow_initialize();
+    if (ret < 0 ){
+	syslog(LOG_ERR, "Failed to initialize esp now: %d\n", ret);
     }
+
+
+//   ret = board_wlan_init();
+//   if (ret < 0)
+//     {
+//       syslog(LOG_ERR, "ERROR: Failed to initialize wireless subsystem=%d\n",
+//              ret);
+//     }
 }
 
 

@@ -41,10 +41,13 @@ add_library(drivers_board
 	# esp32_ledc.c
 	#esp32_board_tim.c
 	esp32_board_wlan.c
+	esp_now_mavlink.c
 	#esp32_board_sdmmc.c
 	#esp32_adc.c
 	mtd.cpp
 )
+
+target_compile_definitions(drivers_board PRIVATE __NuttX__)
 
 target_link_libraries(drivers_board
 	PRIVATE
@@ -58,8 +61,11 @@ target_link_libraries(drivers_board
 
 target_include_directories(drivers_board PRIVATE
 
-../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/components/soc/esp32/include/
-../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/components/esp_common/include/
-../../../../platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/nuttx/esp32/include/
-
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/components/soc/esp32/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/components/esp_common/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/nuttx/esp32/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/boards/xtensa/esp32/common/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/components/esp_wifi/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/components/esp_hw_support/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/components/esp_event/include/
 )
