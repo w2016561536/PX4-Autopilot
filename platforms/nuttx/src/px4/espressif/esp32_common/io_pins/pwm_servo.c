@@ -60,7 +60,8 @@
 
 #include <px4_arch/io_timer.h>
 
-#include "esp32s3_ledc.h"
+#include "esp_ledc.h"
+
 
 typedef uint16_t	servo_position_t;
 
@@ -180,7 +181,7 @@ int up_pwm_servo_init(uint32_t channel_mask)
 
 	// int ret = 0;
 	if (channel_mask & io_timer_get_group(0)) {
-		pwm0 = esp32s3_ledc_init(0);
+		pwm0 = esp_ledc_init(0);
 
 		if (!pwm0) {
 			syslog(LOG_ERR, "[ESP PWM][boot] Failed to get the LEDC PWM 0 lower half\n");
@@ -206,7 +207,7 @@ int up_pwm_servo_init(uint32_t channel_mask)
 #ifdef CONFIG_ESP32S3_LEDC_TIM1
 
 	if (channel_mask & io_timer_get_group(1)) {
-		pwm1 = esp32s3_ledc_init(1);
+		pwm1 = esp_ledc_init(1);
 
 		if (!pwm1) {
 			syslog(LOG_ERR, "[[ESP PWM]] Failed to get the LEDC PWM 1 lower half\n");
@@ -232,7 +233,7 @@ int up_pwm_servo_init(uint32_t channel_mask)
 #if defined(CONFIG_ESP32S3_LEDC_TIM2)
 
 	if (channel_mask & io_timer_get_group(2)) {
-		pwm2 = esp32s3_ledc_init(2);
+		pwm2 = esp_ledc_init(2);
 
 		if (!pwm2) {
 			syslog(LOG_ERR, "[ESP PWM] Failed to get the LEDC PWM 2 lower half\n");

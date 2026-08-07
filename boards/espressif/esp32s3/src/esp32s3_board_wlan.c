@@ -34,7 +34,7 @@
 #include <nuttx/wireless/wireless.h>
 
 #include "esp32s3_spiflash.h"
-#include "espressif/esp_wlan.h"
+// #include "espressif/esp_wlan.h"
 #include "netutils/netlib.h"
 #include "netutils/dhcpd.h"
 #include "esp32s3_board_wlan.h"

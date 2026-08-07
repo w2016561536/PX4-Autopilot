@@ -36,10 +36,11 @@ px4_add_library(arch_hrt
 )
 target_include_directories(arch_hrt PRIVATE
 
-../../../../../NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/soc/esp32s3/include/
-../../../../../NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/esp_common/include/
-../../../../../NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/nuttx/esp32s3/include/
-../../../../../NuttX/nuttx/arch/xtensa/src/chip/esp-hal-3rdparty/components/esp_hw_support/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/soc/esp32s3/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/esp_common/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/nuttx/esp32s3/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/esp_hw_support/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/soc/esp32s3/register/
 
 )
 target_compile_options(arch_hrt

@@ -43,7 +43,8 @@ ${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3r
 ${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/nuttx/esp32s3/include/
 ${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/esp_adc/include/
 ${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/hal/include/
-${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/chip/esp-hal-3rdparty/components/esp_adc/esp32s3/include
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/esp_adc/esp32s3/include
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/soc/esp32s3/register/
 )
 
 target_link_libraries(arch_adc

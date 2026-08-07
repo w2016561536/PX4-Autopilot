@@ -85,13 +85,13 @@
 
 #include "esp32s3_board_wlan.h"
 #ifdef CONFIG_ESP32S3_SPIFLASH
-#include "esp32s3_spiflash_mtd.h"
-#include "esp32s3_spiflash.h"
+#include "esp_spiflash_mtd.h"
+#include "esp_spiflash.h"
 #endif
 
-#ifdef CONFIG_ESP32S3_LEDC
-#  include "esp32s3_ledc.h"
-#endif
+// #ifdef CONFIG_ESP32S3_LEDC
+// #  include "esp_ledc.h"
+// #endif
 
 #include "esp32s3_rt_timer.h"
 
@@ -392,10 +392,10 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 	// esp32 flash mtd init.
 	//int ret = 0;
 	FAR struct mtd_dev_s *mtd;
-	ret = esp32s3_spiflash_init();
-	mtd = esp32s3_spiflash_alloc_mtdpart(0x310000,
-					     0x10000,
-					     false);
+	ret = esp_spiflash_init();
+	mtd = esp_spiflash_alloc_mtdpart(0x310000,
+					     0x10000
+					     );
 
 	if (!mtd) {
 		ferr("ERROR: Failed to alloc MTD partition of SPI Flash\n");

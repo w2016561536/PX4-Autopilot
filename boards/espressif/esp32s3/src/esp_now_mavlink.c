@@ -789,7 +789,7 @@ int mavlink_espnow_register(
       goto err_peer;
     }
 
-  ret = mavespnow_err(esp_now_register_send_cb(mavespnow_send_cb));
+  ret = mavespnow_err(esp_now_register_send_cb((esp_now_send_cb_t)mavespnow_send_cb));
   if (ret < 0)
     {
       goto err_recv_cb;

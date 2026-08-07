@@ -37,6 +37,10 @@ px4_add_library(arch_io_pins
 	io_timer.c
 )
 
+include_directories(
+	${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/common/espressif/
+)
+
 target_compile_options(arch_io_pins PRIVATE ${MAX_CUSTOM_OPT_LEVEL})
 
 target_link_libraries(arch_io_pins PRIVATE drivers_board)

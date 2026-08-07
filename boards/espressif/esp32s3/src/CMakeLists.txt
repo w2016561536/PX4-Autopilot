@@ -74,6 +74,8 @@ ${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3r
 ${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/esp_rom/include/
 ${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/efuse/esp32s3/include/
 ${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/boards/xtensa/esp32s3/common/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3rdparty/components/soc/esp32s3/register/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/common/espressif/
 )
 
 add_subdirectory(${PX4_BOARD_DIR}/src/drivers/edit_ssid)

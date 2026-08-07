@@ -17,11 +17,11 @@
 [submodule "platforms/nuttx/NuttX/nuttx"]
 	path = platforms/nuttx/NuttX/nuttx
 	url = https://github.com/w2016561536/nuttx.git
-	branch = px4_esp32s3_12.10
+	branch = releases/12.13
 [submodule "platforms/nuttx/NuttX/apps"]
 	path = platforms/nuttx/NuttX/apps
 	url = https://github.com/apache/nuttx-apps.git
-	branch = releases/12.10
+	branch = releases/12.13
 [submodule "Tools/flightgear_bridge"]
 	path = Tools/simulation/flightgear/flightgear_bridge
 	url = https://github.com/PX4/PX4-FlightGear-Bridge.git
