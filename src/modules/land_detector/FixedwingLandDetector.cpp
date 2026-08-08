@@ -134,7 +134,7 @@ bool FixedwingLandDetector::_get_landed_state()
 
 	} else {
 		// Control state topic has timed out and we need to assume we're landed.
-		landDetected = true;
+		landDetected = false;
 	}
 
 	return landDetected;
