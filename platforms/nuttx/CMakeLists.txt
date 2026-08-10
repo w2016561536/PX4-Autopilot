@@ -252,6 +252,9 @@ else()
 	${PX4_STARTUP_DIR}/xtensa_user_handler.o
 	${PX4_STARTUP_DIR}/esp32_start.o
 	${PX4_STARTUP_DIR}/esp32_wdt.o
+	${PX4_STARTUP_DIR}/esp32/esp-hal-3rdparty/components/esp_wifi/regulatory/esp_wifi_regulatory.o
+	${PX4_STARTUP_DIR}/esp32/esp-hal-3rdparty/components/esp_wifi/src/lib_printf.o
+	# ${PX4_STARTUP_DIR}/esp32/esp-hal-3rdparty/nuttx/src/bootloader_banner_wrap.o
 
 
 	# ${PX4_STARTUP_DIR}/xtensa_cpupause.o
@@ -283,6 +286,7 @@ else()
 			${PX4_STARTUP_DIR}/esp32/esp-hal-3rdparty/components/esp_coex/lib/esp32/libcoexist.a
 			${PX4_STARTUP_DIR}/esp32/esp-hal-3rdparty/components/esp_phy/lib/esp32/librtc.a
 			${PX4_STARTUP_DIR}/esp32/esp-hal-3rdparty/components/esp_wifi/lib/esp32/libespnow.a
+
 			)
 
 	target_link_libraries(nuttx_c INTERFACE nuttx_drivers)
@@ -313,6 +317,7 @@ else()
 		-Wl,-Map=${PX4_CONFIG}.map
 		-Wl,--warn-common
 		-Wl,--gc-sections
+		-Wl,--wrap=bootloader_print_banner
 
 		-Wl,--start-group
 			${nuttx_libs}

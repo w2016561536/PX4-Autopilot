@@ -5,8 +5,6 @@ PROVIDE( cache_read_disable = Cache_Read_Disable_rom );
 PROVIDE( cache_read_enable = Cache_Read_Enable_rom );
 MEMORY
 {
-  ROM (RX) : org = 0x20,
-                         len = 0x400000 - ORIGIN(ROM)
   iram0_0_seg (RX) : org = 0x40080000, len = 0x20000 + 0xa000
   irom0_0_seg (RX) : org = 0x400d0020, len = 0x330000 - 0x20
   dram0_0_seg (RW) : org = 0x3ffb0000 + 0,
@@ -15,6 +13,7 @@ MEMORY
   rtc_iram_seg (RWX) : org = 0x400c0000, len = 0x2000
   rtc_slow_seg (RW) : org = 0x50000000 + 0,
                          len = 0x1000 - 0
+  rtc_reserved_seg(RW) : org = 0x50000000 + 0x2000 - ((24)), len = ((24))
   extmem_seg (RWX) : org = 0x3f800000, len = 0x400000
 }
   REGION_ALIAS("default_rodata_seg", drom0_0_seg);

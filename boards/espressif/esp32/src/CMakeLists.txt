@@ -68,4 +68,6 @@ ${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/boards/xtensa/esp32/common/include
 ${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/components/esp_wifi/include/
 ${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/components/esp_hw_support/include/
 ${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32/esp-hal-3rdparty/components/esp_event/include/
+${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/common/espressif/
+platforms/nuttx/NuttX/nuttx/arch/xtensa/src/common/espressif/esp_spiflash_mtd.h
 )

@@ -49,6 +49,7 @@ SECTIONS
     *libarch.a:xtensa_modifyreg32.*(.literal .text .literal.* .text.*)
     *libarch.a:xtensa_saveusercontext.*(.literal .text .literal.* .text.*)
     *libarch.a:xtensa_testset.*(.literal .text .literal.* .text.*)
+    *libarch.a:esp_app_desc.*(.literal .text .literal.* .text.*)
     *libc.a:lib_assert.*(.literal .text .literal.* .text.*)
     *libc.a:lib_utsname.*(.literal .text .literal.* .text.*)
     *libc.a:sq_remlast.*(.literal .text .literal.* .text.*)
@@ -65,6 +66,21 @@ SECTIONS
     *libsched.a:sched_thistask.*(.literal .text .literal.* .text.*)
     *libsched.a:sched_unlock.*(.literal .text .literal.* .text.*)
     *libsched.a:spinlock.*(.literal .text .literal.* .text.*)
+    *libarch.a:esp_spiflash.*(.literal .text .literal.* .text.*)
+    *libarch.a:esp_flash_api.*(.text .text.* .literal .literal.*)
+    *libarch.a:esp_flash_spi_init.*(.text .text.* .literal .literal.*)
+    *libarch.a:spi_flash_hal_iram.*(.literal .literal.* .text .text.*)
+    *libarch.a:spi_flash_encrypt_hal_iram.*(.text .text.* .literal .literal.*)
+    *libarch.a:spi_flash_hal_gpspi.*(.literal .literal.* .text .text.*)
+    *libarch.a:spi_flash_chip*.*(.literal .literal.* .text .text.*)
+    *libarch.a:spi_flash_wrap.*(.literal .literal.* .text .text.*)
+    *libarch.a:spi_flash_os_func_noos.*(.literal .literal.* .text .text.*)
+    *libarch.a:spi_flash_os_func_app.*(.literal .literal.* .text .text.*)
+    *libarch.a:flash_brownout_hook.*(.literal .literal.* .text .text.*)
+    *libarch.a:esp_cache.*(.literal .literal.* .text .text.*)
+    *libarch.a:cache_hal_esp32.*(.literal .literal.* .text .text.*)
+    *libarch.a:cache_utils.*(.literal .literal.* .text .text.*)
+    *libarch.a:memspi_host_driver.*(.literal .literal.* .text .text.*)
     *(.wifirxiram .wifirxiram.*)
     *(.wifi0iram .wifi0iram.*)
     *(.wifiorslpiram .wifiorslpiram.*)
@@ -172,6 +188,20 @@ SECTIONS
     *(.dram1 .dram1.*)
     *libphy.a:(.rodata .rodata.*)
     *libarch.a:esp32_spiflash.*(.rodata .rodata.*)
+    *libarch.a:esp_flash_api.*(.rodata .rodata.*)
+    *libarch.a:esp_flash_spi_init.*(.rodata .rodata.*)
+    *libarch.a:spi_flash_hal_iram.*(.rodata .rodata.*)
+    *libarch.a:spi_flash_encrypt_hal_iram.*(.rodata .rodata.*)
+    *libarch.a:spi_flash_hal_gpspi.*(.rodata .rodata.*)
+    *libarch.a:spi_flash_chip*.*(.rodata .rodata.*)
+    *libarch.a:spi_flash_wrap.*(.rodata .rodata.*)
+    *libarch.a:spi_flash_os_func_noos.*(.rodata .rodata.*)
+    *libarch.a:spi_flash_os_func_app.*(.rodata .rodata.*)
+    *libarch.a:flash_brownout_hook.*(.rodata .rodata.*)
+    *libarch.a:esp_cache.*(.rodata .rodata.*)
+    *libarch.a:cache_utils.*(.rodata .rodata.*)
+    *libarch.a:cache_hal_esp32.*(.rodata .rodata.*)
+    *libarch.a:memspi_host_driver.*(.rodata .rodata.*)
     *libarch.a:xtensa_context.*(.rodata .rodata.*)
     *libarch.a:xtensa_copystate.*(.rodata .rodata.*)
     *libarch.a:xtensa_cpupause.*(.rodata .rodata.*)
@@ -196,7 +226,9 @@ SECTIONS
   } > extmem_seg
   .flash.rodata :
   {
+    _rodata_reserved_start = ABSOLUTE(.);
     _srodata = ABSOLUTE(.);
+    *(.rodata_desc .rodata_desc.*)
     *(.rodata)
     *(.rodata.*)
     *(.rodata_wlog_verbose.*)
@@ -216,15 +248,21 @@ SECTIONS
     *(.eh_frame)
     . = (. + 3) & ~ 3;
     _sinit = ABSOLUTE(.);
+    __init_array_start = ABSOLUTE(.);
     KEEP (*crtbegin.o(.ctors))
     KEEP (*(EXCLUDE_FILE (*crtend.o) .ctors))
     KEEP (*(SORT(.ctors.*)))
     KEEP (*(.ctors))
     _einit = ABSOLUTE(.);
+    __init_array_end = ABSOLUTE(.);
     KEEP (*crtbegin.o(.dtors))
     KEEP (*(EXCLUDE_FILE (*crtend.o) .dtors))
     KEEP (*(SORT(.dtors.*)))
     KEEP (*(.dtors))
+    . = ALIGN(4);
+    _esp_system_init_fn_array_start = ABSOLUTE(.);
+    KEEP (*(SORT_BY_INIT_PRIORITY(.esp_system_init_fn.*)))
+    _esp_system_init_fn_array_end = ABSOLUTE(.);
     __XT_EXCEPTION_DESCS_ = ABSOLUTE(.);
     *(.xt_except_desc)
     *(.gnu.linkonce.h.*)
@@ -269,4 +307,12 @@ SECTIONS
     . = ALIGN (4);
     _srtcheap = ABSOLUTE(.);
   } > rtc_slow_seg
+  .rtc_reserved (NOLOAD):
+  {
+    . = ALIGN(4);
+    _rtc_reserved_start = ABSOLUTE(.);
+    *(.rtc_timer_data_in_rtc_mem .rtc_timer_data_in_rtc_mem.*)
+    KEEP(*(.bootloader_data_rtc_mem .bootloader_data_rtc_mem.*))
+    _rtc_reserved_end = ABSOLUTE(.);
+  } > rtc_reserved_seg
 }

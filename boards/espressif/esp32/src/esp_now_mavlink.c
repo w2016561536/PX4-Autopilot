@@ -783,13 +783,13 @@ int mavlink_espnow_register(
     }
 
   g_mavespnow = priv;
-  ret = mavespnow_err(esp_now_register_recv_cb(mavespnow_recv_cb));
+  ret = mavespnow_err(esp_now_register_recv_cb((esp_now_recv_cb_t)mavespnow_recv_cb));
   if (ret < 0)
     {
       goto err_peer;
     }
 
-  ret = mavespnow_err(esp_now_register_send_cb(mavespnow_send_cb));
+  ret = mavespnow_err(esp_now_register_send_cb((esp_now_send_cb_t)mavespnow_send_cb));
   if (ret < 0)
     {
       goto err_recv_cb;
