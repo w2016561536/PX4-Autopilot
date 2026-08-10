@@ -77,9 +77,11 @@ struct pwm_lowerhalf_s *pwm2;
 struct pwm_info_s pwm_info2;
 #endif
 
+// int count = 0;
+
 int up_pwm_servo_set(unsigned channel, servo_position_t value)
 {
-	//syslog(LOG_INFO, "[ESP PWM] PWM set ch: %d value:%d\n", channel,value);
+	// syslog(LOG_INFO, "[ESP PWM] PWM set ch: %d value:%d\n", channel,value);
 	if (channel < CONFIG_ESP32_LEDC_TIM0_CHANNELS) {
 		if (pwm_info0.frequency > 400) {
 			if (value > 2000) {
@@ -266,7 +268,7 @@ void up_pwm_servo_deinit(uint32_t channel_mask)
 
 int up_pwm_servo_set_rate_group_update(unsigned group, unsigned rate)
 {
-	syslog(LOG_INFO, "[ESP PWM] group update group: %d rate:%d\n", group, rate);
+	// syslog(LOG_INFO, "[ESP PWM] group update group: %d rate:%d\n", group, rate);
 
 	if (group == 0) {
 		if (rate == 0) {
@@ -309,7 +311,25 @@ int up_pwm_servo_set_rate_group_update(unsigned group, unsigned rate)
 
 void up_pwm_update(unsigned channels_mask)
 {
-	//syslog(LOG_INFO, "[ESP PWM] up_pwm_update channels_mask: %02X\n", channels_mask);
+	// if (count > 100){
+	// 	syslog(LOG_INFO, "[ESP PWM] up_pwm_update channels_mask: %02X\n", channels_mask);
+
+	// 	for (int channel_index = 0 ;channel_index < 2; channel_index++){
+	// 			syslog(LOG_INFO,
+	// 			"[ESP PWM] group update group: 0, channel: %d , rate:%ld , duty: %ld\n",
+	// 			channel_index, pwm_info0.frequency, pwm_info0.channels[channel_index].duty);
+	// 		}
+
+	// 	for (int channel_index = 0 ;channel_index < 2; channel_index++){
+	// 			syslog(LOG_INFO,
+	// 			"[ESP PWM] group update group: 1 channel: %d , rate:%ld , duty: %ld\n",
+	// 			channel_index, pwm_info1.frequency, pwm_info1.channels[channel_index].duty);
+	// 		}
+	// 	count = 0;
+	// }else{
+	// 	count += 1;
+	// }
+
 
 	if (channels_mask & io_timer_get_group(0)) {
 		pwm0->ops->start(pwm0, &pwm_info0);
