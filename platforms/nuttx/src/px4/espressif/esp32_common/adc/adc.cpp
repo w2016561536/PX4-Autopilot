@@ -56,7 +56,7 @@
 
 struct adc_dev_s *adcdev;
 
-#define CONFIG_ESPRESSIF_ADC_1
+// #define CONFIG_ESPRESSIF_ADC_1
 
 #ifdef CONFIG_ESPRESSIF_ADC_1
 #define ADC_1_MAX_CHANNELS 8
@@ -144,7 +144,7 @@ uint32_t px4_arch_adc_sample(uint32_t base_address, unsigned channel) {
 }
 
 float px4_arch_adc_reference_v() {
-	return 3.1f; // TODO: provide true vref
+	return 4.4f; // TODO: provide true vref
 }
 
 uint32_t px4_arch_adc_temp_sensor_mask() {

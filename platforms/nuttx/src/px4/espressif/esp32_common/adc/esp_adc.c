@@ -583,7 +583,7 @@ uint32_t esp_adc_oneshot_read_now(struct adc_dev_s *dev, uint8_t channel_id)
             priv->unit, ch->channel, ch->calibrated,
             (int32_t)voltage, raw_value);
 //       usleep(1000);
-        return voltage * 4095 / 1000;
+        return voltage * 4095 / priv->atten_k;
 
     }
 
