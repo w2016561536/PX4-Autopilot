@@ -293,6 +293,7 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 	syslog(LOG_INFO, "\n[boot] CPU SPEED %d\n", esp_rtc_clk_get_cpu_freq());
 
 	// led_init();
+	int ret =0;
 
 	// led_on(LED_RED);
 	// led_on(LED_GREEN);
@@ -321,8 +322,8 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 		//led_on(LED_RED);
 	}
 
-	// Default SPI1 to 10MHz
-	SPI_SETFREQUENCY(spi2, 10000000);
+	// Default SPI1 to 5MHz
+	SPI_SETFREQUENCY(spi2, 5000000);
 	SPI_SETBITS(spi2, 8);
 	SPI_SETMODE(spi2, SPIDEV_MODE3);
 	usleep(100);
@@ -330,12 +331,12 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 	usleep(100);
 
 
-// 	int ret = spi_register(spi2, 2);
-//   if (ret < 0)
-//     {
-//       syslog(LOG_ERR, "Failed to register /dev/spi%d: %d\n", 2, ret);
-//       esp32_spibus_uninitialize(spi2);
-//     }
+	ret = spi_register(spi2, 2);
+  if (ret < 0)
+    {
+      syslog(LOG_ERR, "Failed to register /dev/spi%d: %d\n", 2, ret);
+      esp32_spibus_uninitialize(spi2);
+    }
 
 
 #endif
@@ -356,7 +357,7 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 	usleep(100);
 
 #endif
-	int ret =0;
+
 
 
 
