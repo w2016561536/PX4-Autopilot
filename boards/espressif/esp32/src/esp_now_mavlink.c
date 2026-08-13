@@ -28,6 +28,21 @@
 #include <nuttx/spinlock.h>
 #include <esp_now_mavlink.h>
 
+/* The MAVLink payload is byte aligned.  Force generated accessors to use
+ * byte copies on ESP32/Xtensa instead of alignment-increasing pointer casts.
+ */
+
+#define MAVLINK_ALIGNED_FIELDS 0
+
+#if defined(__GNUC__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Waddress-of-packed-member"
+#endif
+#include <mavlink/common/mavlink.h>
+#if defined(__GNUC__)
+#  pragma GCC diagnostic pop
+#endif
+
 #include "esp_now.h"
 #include "esp_wifi.h"
 
@@ -45,6 +60,19 @@
 #define MAVESPNOW_WIFI_PROTOCOL   WIFI_PROTOCOL_LR
 #define MAVESPNOW_PHY_MODE        WIFI_PHY_MODE_LR
 #define MAVESPNOW_PHY_RATE        WIFI_PHY_RATE_LORA_250K
+
+/* Set this to 1 in the aircraft build and 0 in the ground-radio build.
+ * The aircraft reports the RSSI it measured for ground-to-air packets to
+ * the ground as RADIO_STATUS.remrssi.  No RSSI message is injected into PX4.
+ */
+
+#define MAVESPNOW_TX_RSSI_REPORT  1
+#define MAVESPNOW_RSSI_PERIOD_MS  1000
+#define MAVESPNOW_RADIO_SYSID     51  /* SiK-compatible '3' */
+#define MAVESPNOW_RADIO_COMPID    68  /* MAV_COMP_ID_TELEMETRY_RADIO */
+#define MAVESPNOW_RADIO_FRAME_LEN (MAVLINK_MSG_ID_RADIO_STATUS_LEN + \
+                                   MAVLINK_NUM_NON_PAYLOAD_BYTES + \
+                                   MAVLINK_SIGNATURE_BLOCK_LEN)
 
 /* Use the frame limit exported by the same ESP-NOW HAL as the pktradio
  * driver.  The API currently defines ESP_NOW_MAX_DATA_LEN as 250 bytes.
@@ -82,9 +110,17 @@ struct mavlink_espnow_dev_s
   size_t rxcount;
   uint8_t txseq;
   uint8_t rxseq;
+#if MAVESPNOW_TX_RSSI_REPORT
+  mavlink_status_t radio_tx_status;
+  clock_t last_rssi_tx;
+  int8_t last_rssi_dbm;
+#endif
   volatile esp_now_send_status_t txstatus;
   volatile bool txpending;
   bool have_rxseq;
+#if MAVESPNOW_TX_RSSI_REPORT
+  bool have_rssi;
+#endif
   bool running;
 };
 
@@ -303,11 +339,134 @@ static ssize_t mavespnow_read(FAR struct file *filep, FAR char *buffer,
     }
 }
 
+/* Send one ESP-NOW transport fragment.  The caller holds txlock. */
+
+static int mavespnow_send_fragment(FAR struct mavlink_espnow_dev_s *priv,
+                                   FAR const uint8_t *payload,
+                                   size_t payload_len)
+{
+  uint8_t frame[MAVESPNOW_FRAME_LEN];
+  int ret;
+
+  if (payload_len > MAVESPNOW_PAYLOAD_LEN)
+    {
+      return -EMSGSIZE;
+    }
+
+  /* A timed-out write may still have a completion callback in flight. */
+
+  if (priv->txpending)
+    {
+      ret = nxsem_tickwait_uninterruptible(
+              &priv->txdone, MSEC2TICK(MAVESPNOW_TXTIMEOUT_MS));
+      if (ret < 0)
+        {
+          return -ETIMEDOUT;
+        }
+    }
+
+  frame[0] = MAVESPNOW_MAGIC0;
+  frame[1] = MAVESPNOW_MAGIC1;
+  frame[2] = MAVESPNOW_VERSION;
+  frame[3] = priv->txseq++;
+  frame[4] = payload_len & 0xff;
+  frame[5] = (payload_len >> 8) & 0xff;
+  memcpy(&frame[MAVESPNOW_HEADER_LEN], payload, payload_len);
+
+  while (nxsem_trywait(&priv->txdone) == OK)
+    {
+    }
+
+  priv->txpending = true;
+  ret = mavespnow_err(esp_now_send(priv->config.peer_addr, frame,
+                                  MAVESPNOW_HEADER_LEN + payload_len));
+  if (ret < 0)
+    {
+      priv->txpending = false;
+      return ret;
+    }
+
+  ret = nxsem_tickwait_uninterruptible(
+          &priv->txdone, MSEC2TICK(MAVESPNOW_TXTIMEOUT_MS));
+  if (ret < 0)
+    {
+      return -ETIMEDOUT;
+    }
+
+  return priv->txstatus == ESP_NOW_SEND_SUCCESS ? OK : -EHOSTUNREACH;
+}
+
+#if MAVESPNOW_TX_RSSI_REPORT
+static uint8_t mavespnow_rssi_to_sik(int rssi_dbm)
+{
+  int scaled;
+
+  if (rssi_dbm < -127)
+    {
+      rssi_dbm = -127;
+    }
+  else if (rssi_dbm > 6)
+    {
+      rssi_dbm = 6;
+    }
+
+  scaled = ((rssi_dbm + 127) * 19 + 5) / 10;
+  return (uint8_t)scaled;
+}
+
+static int mavespnow_send_rssi(FAR struct mavlink_espnow_dev_s *priv)
+{
+  uint8_t payload[MAVESPNOW_RADIO_FRAME_LEN];
+  mavlink_message_t message;
+  irqstate_t flags;
+  clock_t now;
+  int8_t rssi_dbm;
+  uint16_t payload_len;
+  bool report_due;
+  int ret;
+
+  now = clock_systime_ticks();
+  flags = spin_lock_irqsave(&priv->rxlock);
+  rssi_dbm = priv->last_rssi_dbm;
+  report_due = priv->have_rssi &&
+               (priv->last_rssi_tx == 0 ||
+                now - priv->last_rssi_tx >=
+                MSEC2TICK(MAVESPNOW_RSSI_PERIOD_MS));
+  spin_unlock_irqrestore(&priv->rxlock, flags);
+
+  if (!report_due)
+    {
+      return OK;
+    }
+
+  /* This value was measured at the aircraft, so it is the remote RSSI from
+   * the ground station's point of view.  Unknown local RSSI/noise fields use
+   * UINT8_MAX as required by RADIO_STATUS.
+   */
+
+  mavlink_msg_radio_status_pack_status(MAVESPNOW_RADIO_SYSID,
+                                       MAVESPNOW_RADIO_COMPID,
+                                       &priv->radio_tx_status, &message,
+                                       UINT8_MAX,
+                                       mavespnow_rssi_to_sik(rssi_dbm),
+                                       100, UINT8_MAX, UINT8_MAX, 0, 0);
+  payload_len = mavlink_msg_to_send_buffer(payload, &message);
+  ret = mavespnow_send_fragment(priv, payload, payload_len);
+  if (ret == OK)
+    {
+      flags = spin_lock_irqsave(&priv->rxlock);
+      priv->last_rssi_tx = now;
+      spin_unlock_irqrestore(&priv->rxlock, flags);
+    }
+
+  return ret;
+}
+#endif
+
 static ssize_t mavespnow_write(FAR struct file *filep,
                                FAR const char *buffer, size_t buflen)
 {
   FAR struct mavlink_espnow_dev_s *priv = filep->f_inode->i_private;
-  uint8_t frame[MAVESPNOW_FRAME_LEN];
   size_t sent = 0;
   size_t chunk;
   int ret;
@@ -330,71 +489,34 @@ static ssize_t mavespnow_write(FAR struct file *filep,
 
   while (sent < buflen)
     {
-      /* A timed-out write may still have a radio completion callback in
-       * flight.  Consume that callback before reusing the single completion
-       * semaphore, otherwise it could be mistaken for the next packet.
-       */
-
-      if (priv->txpending)
-        {
-          ret = nxsem_tickwait_uninterruptible(
-                  &priv->txdone,
-                  MSEC2TICK(MAVESPNOW_TXTIMEOUT_MS));
-          if (ret < 0)
-            {
-              ret = -ETIMEDOUT;
-              break;
-            }
-        }
-
       chunk = buflen - sent;
       if (chunk > MAVESPNOW_PAYLOAD_LEN)
         {
           chunk = MAVESPNOW_PAYLOAD_LEN;
         }
 
-      frame[0] = MAVESPNOW_MAGIC0;
-      frame[1] = MAVESPNOW_MAGIC1;
-      frame[2] = MAVESPNOW_VERSION;
-      frame[3] = priv->txseq++;
-      frame[4] = chunk & 0xff;
-      frame[5] = (chunk >> 8) & 0xff;
-      memcpy(&frame[MAVESPNOW_HEADER_LEN], buffer + sent, chunk);
-
-      /* Remove a stale completion token before starting the sole in-flight
-       * transfer.  txlock preserves packet order for concurrent writers.
-       */
-
-      while (nxsem_trywait(&priv->txdone) == OK)
-        {
-        }
-
-      priv->txpending = true;
-      ret = mavespnow_err(esp_now_send(priv->config.peer_addr, frame,
-                                      MAVESPNOW_HEADER_LEN + chunk));
+      ret = mavespnow_send_fragment(priv,
+                                    (FAR const uint8_t *)buffer + sent,
+                                    chunk);
       if (ret < 0)
         {
-          priv->txpending = false;
-          break;
-        }
-
-      ret = nxsem_tickwait_uninterruptible(
-              &priv->txdone,
-              MSEC2TICK(MAVESPNOW_TXTIMEOUT_MS));
-      if (ret < 0)
-        {
-          ret = -ETIMEDOUT;
-          break;
-        }
-
-      if (priv->txstatus != ESP_NOW_SEND_SUCCESS)
-        {
-          ret = -EHOSTUNREACH;
           break;
         }
 
       sent += chunk;
     }
+
+#if MAVESPNOW_TX_RSSI_REPORT
+  /* Append the link report only after the caller's complete write, keeping
+   * it outside the application MAVLink frame.  Failure of this auxiliary
+   * report must not turn a successfully sent PX4 message into a short write.
+   */
+
+  if (sent == buflen)
+    {
+      (void)mavespnow_send_rssi(priv);
+    }
+#endif
 
   nxmutex_unlock(&priv->txlock);
   return sent != 0 ? (ssize_t)sent : (ssize_t)ret;
@@ -612,6 +734,18 @@ static void mavespnow_recv_cb(FAR const esp_now_recv_info_t *info,
   payload = &data[MAVESPNOW_HEADER_LEN];
   flags = spin_lock_irqsave(&priv->rxlock);
 
+#if MAVESPNOW_TX_RSSI_REPORT
+  /* Cache only.  Do not expose this measurement to the local PX4 reader;
+   * mavespnow_write() will send it to the ground endpoint instead.
+   */
+
+  if (info->rx_ctrl != NULL)
+    {
+      priv->last_rssi_dbm = info->rx_ctrl->rssi;
+      priv->have_rssi = true;
+    }
+#endif
+
   /* Drop a complete radio fragment when the stream buffer is full.  A
    * partial fragment would corrupt the MAVLink byte stream more severely.
    */
@@ -712,6 +846,9 @@ int mavlink_espnow_register(
   nxsem_init(&priv->txdone, 0, 0);
   nxsem_init(&priv->rxready, 0, 0);
   spin_lock_init(&priv->rxlock);
+#if MAVESPNOW_TX_RSSI_REPORT
+  priv->radio_tx_status.flags = MAVLINK_STATUS_FLAG_OUT_MAVLINK1;
+#endif
 
   /* PX4 treats every MAVLink character device as a UART and configures it
    * through termios.  Store those settings as virtual attributes; baud and
