@@ -28,7 +28,7 @@ struct mavlink_espnow_config_s
 {
   uint8_t peer_addr[MAVLINK_ESPNOW_ADDR_LEN];
   uint8_t pmk[MAVLINK_ESPNOW_KEY_LEN];
-  uint8_t channel;                  /* 0: use the current Wi-Fi channel */
+  uint8_t channel;                  /* 0: scan and select; 1-13: fixed */
 };
 
 /****************************************************************************
@@ -42,7 +42,8 @@ struct mavlink_espnow_config_s
  *
  * Input Parameters:
  *   devpath - Character device path, normally "/dev/mavlink0".
- *   config  - Remote peer or broadcast address, plus a 16-byte PMK.
+ *   config  - Remote peer or broadcast address, a 16-byte PMK, and either
+ *             automatic (0) or fixed (1-13) channel selection.
  *
  * Returned Value:
  *   Zero on success or a negated errno value on failure.

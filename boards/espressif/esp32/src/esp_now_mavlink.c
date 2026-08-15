@@ -60,6 +60,8 @@
 #define MAVESPNOW_WIFI_PROTOCOL   WIFI_PROTOCOL_LR
 #define MAVESPNOW_PHY_MODE        WIFI_PHY_MODE_LR
 #define MAVESPNOW_PHY_RATE        WIFI_PHY_RATE_LORA_250K
+#define MAVESPNOW_CHANNEL_MIN     1
+#define MAVESPNOW_CHANNEL_MAX     13
 
 /* Set this to 1 in the aircraft build and 0 in the ground-radio build.
  * The aircraft reports the RSSI it measured for ground-to-air packets to
@@ -154,6 +156,14 @@ static int mavespnow_err(esp_err_t err)
 static int mavespnow_wifi_start(void)
 {
   wifi_init_config_t wifi = WIFI_INIT_CONFIG_DEFAULT();
+  wifi_country_t country =
+  {
+    .cc = "CN",
+    .schan = MAVESPNOW_CHANNEL_MIN,
+    .nchan = MAVESPNOW_CHANNEL_MAX,
+    .max_tx_power = MAVESPNOW_TX_POWER,
+    .policy = WIFI_COUNTRY_POLICY_MANUAL,
+  };
   esp_err_t err;
 
   /* ESP-NOW still needs the vendor Wi-Fi driver and an enabled STA radio,
@@ -211,27 +221,124 @@ static int mavespnow_wifi_start(void)
       return mavespnow_err(err);
     }
 
-  err = esp_wifi_set_ps(WIFI_PS_NONE);
+  err = esp_wifi_set_country(&country);
+  if (err == ESP_OK)
+    {
+      err = esp_wifi_set_ps(WIFI_PS_NONE);
+    }
   if (err == ESP_OK)
     {
       err = esp_wifi_set_max_tx_power(MAVESPNOW_TX_POWER);
     }
 
-  if (err == ESP_OK)
-    {
-      err = esp_wifi_set_protocol(WIFI_IF_STA,
-                                  MAVESPNOW_WIFI_PROTOCOL);
-    }
-
   if (err != ESP_OK)
     {
-      wlerr("ERROR: Wi-Fi power/LR configuration failed: %d\n", err);
+      wlerr("ERROR: Wi-Fi power configuration failed: %d\n", err);
       esp_wifi_stop();
       esp_wifi_deinit();
       return mavespnow_err(err);
     }
 
   return OK;
+}
+
+/* Estimate congestion from visible access points.  A 20 MHz 2.4 GHz signal
+ * overlaps nearby numbered channels, so each AP contributes a decreasing
+ * score out to four channels on either side.  This is an AP-density estimate,
+ * not a true airtime survey, but is available without keeping the radio in
+ * promiscuous mode or delaying normal MAVLink traffic after startup. */
+
+static uint8_t mavespnow_select_channel(void)
+{
+  FAR wifi_ap_record_t *records;
+  wifi_scan_config_t scan;
+  uint16_t score[MAVESPNOW_CHANNEL_MAX + 1];
+  uint16_t count = 0;
+  uint16_t fetched;
+  uint8_t selected = MAVESPNOW_CHANNEL_MIN;
+  esp_err_t err;
+  int channel;
+  int i;
+
+  memset(score, 0, sizeof(score));
+  memset(&scan, 0, sizeof(scan));
+  scan.show_hidden = true;
+  err = esp_wifi_scan_start(&scan, true);
+  if (err != ESP_OK)
+    {
+      wlwarn("WARNING: Wi-Fi scan failed (%d); using channel %u\n",
+             err, selected);
+      return selected;
+    }
+
+  err = esp_wifi_scan_get_ap_num(&count);
+  if (err != ESP_OK || count == 0)
+    {
+      if (err != ESP_OK)
+        {
+          wlwarn("WARNING: cannot read Wi-Fi scan results (%d); "
+                 "using channel %u\n", err, selected);
+          esp_wifi_clear_ap_list();
+        }
+
+      return selected;
+    }
+
+  records = kmm_malloc((size_t)count * sizeof(*records));
+  if (records == NULL)
+    {
+      wlwarn("WARNING: no memory for %u Wi-Fi scan results; "
+             "using channel %u\n", count, selected);
+      esp_wifi_clear_ap_list();
+      return selected;
+    }
+
+  fetched = count;
+  err = esp_wifi_scan_get_ap_records(&fetched, records);
+  if (err != ESP_OK)
+    {
+      wlwarn("WARNING: cannot fetch Wi-Fi scan results (%d); "
+             "using channel %u\n", err, selected);
+      esp_wifi_clear_ap_list();
+      kmm_free(records);
+      return selected;
+    }
+
+  for (i = 0; i < fetched; i++)
+    {
+      int primary = records[i].primary;
+
+      if (primary < MAVESPNOW_CHANNEL_MIN ||
+          primary > MAVESPNOW_CHANNEL_MAX)
+        {
+          continue;
+        }
+
+      for (channel = MAVESPNOW_CHANNEL_MIN;
+           channel <= MAVESPNOW_CHANNEL_MAX; channel++)
+        {
+          int distance = channel > primary ? channel - primary :
+                                             primary - channel;
+          if (distance <= 4)
+            {
+              score[channel] += 5 - distance;
+            }
+        }
+    }
+
+  kmm_free(records);
+  for (channel = MAVESPNOW_CHANNEL_MIN + 1;
+       channel <= MAVESPNOW_CHANNEL_MAX; channel++)
+    {
+      if (score[channel] < score[selected])
+        {
+          selected = channel;
+        }
+    }
+
+  wlinfo("Wi-Fi scan found %u APs; selected ESP-NOW channel %u "
+         "(occupancy score %u)\n", fetched, selected, score[selected]);
+  return selected;
 }
 
 static bool mavespnow_bad_key(FAR const uint8_t *key)
@@ -440,8 +547,9 @@ static int mavespnow_send_rssi(FAR struct mavlink_espnow_dev_s *priv)
     }
 
   /* This value was measured at the aircraft, so it is the remote RSSI from
-   * the ground station's point of view.  Unknown local RSSI/noise fields use
-   * UINT8_MAX as required by RADIO_STATUS.
+   * the ground station's point of view.  Report the selected Wi-Fi channel
+   * through txbuf; unknown local RSSI/noise fields use UINT8_MAX as required
+   * by RADIO_STATUS.
    */
 
   mavlink_msg_radio_status_pack_status(MAVESPNOW_RADIO_SYSID,
@@ -449,7 +557,8 @@ static int mavespnow_send_rssi(FAR struct mavlink_espnow_dev_s *priv)
                                        &priv->radio_tx_status, &message,
                                        UINT8_MAX,
                                        mavespnow_rssi_to_sik(rssi_dbm),
-                                       100, UINT8_MAX, UINT8_MAX, 0, 0);
+                                       priv->config.channel,
+                                       UINT8_MAX, UINT8_MAX, 0, 0);
   payload_len = mavlink_msg_to_send_buffer(payload, &message);
   ret = mavespnow_send_fragment(priv, payload, payload_len);
   if (ret == OK)
@@ -811,7 +920,7 @@ int mavlink_espnow_register(
       return -EINVAL;
     }
 
-  if (config->channel > 14)
+  if (config->channel > MAVESPNOW_CHANNEL_MAX)
     {
       wlerr("ERROR: invalid ESP-NOW channel: %u\n", config->channel);
       return -EINVAL;
@@ -866,16 +975,26 @@ int mavlink_espnow_register(
       goto err_free;
     }
 
-  if (priv->config.channel != 0)
+  if (priv->config.channel == 0)
     {
-      ret = mavespnow_err(
-              esp_wifi_set_channel(priv->config.channel,
-                                   WIFI_SECOND_CHAN_NONE));
-      if (ret < 0)
-        {
-          wlerr("ERROR: esp_wifi_set_channel failed: %d\n", ret);
-          goto err_wifi;
-        }
+      priv->config.channel = mavespnow_select_channel();
+    }
+
+  ret = mavespnow_err(
+          esp_wifi_set_channel(priv->config.channel,
+                               WIFI_SECOND_CHAN_NONE));
+  if (ret < 0)
+    {
+      wlerr("ERROR: esp_wifi_set_channel failed: %d\n", ret);
+      goto err_wifi;
+    }
+
+  ret = mavespnow_err(
+          esp_wifi_set_protocol(WIFI_IF_STA, MAVESPNOW_WIFI_PROTOCOL));
+  if (ret < 0)
+    {
+      wlerr("ERROR: Wi-Fi LR configuration failed: %d\n", ret);
+      goto err_wifi;
     }
 
   ret = mavespnow_err(esp_now_init());
