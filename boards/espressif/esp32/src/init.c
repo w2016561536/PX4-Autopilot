@@ -132,13 +132,17 @@ static const uint8_t g_peer_mac[6] =
 {
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff
 };
-
-
 static const uint8_t g_pmk[16] =
 {
-  'm', 'a', 'v', 'l', 'i', 'n', 'k', '-',
-  'p', 'm', 'k', '-', 'd', 'e', 'm', 'o'
+'m','a','v','l','i','n','k','-',
+  'p','e','e','r','-','l','m','k'
 };
+
+// static const uint8_t g_lmk[16] =
+// {
+//   'm', 'a', 'v', 'l', 'i', 'n', 'k', '-',
+//   'p', 'm', 'k', '-', 'd', 'e', 'm', 'o'
+// };
 
 int board_mavlink_espnow_initialize(void)
 {
@@ -147,6 +151,7 @@ int board_mavlink_espnow_initialize(void)
   memset(&config, 0, sizeof(config));
   memcpy(config.peer_addr, g_peer_mac, sizeof(config.peer_addr));
   memcpy(config.pmk, g_pmk, sizeof(config.pmk));
+//   memcpy(config.lmk, g_lmk, sizeof(config.lmk));
   config.channel = 0;
 
   /* This call initializes the minimal Wi-Fi STA radio and ESP-NOW. */
@@ -292,13 +297,15 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 
 	syslog(LOG_INFO, "\n[boot] CPU SPEED %d\n", esp_rtc_clk_get_cpu_freq());
 
-	// led_init();
+	led_init();
 	int ret =0;
+
+	led_on(BOARD_ARMED_LED);
 
 	// led_on(LED_RED);
 	// led_on(LED_GREEN);
 
-	// drv_led_start();
+	drv_led_start();
 
 	esp32_wifi_init();
 
@@ -387,7 +394,7 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 	syslog(LOG_INFO, "PX4 PLATFORM INIT OK");
 	px4_platform_configure();
 
-	// led_off(LED_RED);
+	led_off(BOARD_ARMED_LED);
 	// led_off(LED_GREEN);
 
 	return OK;
