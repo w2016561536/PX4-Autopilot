@@ -52,7 +52,7 @@
 
 // #define GPIO_LED_RED                 (GPIO_OUTPUT|34)
 //#define GPIO_LED_GREEN               (GPIO_OUTPUT|12)
-#define GPIO_LED_BLUE                (GPIO_OUTPUT|12)
+#define GPIO_LED_BLUE                (GPIO_OUTPUT|17)
 // #define GPIO_LED_SAFETY              GPIO_LED_BLUE
 
 #define BOARD_HAS_CONTROL_STATUS_LEDS 1
@@ -63,7 +63,7 @@
 
 #define HRT_TIMER                    0  /* use timer 3 for the HRT */
 
-#define BOARD_SPI_BUS_MAX_BUS_ITEMS 4
+#define BOARD_SPI_BUS_MAX_BUS_ITEMS 6
 
 
 /**
@@ -71,30 +71,25 @@
  * These are the channel numbers of the ADCs of the microcontroller that can be used by the Px4 Firmware in the adc driver.
  */
 
-#define ADC_BATTERY_VOLTAGE_CHANNEL   4
+#define ADC_BATTERY_VOLTAGE_CHANNEL   0
 #define ADC_BATTERY_CURRENT_CHANNEL 30
-#define ADC_SERVO_1_CHANNEL 6
-#define ADC_SERVO_2_CHANNEL 5
+
 
 #define ADC_CHANNELS \
 	((1 << ADC_BATTERY_VOLTAGE_CHANNEL) |\
-	 (1 << ADC_BATTERY_CURRENT_CHANNEL) |\
-	 (1 << ADC_SERVO_1_CHANNEL) |\
-	 (1 << ADC_SERVO_2_CHANNEL))
+	 (1 << ADC_BATTERY_CURRENT_CHANNEL))
 
 #define CONFIG_ESP32S3_ADC_VOL_3100 1
-#define CONFIG_ESP32S3_ADC1_CHANNEL4 1
-#define CONFIG_ESP32S3_ADC1_CHANNEL5 1
-#define CONFIG_ESP32S3_ADC1_CHANNEL6 1
+#define CONFIG_ESP32S3_ADC1_CHANNEL0 1
 
 #define ADC_V5_V_FULL_SCALE (7.17f)
 
-#define GPIO_HEATER_OUTPUT   /* PA8 */ (GPIO_OUTPUT| 46)
-#define HEATER_OUTPUT_EN(on_true)      px4_arch_gpiowrite(GPIO_HEATER_OUTPUT, (on_true))
+// #define GPIO_HEATER_OUTPUT   /* PA8 */ (GPIO_OUTPUT| 46)
+// #define HEATER_OUTPUT_EN(on_true)      px4_arch_gpiowrite(GPIO_HEATER_OUTPUT, (on_true))
 
 /* AUX PWMs
  */
-#define BOARD_NUM_IO_TIMERS 2
+#define BOARD_NUM_IO_TIMERS 1
 #define DIRECT_PWM_OUTPUT_CHANNELS	4
 
 // #define BOARD_ENABLE_CONSOLE_BUFFER

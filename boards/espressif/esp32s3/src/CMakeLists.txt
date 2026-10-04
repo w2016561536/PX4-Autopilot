@@ -73,4 +73,4 @@ ${PX4_SOURCE_DIR}/platforms/nuttx/NuttX/nuttx/arch/xtensa/src/esp32s3/esp-hal-3r
 )
 
 add_subdirectory(${PX4_BOARD_DIR}/src/drivers/edit_ssid)
-add_subdirectory(${PX4_BOARD_DIR}/src/drivers/servo_driver)
+# add_subdirectory(${PX4_BOARD_DIR}/src/drivers/servo_driver)

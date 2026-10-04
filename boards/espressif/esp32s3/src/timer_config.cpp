@@ -34,17 +34,17 @@
 #include <px4_arch/io_timer_hw_description.h>
 
 constexpr io_timers_t io_timers[MAX_IO_TIMERS] = {
-	initIOTimer(Timer::Timer0),
-	initIOTimer(Timer::Timer1),
+	initIOTimer(Timer::Timer0)
+	// initIOTimer(Timer::Timer1),
 };
 
 constexpr timer_io_channels_t timer_io_channels[MAX_TIMER_IO_CHANNELS] = {
-	initIOTimerChannel(io_timers, {Timer::Timer0, 0}, {37}),
-	initIOTimerChannel(io_timers, {Timer::Timer1, 0}, {38}),
+	initIOTimerChannel(io_timers, {Timer::Timer0, 0}, {-1}),
+	initIOTimerChannel(io_timers, {Timer::Timer0, 1}, {-1}),
 	// initIOTimerChannel(io_timers, {Timer::Timer1, 2}, {4}),
-	initIOTimerChannel(io_timers, {Timer::Timer1, 1}, {1}),
-	initIOTimerChannel(io_timers, {Timer::Timer1, 2}, {2}),
-
+	initIOTimerChannel(io_timers, {Timer::Timer0, 2}, {-1}),
+	initIOTimerChannel(io_timers, {Timer::Timer0, 3}, {-1}),
+	// Please configure pwm io in nuttx config
 
 };
 // Well, the pins here are invalid, it defined in defconfig
